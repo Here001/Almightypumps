@@ -76,7 +76,13 @@ export type TvSms = { id: string; smsContent?: string | null; parsedCode?: strin
 
 export const TextVerified = {
   account: () => tv<{ username: string; currentBalance: number }>("GET", "/api/pub/v2/account/me"),
-  services: () => tv<{ serviceName: string; capability: string }[]>("GET", "/api/pub/v2/services", { params: { numberType: "mobile", reservationType: "verification" } }),
+  /** Services for one-time verifications. Accepts a bare array or { data: [...] }; logs the shape for debugging. */
+  async services(numberType?: string): Promise<{ serviceName: string; capability?: string }[]> {
+    const raw = await tv<unknown>("GET", "/api/pub/v2/services", { params: { reservationType: "verification", ...(numberType ? { numberType } : {}) } });
+    const list = (Array.isArray(raw) ? raw : ((raw as { data?: unknown[] })?.data ?? [])) as Record<string, unknown>[];
+    console.log(`[textverified] services numberType=${numberType ?? "-"} type=${Array.isArray(raw) ? "array" : typeof raw} keys=${raw && !Array.isArray(raw) ? Object.keys(raw as object).join(",") : ""} count=${list.length} sample=${JSON.stringify(list.slice(0, 2)).slice(0, 300)}`);
+    return list.map((s) => ({ serviceName: String(s.serviceName ?? s.name ?? ""), capability: s.capability === undefined ? undefined : String(s.capability) }));
+  },
   price: (serviceName: string) =>
     tv<{ serviceName: string; price: number }>("POST", "/api/pub/v2/pricing/verifications", {
       json: { serviceName, areaCode: false, carrier: false, numberType: "mobile", capability: "sms" },

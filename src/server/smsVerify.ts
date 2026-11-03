@@ -43,8 +43,10 @@ export async function updateVerifyConfig(db: Db, input: { markupBps?: number; en
 
 /** Pull the provider's service list (names only; prices are fetched when a customer opens one). */
 export async function syncSmsServices(db: Db) {
-  const list = await TextVerified.services();
-  const names = [...new Set(list.filter((s) => s.capability === "sms" || s.capability === "smsAndVoiceCombo").map((s) => s.serviceName).filter(Boolean))];
+  const pick = (list: { serviceName: string; capability?: string }[]) =>
+    [...new Set(list.filter((s) => !s.capability || /sms/i.test(s.capability)).map((s) => s.serviceName.trim()).filter(Boolean))];
+  let names = pick(await TextVerified.services("mobile"));
+  if (names.length === 0) names = pick(await TextVerified.services());
   if (names.length === 0) throw new AppError(502, "PROVIDER_ERROR", "The provider returned no services.");
   const now = new Date();
   await db.transaction(async (tx) => {
