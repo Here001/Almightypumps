@@ -166,6 +166,8 @@ export const listings = pgTable("listings", {
   status: text("status").$type<"active" | "paused" | "removed" | "pending" | "declined">().notNull().default("active"),
   /** Why it's waiting for review, or why an admin declined it. */
   reviewNote: text("review_note"),
+  /** Seller's answers to the category questions ({questionId: answer}). */
+  answers: jsonb("answers").$type<Record<string, string>>().notNull().default({}),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 
@@ -314,4 +316,16 @@ export const sellerProfiles = pgTable("seller_profiles", {
   reviewNote: text("review_note"),
   submittedAt: ts("submitted_at").notNull().defaultNow(),
   decidedAt: ts("decided_at"),
+});
+
+/** P2P categories with per-category seller questions (drizzle/0011_listing_categories.sql). */
+export const listingCategories = pgTable("listing_categories", {
+  slug: text("slug").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull().default(""),
+  questions: jsonb("questions").$type<import("@/core/listingQuestions").Question[]>().notNull().default([]),
+  requiresReview: boolean("requires_review").notNull().default(false),
+  active: boolean("active").notNull().default(true),
+  position: integer("position").notNull().default(0),
+  createdAt: ts("created_at").notNull().defaultNow(),
 });

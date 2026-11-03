@@ -4,22 +4,21 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../api";
 import { useCurrency } from "./Currency";
+import type { Question } from "@/core/listingQuestions";
 
 type Listing = {
   id: string; title: string; description: string; category: string; deliveryType: string; price: number; stock: number;
   minQty: number; maxQty: number; status: "active" | "paused" | "pending" | "declined"; reviewNote: string | null; sold: number; openOrders: number;
+  answers: Record<string, string>;
 };
+export type P2PCategory = { slug: string; name: string; description: string; questions: Question[]; requiresReview: boolean };
 type Order = {
   id: string; publicId: number; status: string; quantity: number; amount: number; youReceive: number; shipBy: string;
   inspectionEndsAt: string | null; deliveryProof: string | null; createdAt: string; title: string; deliveryType: string; buyerName: string;
 };
 type Msg = { ok: boolean; text: string } | null;
 
-export const CATEGORY_LABELS: Record<string, string> = {
-  fashion: "Fashion", "phones-gadgets": "Phones & gadgets", beauty: "Beauty", home: "Home", "digital-products": "Digital products",
-  "gift-cards-crypto": "Gift cards & crypto", services: "Services", other: "Other",
-};
-const DELIVERY_LABELS: Record<string, string> = { physical: "Physical item (shipped or picked up)", digital: "Digital (code, file or link)", service: "A service" };
+export const DELIVERY_LABELS: Record<string, string> = { physical: "Physical item (shipped or picked up)", digital: "Digital (code, file or link)", service: "A service" };
 const STATUS: Record<Listing["status"], { label: string; tone: string }> = {
   active: { label: "Live", tone: "ok" }, paused: { label: "Paused", tone: "" }, pending: { label: "Waiting for review", tone: "info" }, declined: { label: "Declined", tone: "bad" },
 };
@@ -40,6 +39,9 @@ export function SellerPanel() {
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [form, setForm] = useState<{ listing?: Listing } | null>(null);
   const [notice, setNotice] = useState<Msg>(null);
+  const [cats, setCats] = useState<P2PCategory[]>([]);
+  useEffect(() => { api<P2PCategory[]>("/api/market/categories").then(setCats).catch(() => {}); }, []);
+  const catName = (slug: string) => cats.find((c) => c.slug === slug)?.name ?? slug;
 
   const load = useCallback(async () => {
     const [l, o] = await Promise.all([api<Listing[]>("/api/seller/listings"), api<Order[]>("/api/seller/orders")]);
@@ -80,7 +82,7 @@ export function SellerPanel() {
 
       {form && (
         <ListingForm
-          listing={form.listing}
+          listing={form.listing} categories={cats}
           onCancel={() => setForm(null)}
           onSaved={async (m) => { setForm(null); setNotice({ ok: true, text: m }); await load(); router.refresh(); }}
         />
@@ -107,7 +109,7 @@ export function SellerPanel() {
                     <div className="ap-row-title" style={{ fontWeight: 700 }}>{l.title}</div>
                     <div className="ap-service-meta" style={{ marginTop: 6 }}>
                       <span className={`status ${STATUS[l.status].tone}`}>{STATUS[l.status].label}</span>
-                      <span className="ap-tag">{CATEGORY_LABELS[l.category] ?? l.category}</span>
+                      <span className="ap-tag">{catName(l.category)}</span>
                       <span className="muted">{l.stock} in stock · {l.sold} sold{l.openOrders ? ` · ${l.openOrders} open order${l.openOrders === 1 ? "" : "s"}` : ""}</span>
                     </div>
                   </div>
@@ -204,17 +206,19 @@ function FulfilRow({ o, onDone }: { o: Order; onDone: (m: Msg) => Promise<void> 
   );
 }
 
-function ListingForm({ listing, onCancel, onSaved }: { listing?: Listing; onCancel: () => void; onSaved: (msg: string) => Promise<void> }) {
+function ListingForm({ listing, categories, onCancel, onSaved }: { listing?: Listing; categories: P2PCategory[]; onCancel: () => void; onSaved: (msg: string) => Promise<void> }) {
   const { charge } = useCurrency();
+  const [answers, setAnswers] = useState<Record<string, string>>(listing?.answers ?? {});
   const [f, setF] = useState({
-    title: listing?.title ?? "", description: listing?.description ?? "", category: listing?.category ?? "phones-gadgets",
-    deliveryType: listing?.deliveryType ?? "physical", price: listing ? String(listing.price / 100) : "",
+    title: listing?.title ?? "", description: listing?.description ?? "", category: listing?.category ?? "",
+    deliveryType: listing?.deliveryType ?? "digital", price: listing ? String(listing.price / 100) : "",
     stock: String(listing?.stock ?? 1), minQty: String(listing?.minQty ?? 1), maxQty: String(listing?.maxQty ?? 1),
   });
   const [busy, setBusy] = useState(false);
   const [problems, setProblems] = useState<string[]>([]);
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setF((x) => ({ ...x, [k]: e.target.value }));
   const priceKobo = Math.round(Number(f.price.replace(/,/g, "")) * 100);
+  const cat = categories.find((c) => c.slug === f.category);
   const fee = Number.isFinite(priceKobo) && priceKobo > 0 ? Math.ceil(priceKobo * 0.03) : 0;
 
   return (
@@ -226,8 +230,8 @@ function ListingForm({ listing, onCancel, onSaved }: { listing?: Listing; onCanc
         setProblems([]);
         try {
           const r = listing
-            ? await api<{ message: string }>(`/api/seller/listings/${listing.id}`, { action: "update", ...f })
-            : await api<{ message: string }>("/api/market/listings", f);
+            ? await api<{ message: string }>(`/api/seller/listings/${listing.id}`, { action: "update", ...f, answers })
+            : await api<{ message: string }>("/api/market/listings", { ...f, answers });
           await onSaved(r.message);
         } catch (err) {
           setProblems([(err as Error).message]);
@@ -235,16 +239,41 @@ function ListingForm({ listing, onCancel, onSaved }: { listing?: Listing; onCanc
           setBusy(false);
         }
       }}>
+        <div className="field"><label htmlFor="lf-cat">Category</label>
+          <select id="lf-cat" className="select" value={f.category} onChange={set("category")} required>
+            <option value="">Choose a category…</option>
+            {categories.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
+          </select>
+          {cat?.description && <span className="muted" style={{ fontSize: 12 }}>{cat.description}</span>}
+          {cat?.requiresReview && <span className="muted" style={{ fontSize: 12 }}>Ads in this category are checked by our team before going live.</span>}
+        </div>
         <div className="field"><label htmlFor="lf-title">Title</label>
           <input id="lf-title" className="input" value={f.title} onChange={set("title")} placeholder="e.g. iPhone 13, 128GB, UK used" required minLength={4} maxLength={120} /></div>
         <div className="field"><label htmlFor="lf-desc">Description</label>
           <textarea id="lf-desc" className="input" rows={4} value={f.description} onChange={set("description")} placeholder="Condition, what's included, how you deliver" required minLength={20} maxLength={4000} />
           <span className="muted" style={{ fontSize: 12 }}>{f.description.trim().length}/20 characters minimum</span></div>
+        {cat && cat.questions.length > 0 && (
+          <div className="ap-subform" style={{ gap: 10 }}>
+            <span className="muted" style={{ fontSize: 13, fontWeight: 600 }}>About this {cat.name.toLowerCase()} item</span>
+            {cat.questions.map((q) => (
+              <div key={q.id} className="field">
+                <label htmlFor={`ans-${q.id}`}>{q.label}{!q.required && <span className="muted"> (optional)</span>}</label>
+                {q.type === "textarea" ? (
+                  <textarea id={`ans-${q.id}`} className="input" rows={3} value={answers[q.id] ?? ""} onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value }))} required={q.required} />
+                ) : q.type === "select" || q.type === "yesno" ? (
+                  <select id={`ans-${q.id}`} className="select" value={answers[q.id] ?? ""} onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value }))} required={q.required}>
+                    <option value="">Choose…</option>
+                    {(q.type === "yesno" ? ["Yes", "No"] : q.options ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                ) : (
+                  <input id={`ans-${q.id}`} className="input" inputMode={q.type === "number" ? "decimal" : undefined} value={answers[q.id] ?? ""} onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value }))} required={q.required} />
+                )}
+                {q.help && <span className="muted" style={{ fontSize: 12 }}>{q.help}</span>}
+              </div>
+            ))}
+          </div>
+        )}
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <div className="field" style={{ flex: "1 1 180px" }}><label htmlFor="lf-cat">Category</label>
-            <select id="lf-cat" className="select" value={f.category} onChange={set("category")}>
-              {Object.entries(CATEGORY_LABELS).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
-            </select></div>
           <div className="field" style={{ flex: "1 1 220px" }}><label htmlFor="lf-del">How it&apos;s delivered</label>
             <select id="lf-del" className="select" value={f.deliveryType} onChange={set("deliveryType")}>
               {Object.entries(DELIVERY_LABELS).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
@@ -261,7 +290,7 @@ function ListingForm({ listing, onCancel, onSaved }: { listing?: Listing; onCanc
             <input id="lf-max" className="input" inputMode="numeric" value={f.maxQty} onChange={set("maxQty")} /></div>
         </div>
         {fee > 0 && <p className="muted" style={{ fontSize: 13 }}>For each sale you receive {charge(priceKobo - fee)} after our 3% escrow fee.</p>}
-        <p className="muted" style={{ fontSize: 13 }}>Gift cards, crypto and some wording are checked by our team before going live. Fake documents, counterfeits, accounts, weapons and drugs aren&apos;t allowed.</p>
+        <p className="muted" style={{ fontSize: 13 }}>Some ads are checked by our team before going live. Fake documents, counterfeits, accounts, weapons and drugs aren&apos;t allowed.</p>
         {problems.length > 0 && <div className="form-error" role="alert">{problems.join(" ")}</div>}
         <div style={{ display: "flex", gap: 8 }}>
           <button className="btn btn-primary" disabled={busy}>{busy ? "Saving…" : listing ? "Save changes" : "Post ad"}</button>

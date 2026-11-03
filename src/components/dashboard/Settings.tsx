@@ -233,10 +233,10 @@ function Seller({ status, onOpenPanel }: { status: string; onOpenPanel: () => vo
           <h3 style={{ fontSize: 15 }}>About your shop</h3>
           <div className="field"><label htmlFor="sa-biz">Shop or business name</label>
             <input id="sa-biz" className="input" value={f.businessName} onChange={set("businessName")} required maxLength={80} /></div>
-          <div className="field"><label htmlFor="sa-phone">Phone buyers and our team can reach you on</label>
+          <div className="field"><label htmlFor="sa-phone">Phone number</label>
             <input id="sa-phone" className="input" value={f.contactPhone} onChange={set("contactPhone")} inputMode="tel" placeholder="0803 123 4567" required /></div>
           <div className="field"><label htmlFor="sa-what">What will you sell?</label>
-            <textarea id="sa-what" className="input" rows={2} value={f.whatTheySell} onChange={set("whatTheySell")} placeholder="e.g. Fairly used iPhones and accessories" required maxLength={500} /></div>
+            <textarea id="sa-what" className="input" rows={2} value={f.whatTheySell} onChange={set("whatTheySell")} placeholder="e.g. Bags, e-books, design templates" required maxLength={500} /></div>
 
           <h3 style={{ fontSize: 15 }}>Where we pay you</h3>
           <div className="field"><label htmlFor="sa-bank">Bank</label>

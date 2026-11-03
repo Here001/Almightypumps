@@ -196,3 +196,29 @@ button.btn-ghost { border: 1px solid rgb(var(--ov) / 0.200); }
 .ap-facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 0; font-size: 14px; }
 .ap-facts dt { color: var(--muted); }
 .ap-facts dd { margin: 0; overflow-wrap: anywhere; }
+
+/* P2P marketplace */
+.mk { gap: 6px; }
+.mk-filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.mk-pill { min-height: 40px; padding: 8px 30px 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: rgb(var(--ov) / 0.04); color: var(--fg); font: inherit; font-size: 14px; font-weight: 600; }
+.mk-search { flex: 1 1 140px; min-height: 40px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--input-bg); color: var(--fg); font: inherit; font-size: 15px; }
+.mk-list { list-style: none; margin: 0; padding: 0; }
+.mk-row { display: flex; flex-direction: column; gap: 8px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+.mk-row:last-child { border-bottom: 0; }
+.mk-seller { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.mk-avatar { flex: none; width: 28px; height: 28px; border-radius: 999px; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); font-weight: 800; font-size: 14px; }
+.mk-name { font-weight: 600; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mk-badge { flex: none; color: var(--info); display: inline-flex; }
+.mk-stats { margin-left: auto; flex: none; font-size: 13px; color: var(--muted); }
+.mk-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.mk-title { background: none; border: 0; padding: 0; color: var(--fg); font: inherit; font-size: 15px; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.mk-bottom { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
+.mk-price { font-family: var(--display); font-weight: 800; font-size: clamp(24px, 6vw, 30px); letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+.mk-meta { font-size: 14px; font-variant-numeric: tabular-nums; }
+.mk-meta span { color: var(--muted); margin-right: 4px; }
+.mk-buy { flex: none; min-width: 104px; min-height: 44px; padding: 10px 26px; border: 0; border-radius: 999px; background: #22C55E; color: #052E12; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
+.mk-buy:hover { filter: brightness(1.08); }
+.mk-buy[disabled] { opacity: .6; cursor: progress; }
+.mk-buy-lg { width: 100%; min-height: 52px; }
+.mk-stepper { display: flex; align-items: center; gap: 14px; }
+.mk-stepper strong { min-width: 28px; text-align: center; font-size: 18px; font-variant-numeric: tabular-nums; }

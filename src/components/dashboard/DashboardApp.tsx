@@ -9,10 +9,12 @@ import { HUB_SERVICES } from "./services";
 import { ShopCategory } from "./Shop";
 import { Settings } from "./Settings";
 import { SellerPanel } from "./SellerPanel";
+import { Marketplace } from "./Marketplace";
+import { TradeActions } from "./TradeActions";
 import { SHOP_ICON_PATHS } from "../icons";
 
 type Order = { id: number; service: string; platform: string; link: string; quantity: number; amount: number; status: string; remains: number | null; when: string };
-type Trade = { id: number; title: string; role: string; amount: number; status: string; when: string };
+type Trade = { id: number; uuid: string; title: string; role: string; amount: number; status: string; when: string; shipBy: string; inspectionEndsAt: string | null; proof: string | null };
 type Entry = { id: string; what: string; change: number; after: number; when: string };
 
 const TABS = [
@@ -39,7 +41,7 @@ function Icon({ d }: { d: string }) {
 }
 
 type Props = {
-  greeting: string; isAdmin: boolean; wallet: { available: number; held: number }; minOrderKobo: number; usdRateKobo: number;
+  greeting: string; isAdmin: boolean; userId: string; wallet: { available: number; held: number }; minOrderKobo: number; usdRateKobo: number;
   catalog: CatalogPlatform[]; orders: Order[]; trades: Trade[]; history: Entry[];
   me: { name: string; email: string; phone: string | null; sellerStatus: string };
   shopCategories: { slug: string; name: string; description: string; icon: string; products: number }[];
@@ -53,6 +55,7 @@ export function DashboardApp(props: Props) {
 function Dashboard(props: Props) {
   const { money, currency, charge } = useCurrency();
   const [tab, setTab] = useState<Tab>("services");
+  const [p2pView, setP2pView] = useState<"market" | "mine">("market");
 
   // Tabs live in the URL hash so the back button and Insights tracking work.
   useEffect(() => {
@@ -214,7 +217,7 @@ function Dashboard(props: Props) {
             </section>
           )}
 
-          {tab === "settings" && <Settings me={{ ...props.me, isAdmin: props.isAdmin }} onOpenSellerPanel={() => go("trades")} />}
+          {tab === "settings" && <Settings me={{ ...props.me, isAdmin: props.isAdmin }} onOpenSellerPanel={() => { setP2pView("mine"); go("trades"); }} />}
 
           {tab === "wallet" && (
             <>
@@ -244,33 +247,30 @@ function Dashboard(props: Props) {
             </>
           )}
 
-          {tab === "trades" && (props.me.sellerStatus === "verified" ? <SellerPanel /> : (
-            <section className="card glass">
-              <h2>Sell on Almighty Pumps</h2>
-              <p className="muted" style={{ fontSize: 14 }}>
-                {props.me.sellerStatus === "pending"
-                  ? "Your seller application is being reviewed. Once approved, your seller panel appears here."
-                  : "Post ads on the P2P marketplace. Buyers pay into escrow and you're paid when they confirm."}
-              </p>
-              {props.me.sellerStatus !== "pending" && (
-                <button type="button" className="btn btn-primary ap-mini" style={{ alignSelf: "flex-start" }} onClick={() => go("settings")}>
-                  {props.me.sellerStatus === "rejected" ? "See why and re-apply" : "Become a seller"}
-                </button>
-              )}
-            </section>
-          ))}
+          {tab === "trades" && props.me.sellerStatus === "verified" && (
+            <div className="ap-chips ap-chips-wrap" role="group" aria-label="P2P view">
+              <button type="button" className="ap-chip" aria-pressed={p2pView === "market"} onClick={() => setP2pView("market")}>Marketplace</button>
+              <button type="button" className="ap-chip" aria-pressed={p2pView === "mine"} onClick={() => setP2pView("mine")}>My ads & sales</button>
+            </div>
+          )}
+          {tab === "trades" && (p2pView === "mine" && props.me.sellerStatus === "verified"
+            ? <SellerPanel />
+            : <Marketplace myId={props.userId} balance={props.wallet.available} onAddMoney={() => go("wallet")} onViewTrades={() => document.getElementById("my-trades")?.scrollIntoView({ behavior: "smooth" })} />)}
 
-          {tab === "trades" && (
-            <section className="card glass">
+          {tab === "trades" && props.trades.length > 0 && (
+            <section className="card glass" id="my-trades" style={{ scrollMarginTop: 12 }}>
               <h2>My trades</h2>
-              {props.trades.length === 0 ? <div className="empty">No trades yet. When you buy from a verified seller, your money waits safely in escrow until you confirm the item.</div> : (
+              {(
                 <ul className="ap-list">
                   {props.trades.map((t) => {
                     const st = TRADE_STATUS[t.status] ?? { label: t.status, tone: "" };
                     return (
-                      <li key={t.id} className="ap-row">
-                        <div style={{ minWidth: 0 }}><div className="ap-row-title">{t.title}</div><div className="muted ap-row-sub">#M-{t.id} · {t.role} · {t.when}</div></div>
-                        <div className="ap-row-end"><strong>{money(t.amount)}</strong><span className={`status ${st.tone}`}>{st.label}</span></div>
+                      <li key={t.id} className="ap-row" style={{ flexDirection: "column", gap: 8 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                          <div style={{ minWidth: 0 }}><div className="ap-row-title">{t.title}</div><div className="muted ap-row-sub">#M-{t.id} · {t.role} · {t.when}</div></div>
+                          <div className="ap-row-end"><strong>{money(t.amount)}</strong><span className={`status ${st.tone}`}>{st.label}</span></div>
+                        </div>
+                        <TradeActions t={t} />
                       </li>
                     );
                   })}

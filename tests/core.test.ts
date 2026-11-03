@@ -331,3 +331,21 @@ test("listing policy: fewer false positives, review queue for borderline items",
   assert.equal(checkListing({ ...good, title: "Replica designer sneakers" }).ok, false);
   assert.equal(checkListing({ ...good, description: "Selling fresh bank logs and fullz, message me." }).ok, false);
 });
+
+test("listing category questions", async () => {
+  const { normaliseQuestions, checkAnswers } = await import("../src/core/listingQuestions.ts");
+  const qs = normaliseQuestions([
+    { label: "Condition", type: "select", options: "New, Used, Refurbished", required: true },
+    { label: "Storage (GB)", type: "number", required: false },
+    { label: "Comes with box?", type: "yesno", required: true },
+    { label: "   " },
+  ]);
+  assert.equal(qs.length, 3);
+  assert.deepEqual(qs[0].options, ["New", "Used", "Refurbished"]);
+  assert.throws(() => normaliseQuestions([{ label: "Colour", type: "select", options: "Red" }]));
+  const ok = checkAnswers(qs, { [qs[0].id]: "Used", [qs[1].id]: "128", [qs[2].id]: "Yes", junk: "x" });
+  assert.deepEqual(ok.problems, []);
+  assert.equal(Object.keys(ok.answers).length, 3);
+  const bad = checkAnswers(qs, { [qs[0].id]: "Broken", [qs[1].id]: "lots" });
+  assert.equal(bad.problems.length, 3);
+});

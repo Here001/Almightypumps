@@ -42,7 +42,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 ## Layout
 - `src/core/` pure business rules with no dependencies: money (integer kobo), ledger,
   escrow state machine, SMM pricing/parsing, listing policy, crypto helpers.
-  Tested by `tests/core.test.ts` (`npm test`, Node's built-in runner, 28 tests).
+  Tested by `tests/core.test.ts` (`npm test`, Node's built-in runner, 29 tests).
 - `src/server/` database access, wallet (row locks, holds, idempotent ledger),
   market, smm, payments (Flutterwave), auth, env, http helpers.
 - Customer dashboard (`app/dashboard` → `src/components/dashboard/`): tabs Services / Orders /
@@ -75,6 +75,16 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   Seller panel in the P2P tab (`SellerPanel.tsx`): post/edit (policy re-check; flagged or previously
   declined → review)/pause/resume/remove ads, orders to deliver (SHIP with proof, or CANCEL = refund),
   sales history, earnings after the 3% fee. APIs: /api/seller/{apply,listings,listings/[id],orders}.
+- P2P categories (migration 0011 `listing_categories`, `src/server/listingCategories.ts`, /admin/p2p-categories):
+  admin creates categories, each with its own seller questions (`src/core/listingQuestions.ts`: short/long
+  answer, number, pick-from-list, yes/no; required flag; hint) and an "needs my approval" switch
+  (`requires_review` → ads go to pending). Sellers pick a category first in the ad form and answer its
+  questions; answers are stored in `listings.answers`, policy-checked, and shown to buyers.
+  `prepareListing` in `market.ts` does all checks for create and update.
+- P2P tab for everyone = Marketplace (`Marketplace.tsx`, layout inspired by Bybit P2P: seller, badge,
+  orders/completion, price, limits, stock, green Buy) → buy sheet (answers, quantity, escrow). Verified
+  sellers also get "My ads & sales". "Become a seller" lives only in Settings. Buyers' "My trades" has
+  `TradeActions.tsx`: confirm received, dispute, or cancel & refund after the 72h ship deadline.
 - `app/api/**` route handlers; `app/page.tsx` 3D homepage; `app/signup`, `app/login`,
   `app/dashboard`; `app/admin` (Insights, Growth providers, Services, Pricing, Shop, Listings review; admins only).
 - Shop (`src/server/shop.ts`, /admin/shop, migration 0008): admin categories → products. Delivery
@@ -117,7 +127,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   `dev` (full app) are both pushed.
 - Neon: project **almighty-pumps** (`jolly-dust-18900048`, AWS eu-central-1).
   - `main` branch: production, still empty. Run the migration on it only after approval.
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0010 applied. Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0011 applied. Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

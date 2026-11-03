@@ -21,7 +21,7 @@ export const applySchema = z
     accountName: z.string().trim().min(3, "Enter the account name").max(120),
     idType: z.enum(["nin", "drivers_license", "passport", "voters_card"]),
     idNumber: z.string().trim().min(5, "Enter your ID number").max(30),
-    whatTheySell: z.string().trim().min(5, "Tell us briefly what you'll sell").max(500),
+    whatTheySell: z.string().trim().min(2, "Tell us what you'll sell").max(500),
   })
   .superRefine((v, ctx) => {
     const t = ID_TYPES.find((x) => x.id === v.idType)!;

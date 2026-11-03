@@ -62,13 +62,14 @@ export type ListingInput = {
   maxQty: number;
 };
 
-export function checkListing(l: ListingInput): { ok: boolean; problems: string[]; review: string[] } {
+/** `categories` = slugs admins have set up (default: the starter list); category-level review is applied by the server. */
+export function checkListing(l: ListingInput, categories: readonly string[] = CATEGORIES): { ok: boolean; problems: string[]; review: string[] } {
   const problems: string[] = [];
   const title = l.title.trim();
   const description = l.description.trim();
   if (title.length < 4 || title.length > 120) problems.push("Title must be between 4 and 120 characters.");
   if (description.length < 20 || description.length > 4000) problems.push("Description must be between 20 and 4,000 characters.");
-  if (!(CATEGORIES as readonly string[]).includes(l.category)) problems.push("Choose a valid category.");
+  if (!categories.includes(l.category)) problems.push("Choose a valid category.");
   if (!(DELIVERY_TYPES as readonly string[]).includes(l.deliveryType)) problems.push("Choose how the item is delivered.");
   if (!Number.isSafeInteger(l.priceKobo) || l.priceKobo < 10_000) problems.push("Price must be at least ₦100.");
   if (!Number.isInteger(l.stock) || l.stock < 0) problems.push("Stock must be zero or more.");

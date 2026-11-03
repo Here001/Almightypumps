@@ -14,6 +14,7 @@ const schema = z.discriminatedUnion("action", [
     title: z.string(), description: z.string(), category: z.string(), deliveryType: z.string(),
     price: z.union([z.string(), z.number()]), stock: z.coerce.number().int(),
     minQty: z.coerce.number().int().default(1), maxQty: z.coerce.number().int().default(1),
+    answers: z.record(z.string(), z.string().max(2000)).optional(),
   }),
   z.object({ action: z.enum(["pause", "resume", "remove"]) }),
 ]);

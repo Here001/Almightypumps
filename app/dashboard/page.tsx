@@ -41,6 +41,7 @@ export default async function DashboardPage() {
     <DashboardApp
       greeting={`${greeting()}, ${user.name.split(" ")[0]}`}
       isAdmin={user.role === "admin"}
+      userId={user.id}
       me={{ name: user.name, email: user.email, phone: user.phone, sellerStatus: await effectiveSellerStatus(db, user.id, user.sellerStatus) }}
       wallet={{ available: wallet.available, held: wallet.held }}
       minOrderKobo={minOrderKobo}
@@ -49,7 +50,7 @@ export default async function DashboardPage() {
       shopOrders={shopOrders.map((o) => ({ id: o.id, product: o.product, amount: o.amount, status: o.status, content: o.content, note: o.note, when: when(o.createdAt) }))}
       catalog={catalog}
       orders={orders.map((o) => ({ id: o.id, service: o.service, platform: o.platform, link: o.link, quantity: o.quantity, amount: o.charged || o.cost, status: o.status, remains: o.remains, when: when(o.createdAt) }))}
-      trades={trades.map((t) => ({ id: t.publicId, title: t.title, role: t.buyerId === user.id ? "Buying" : "Selling", amount: t.amount, status: t.status, when: when(t.createdAt) }))}
+      trades={trades.map((t) => ({ id: t.publicId, uuid: t.id, title: t.title, role: t.buyerId === user.id ? "Buying" : "Selling", amount: t.amount, status: t.status, when: when(t.createdAt), shipBy: t.shipBy.toISOString(), inspectionEndsAt: t.inspectionEndsAt?.toISOString() ?? null, proof: t.buyerId === user.id ? t.deliveryProof : null }))}
       history={history.map((h) => ({ id: h.id, what: h.memo ?? h.kind, change: h.availableChange, after: h.availableAfter, when: when(h.createdAt) }))}
     />
   );

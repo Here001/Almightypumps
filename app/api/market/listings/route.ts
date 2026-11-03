@@ -9,8 +9,11 @@ export const dynamic = "force-dynamic";
 
 export const GET = route(async (req: Request) => {
   const url = new URL(req.url);
+  const sort = url.searchParams.get("sort");
   return browseListings(getDb(), {
     category: url.searchParams.get("category") || undefined,
+    q: url.searchParams.get("q")?.slice(0, 100) || undefined,
+    sort: sort === "price_asc" || sort === "price_desc" ? sort : "new",
     limit: Number(url.searchParams.get("limit") ?? 30),
     offset: Number(url.searchParams.get("offset") ?? 0),
   });
@@ -25,6 +28,7 @@ const schema = z.object({
   stock: z.coerce.number().int(),
   minQty: z.coerce.number().int().default(1),
   maxQty: z.coerce.number().int().default(1),
+  answers: z.record(z.string(), z.string().max(2000)).optional(),
 });
 
 export const POST = route(async (req: Request) => {

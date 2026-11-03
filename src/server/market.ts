@@ -2,22 +2,41 @@
  * P2P marketplace with escrow. The buyer's money is held from the moment a
  * trade is created and only moves when the escrow state machine says so.
  */
-import { and, desc, eq, inArray, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, lte, sql } from "drizzle-orm";
 import { checkListing, type ListingInput } from "@/core/listingPolicy";
 import { ESCROW_DEFAULTS, payoutSplit, shipDeadline, transition, type ActorRole, type TradeAction } from "@/core/escrow";
+import { checkAnswers } from "@/core/listingQuestions";
+import { blockedReasons } from "@/core/listingPolicy";
 import type { Db } from "./db";
-import { disputes, listings, tradeEvents, tradeMessages, trades, users } from "./db/schema";
+import { allCategories, getCategory } from "./listingCategories";
+import { disputes, listingCategories, listings, sellerProfiles, tradeEvents, tradeMessages, trades, users } from "./db/schema";
 import { badRequest, forbidden, notFound } from "./errors";
 import { linkHold, placeHold, platformWalletId, settleHold, walletIdForUser } from "./wallet";
 
-export async function createListing(db: Db, sellerId: string, input: ListingInput) {
+/**
+ * Validate an ad against the admin's categories: policy, the category's questions, and whether
+ * the category needs approval. Returns the cleaned answers and review reasons.
+ */
+async function prepareListing(db: Db, input: ListingInput & { answers?: unknown }) {
+  const cats = await allCategories(db, { activeOnly: true });
+  const check = checkListing(input, cats.map((c) => c.slug));
+  const cat = await getCategory(db, input.category);
+  const { answers, problems } = cat ? checkAnswers(cat.questions, input.answers) : { answers: {}, problems: [] as string[] };
+  const answerText = Object.values(answers).join("\n");
+  const problemsAll = [...check.problems, ...problems, ...blockedReasons(answerText).filter((r) => !check.problems.includes(r))];
+  if (problemsAll.length) throw badRequest("Please fix the listing and try again.", problemsAll);
+  const review = [...check.review];
+  if (cat?.requiresReview && !review.length) review.push(`Ads in “${cat.name}” are checked by our team before going live.`);
+  return { answers, review };
+}
+
+export async function createListing(db: Db, sellerId: string, input: ListingInput & { answers?: unknown }) {
   const [seller] = await db.select({ sellerStatus: users.sellerStatus }).from(users).where(eq(users.id, sellerId));
   if (!seller) throw notFound("Account");
   if (seller.sellerStatus !== "verified") {
     throw forbidden("Verify your seller account (ID and bank details) before posting an ad.");
   }
-  const check = checkListing(input);
-  if (!check.ok) throw badRequest("Please fix the listing and try again.", check.problems);
+  const check = await prepareListing(db, input);
   const [row] = await db
     .insert(listings)
     .values({
@@ -30,6 +49,7 @@ export async function createListing(db: Db, sellerId: string, input: ListingInpu
       stock: input.stock,
       minQty: input.minQty,
       maxQty: input.maxQty,
+      answers: check.answers,
       // Borderline listings wait for an admin instead of being rejected.
       status: check.review.length ? "pending" : "active",
       reviewNote: check.review.length ? check.review.join(" ") : null,
@@ -64,32 +84,45 @@ export async function reviewListing(db: Db, listingId: string, decision: "approv
   return row;
 }
 
-export async function browseListings(db: Db, opts: { category?: string; limit?: number; offset?: number }) {
-  const where = opts.category
-    ? and(eq(listings.status, "active"), eq(listings.category, opts.category))
-    : eq(listings.status, "active");
-  return db
+export async function browseListings(db: Db, opts: { category?: string; q?: string; sort?: "new" | "price_asc" | "price_desc"; limit?: number; offset?: number }) {
+  const filters = [eq(listings.status, "active"), sql`${listings.stock} > 0`];
+  if (opts.category) filters.push(eq(listings.category, opts.category));
+  const words = (opts.q ?? "").toLowerCase().split(/\s+/).filter((w) => w.length >= 2).slice(0, 6);
+  for (const w of words) {
+    const like = `%${w.replace(/[\\%_]/g, (c) => "\\" + c)}%`;
+    filters.push(sql`(${listings.title} ILIKE ${like} OR ${listings.description} ILIKE ${like})`);
+  }
+  const order = opts.sort === "price_asc" ? [asc(listings.price)] : opts.sort === "price_desc" ? [desc(listings.price)] : [desc(listings.createdAt)];
+  const limit = Math.min(opts.limit ?? 30, 100);
+  const rows = await db
     .select({
       id: listings.id,
       title: listings.title,
+      description: listings.description,
       category: listings.category,
+      categoryName: listingCategories.name,
       deliveryType: listings.deliveryType,
       price: listings.price,
       stock: listings.stock,
       minQty: listings.minQty,
       maxQty: listings.maxQty,
+      answers: listings.answers,
+      createdAt: listings.createdAt,
       sellerId: listings.sellerId,
-      sellerName: users.name,
+      sellerName: sql<string>`coalesce(${sellerProfiles.businessName}, ${users.name})`,
       sellerVerified: sql<boolean>`${users.sellerStatus} = 'verified'`,
-      sellerOrders: sql<number>`(select count(*)::int from trades t where t.seller_id = ${listings.sellerId} and t.status = 'COMPLETED')`,
-      sellerClosed: sql<number>`(select count(*)::int from trades t where t.seller_id = ${listings.sellerId} and t.status in ('COMPLETED','CANCELLED','REFUNDED'))`,
+      sellerOrders: sql<number>`(select count(*)::int from trades t where t.seller_id = "listings"."seller_id" and t.status = 'COMPLETED')`,
+      sellerClosed: sql<number>`(select count(*)::int from trades t where t.seller_id = "listings"."seller_id" and t.status in ('COMPLETED','CANCELLED','REFUNDED'))`,
     })
     .from(listings)
     .innerJoin(users, eq(users.id, listings.sellerId))
-    .where(where)
-    .orderBy(desc(listings.createdAt))
-    .limit(Math.min(opts.limit ?? 30, 100))
+    .leftJoin(sellerProfiles, eq(sellerProfiles.userId, listings.sellerId))
+    .leftJoin(listingCategories, eq(listingCategories.slug, listings.category))
+    .where(and(...filters))
+    .orderBy(...order)
+    .limit(limit + 1)
     .offset(opts.offset ?? 0);
+  return { listings: rows.slice(0, limit), hasMore: rows.length > limit };
 }
 
 /** Buy: lock stock, hold the buyer's money, open the trade. */
@@ -234,7 +267,7 @@ export async function postMessage(db: Db, tradeId: string, senderId: string, bod
 
 export async function myTrades(db: Db, userId: string) {
   return db
-    .select({ id: trades.id, publicId: trades.publicId, status: trades.status, amount: trades.amount, buyerId: trades.buyerId, sellerId: trades.sellerId, title: listings.title, shipBy: trades.shipBy, inspectionEndsAt: trades.inspectionEndsAt, createdAt: trades.createdAt })
+    .select({ id: trades.id, publicId: trades.publicId, status: trades.status, amount: trades.amount, buyerId: trades.buyerId, sellerId: trades.sellerId, title: listings.title, shipBy: trades.shipBy, inspectionEndsAt: trades.inspectionEndsAt, deliveryProof: trades.deliveryProof, createdAt: trades.createdAt })
     .from(trades)
     .innerJoin(listings, eq(listings.id, trades.listingId))
     .where(sql`${trades.buyerId} = ${userId} or ${trades.sellerId} = ${userId}`)
@@ -255,6 +288,7 @@ export async function myListings(db: Db, sellerId: string) {
       id: listings.id, title: listings.title, description: listings.description, category: listings.category,
       deliveryType: listings.deliveryType, price: listings.price, stock: listings.stock, minQty: listings.minQty,
       maxQty: listings.maxQty, status: listings.status, reviewNote: listings.reviewNote, createdAt: listings.createdAt,
+      answers: listings.answers,
       sold: sql<number>`(SELECT coalesce(sum(t.quantity), 0)::int FROM trades t WHERE t.listing_id = "listings"."id" AND t.status = 'COMPLETED')`,
       openOrders: sql<number>`(SELECT count(*)::int FROM trades t WHERE t.listing_id = "listings"."id" AND t.status IN ('PAID', 'SHIPPED', 'DISPUTED'))`,
     })
@@ -264,17 +298,16 @@ export async function myListings(db: Db, sellerId: string) {
 }
 
 /** Edit an ad. Policy is checked again; anything flagged (or previously declined) goes back to review. */
-export async function updateListing(db: Db, sellerId: string, listingId: string, input: ListingInput) {
+export async function updateListing(db: Db, sellerId: string, listingId: string, input: ListingInput & { answers?: unknown }) {
   const [l] = await db.select().from(listings).where(and(eq(listings.id, listingId), eq(listings.sellerId, sellerId)));
   if (!l || l.status === "removed") throw notFound("Listing");
-  const check = checkListing(input);
-  if (!check.ok) throw badRequest("Please fix the listing and try again.", check.problems);
+  const check = await prepareListing(db, input);
   const needsReview = check.review.length > 0 || l.status === "pending" || l.status === "declined";
   const [row] = await db
     .update(listings)
     .set({
       title: input.title.trim(), description: input.description.trim(), category: input.category, deliveryType: input.deliveryType,
-      price: input.priceKobo, stock: input.stock, minQty: input.minQty, maxQty: input.maxQty,
+      price: input.priceKobo, stock: input.stock, minQty: input.minQty, maxQty: input.maxQty, answers: check.answers,
       status: needsReview ? "pending" : l.status,
       reviewNote: needsReview ? (check.review.join(" ") || "Edited after review; checking again.") : null,
     })
