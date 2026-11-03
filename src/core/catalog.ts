@@ -32,6 +32,7 @@ export function platformFor(category: string): string {
 }
 
 const KINDS: [string, RegExp][] = [
+  ["Poll votes", /\bpoll/i],
   ["Live viewers", /live\s*stream|livestream|\blive\b/i],
   ["Likes", /comment\s*likes?/i],
   ["Comments", /comment/i],
@@ -51,14 +52,26 @@ export function kindFor(name: string): string {
 
 /**
  * Services we don't sell even if a provider offers them: fake reviews and
- * ratings, rigged votes/polls and fake shop activity. These deceive other
- * shoppers and voters (consumer-protection risk), unlike reach/engagement boosts.
+ * ratings, rigged contest/broadcast voting and fake shop activity. These deceive
+ * third parties (shoppers, vendors, contest organisers), unlike reach/engagement
+ * boosts. Social-media poll votes (Telegram/Facebook/Instagram polls) are allowed
+ * at the owner's request: they're engagement, like likes.
  */
-const RESTRICTED = /\breviews?\b|\bratings?\b|star rating|trustpilot|\bvotes?\b|\bvoting\b|\bpolls?\b|add[- ]to[- ]cart/i;
+const RESTRICTED = /\breviews?\b|\bratings?\b|star rating|trustpilot|add[- ]to[- ]cart/i;
+const CONTEST_VOTES = /\b(votes?|voting|polls?)\b/i;
+const CONTEST_WORDS = /bbnaija|big brother|radio|\btv\b|television|contest|competition|award|pageant|election|reality/i;
 const RESTRICTED_CATEGORIES = /^(voting|bbnaija|trustpilot|amazon|aliexpress|app_store|webstore|marketplace|bolt_food|glovo|chowdeck)$/i;
 
+const SOCIAL_PLATFORMS = new Set([
+  "Instagram", "TikTok", "YouTube", "Facebook", "X (Twitter)", "Telegram", "WhatsApp", "Snapchat",
+  "Threads", "LinkedIn", "Twitch", "Kick", "Discord", "Reddit", "Bluesky", "Kwai",
+]);
+
 export function isRestricted(name: string, category: string): boolean {
-  return RESTRICTED.test(name) || RESTRICTED_CATEGORIES.test(category.trim());
+  if (RESTRICTED.test(name) || RESTRICTED_CATEGORIES.test(category.trim())) return true;
+  if (!CONTEST_VOTES.test(name)) return false;
+  // Votes are only allowed as social-media poll engagement, never on contests or websites.
+  return CONTEST_WORDS.test(`${name} ${category}`) || !SOCIAL_PLATFORMS.has(platformFor(category));
 }
 
 /** Drop provider server codes ("S19 ") and leading emoji/stars so names read cleanly. */

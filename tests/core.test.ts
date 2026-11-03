@@ -241,7 +241,15 @@ test("catalog: platforms, kinds, policy, names", async () => {
   assert.equal(isRestricted("Trustpilot Reviews", "trustpilot"), true);
   assert.equal(isRestricted("Amazon Star Rating", "amazon"), true);
   assert.equal(isRestricted("BBNaija Votes", "bbnaija"), true);
-  assert.equal(isRestricted("Telegram Poll Votes", "telegram"), true);
+  assert.equal(isRestricted("Telegram Poll Votes", "telegram"), false);
+  assert.equal(isRestricted("Facebook Poll Votes", "facebook"), false);
+  assert.equal(isRestricted("Radio / TV Poll Votes", "voting"), true);
+  assert.equal(isRestricted("Award Contest Votes", "More services"), true);
+  assert.equal(isRestricted("Website IP Votes (100/25K)", "Website & SEO"), true);
+  assert.equal(isRestricted("Stars Votes (50/5K)", "More services"), true);
+  assert.equal(isRestricted("Instagram Story Poll Votes (100/10K)", "Instagram"), false);
+  assert.equal(isRestricted("WhatsApp Poll Votes | High Quality", "WhatsApp"), false);
+  assert.equal(kindFor("Telegram Poll Votes"), "Poll votes");
   assert.equal(isRestricted("Jumia / Konga Add-to-Cart", "marketplace"), true);
   assert.equal(isRestricted("Instagram Followers", "Instagram"), false);
   assert.equal(isRestricted("WhatsApp Channel Post Reaction", "WhatsApp"), false);

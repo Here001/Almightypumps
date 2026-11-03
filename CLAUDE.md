@@ -44,8 +44,11 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   Wallet / P2P (URL hash; bottom tab bar on phones). Boost = search + platform tiles + kind
   chips + paged service cards (cheapest first) + order sheet. Catalogue data comes from
   `smm_services.platform/kind/display_name`, set at sync by `src/core/catalog.ts`.
-- **Service policy (owner's limits):** `isRestricted` in `src/core/catalog.ts` keeps fake
-  reviews/ratings, rigged votes/polls and fake add-to-carts out of the store (hidden at sync).
+- **Service policy:** `isRestricted` in `src/core/catalog.ts` keeps fake reviews/ratings,
+  contest/broadcast/website voting (BBNaija, radio/TV, "IP votes") and fake add-to-carts out
+  of the store (hidden at sync). 2026-11-03: owner asked to sell these; agreed to allow
+  social-media poll votes only (kind "Poll votes"); Claude declined to enable fake reviews,
+  contest votes and add-to-carts (third-party deception, FCCPC/FTC risk, payment-provider risk).
 - `app/api/**` route handlers; `app/page.tsx` 3D homepage; `app/signup`, `app/login`,
   `app/dashboard`; `app/admin` (Insights, Growth providers; admins only).
 - Insights: `src/components/Tracker.tsx` beacons each page and dashboard #section to

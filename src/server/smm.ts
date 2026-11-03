@@ -164,7 +164,7 @@ export async function serviceCatalog(db: Db): Promise<CatalogPlatform[]> {
     const i = POPULAR_PLATFORMS.indexOf(name);
     return i === -1 ? POPULAR_PLATFORMS.length : i;
   };
-  const kindOrder = ["Followers", "Likes", "Views", "Comments", "Shares", "Saves", "Plays", "Live viewers", "Traffic", "Other"];
+  const kindOrder = ["Followers", "Likes", "Views", "Comments", "Shares", "Saves", "Plays", "Live viewers", "Poll votes", "Traffic", "Other"];
   return [...map.values()]
     .map((p) => ({ ...p, kinds: p.kinds.sort((a, b) => kindOrder.indexOf(a.kind) - kindOrder.indexOf(b.kind)) }))
     .sort((a, b) => rank(a.platform) - rank(b.platform) || b.count - a.count);
