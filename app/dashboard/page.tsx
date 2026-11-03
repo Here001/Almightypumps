@@ -8,6 +8,7 @@ import { myOrders, serviceCatalog } from "@/server/smm";
 import { myTrades } from "@/server/market";
 import { getMinOrderKobo, getUsdRateKobo } from "@/server/pricing";
 import { hubCategories, myShopOrders } from "@/server/shop";
+import { effectiveSellerStatus } from "@/server/sellers";
 import { DashboardApp } from "@/components/dashboard/DashboardApp";
 
 export const metadata: Metadata = { title: "Dashboard · Almighty Pumps" };
@@ -40,7 +41,7 @@ export default async function DashboardPage() {
     <DashboardApp
       greeting={`${greeting()}, ${user.name.split(" ")[0]}`}
       isAdmin={user.role === "admin"}
-      me={{ name: user.name, email: user.email, phone: user.phone, sellerStatus: user.sellerStatus }}
+      me={{ name: user.name, email: user.email, phone: user.phone, sellerStatus: await effectiveSellerStatus(db, user.id, user.sellerStatus) }}
       wallet={{ available: wallet.available, held: wallet.held }}
       minOrderKobo={minOrderKobo}
       usdRateKobo={usdRateKobo}

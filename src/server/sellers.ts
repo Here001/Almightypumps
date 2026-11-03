@@ -50,6 +50,16 @@ export async function applyToSell(db: Db, userId: string, input: z.infer<typeof 
   return { sellerStatus: "pending" as const };
 }
 
+/**
+ * The seller status to show: "pending" without an application on file (left over from the old
+ * one-tap button) is treated as "none" so the person gets the form instead of being stuck.
+ */
+export async function effectiveSellerStatus(db: Db, userId: string, status: string) {
+  if (status !== "pending") return status;
+  const [p] = await db.select({ id: sellerProfiles.userId }).from(sellerProfiles).where(eq(sellerProfiles.userId, userId));
+  return p ? status : "none";
+}
+
 /** What the seller sees about their own application (ID and account number masked). */
 export async function mySellerProfile(db: Db, userId: string) {
   const [p] = await db.select().from(sellerProfiles).where(eq(sellerProfiles.userId, userId));
