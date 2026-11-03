@@ -349,3 +349,21 @@ test("listing category questions", async () => {
   const bad = checkAnswers(qs, { [qs[0].id]: "Broken", [qs[1].id]: "lots" });
   assert.equal(bad.problems.length, 3);
 });
+
+test("verification code pricing and outcomes", async () => {
+  const v = await import("../src/core/smsVerify.ts");
+  assert.equal(v.usdToMilli(0.5), 500);
+  assert.equal(v.usdToMilli(1.2345), 1235);
+  // $0.50 at ₦1,500/$ = ₦750; +300% = ₦3,000
+  assert.equal(v.sellPriceKobo(500, 150_000, 30_000), 300_000);
+  // rounds up to the next ₦10: $0.333 at ₦1,500 = ₦499.50 → ×4 = ₦1,998 → ₦2,000
+  assert.equal(v.sellPriceKobo(333, 150_000, 30_000), 200_000);
+  assert.equal(v.sellPriceKobo(500, 0, 30_000), 0);
+  assert.equal(v.outcomeFor("verificationPending", false), "pending");
+  assert.equal(v.outcomeFor("verificationTimedOut", true), "completed");
+  assert.equal(v.outcomeFor("verificationCanceled", false), "refunded");
+  assert.equal(v.extractCode("Your WhatsApp code: 123-456"), "123456");
+  assert.equal(v.extractCode("G-482913 is your Google code"), "482913");
+  assert.equal(v.extractCode("hello"), null);
+  assert.equal(v.serviceLabel("google_voice"), "Google voice");
+});

@@ -9,6 +9,7 @@ const LINKS = [
   { href: "/admin/services", label: "Services" },
   { href: "/admin/pricing", label: "Pricing" },
   { href: "/admin/shop", label: "Shop" },
+  { href: "/admin/verify", label: "Verification codes" },
   { href: "/admin/sellers", label: "Sellers" },
   { href: "/admin/p2p-categories", label: "P2P categories" },
   { href: "/admin/listings", label: "Listings review" },

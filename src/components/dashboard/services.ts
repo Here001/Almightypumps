@@ -39,6 +39,6 @@ export const HUB_SERVICES: HubService[] = [
     title: "Get Verification Code",
     description: "Receive one-time SMS codes on a virtual number.",
     icon: "M5 4h14v16H5zM9 9h6M9 13h6M9 17h3",
-    status: "soon",
+    status: "live",
   },
 ];

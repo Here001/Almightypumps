@@ -42,13 +42,12 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 ## Layout
 - `src/core/` pure business rules with no dependencies: money (integer kobo), ledger,
   escrow state machine, SMM pricing/parsing, listing policy, crypto helpers.
-  Tested by `tests/core.test.ts` (`npm test`, Node's built-in runner, 29 tests).
+  Tested by `tests/core.test.ts` (`npm test`, Node's built-in runner, 30 tests).
 - `src/server/` database access, wallet (row locks, holds, idempotent ledger),
   market, smm, payments (Flutterwave), auth, env, http helpers.
 - Customer dashboard (`app/dashboard` → `src/components/dashboard/`): tabs Services / Orders /
   Wallet / P2P / Settings (URL hash; bottom tab bar on phones). Services = hub of service tiles from
-  `src/components/dashboard/services.ts` (Boost Account live; eSIMs, Get Verification Code
-  "coming soon"). Boost Account (#boost) = all SMM/Owlet services: search + platform tiles +
+  `src/components/dashboard/services.ts` (Boost Account and Get Verification Code live; eSIMs "coming soon"). Boost Account (#boost) = all SMM/Owlet services: search + platform tiles +
   kind chips + paged service cards (recommended first, then cheapest) + order sheet.
   "Recommended" = provider flag (`provider_recommended`, detected by `isProviderRecommended`;
   sync logs the provider's field names as `[provider] … service fields`) OR admin star
@@ -90,6 +89,18 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   `POST/DELETE /api/seller/avatar` (data URL, ≤300 KB, magic-byte check); served by
   `/api/sellers/[id]/avatar?v=…` only for verified sellers, cached immutable. Marketplace rows and the
   buy sheet show it (initial letter as fallback). Ad photos still need proper file storage (Vercel Blob).
+- Get Verification Code (#verify, migration 0013, `src/server/smsVerify.ts`, `src/server/textverified.ts`,
+  `VerifyCode.tsx`, /admin/verify): TextVerified API v2 (auth POST /api/pub/v2/auth with X-API-KEY +
+  X-API-USERNAME → bearer; env TEXTVERIFIED_API_KEY / TEXTVERIFIED_API_USERNAME, both set in Vercel
+  Preview(dev)+Production; TEXTVERIFIED_BASE_URL overrides for local mocks). US mobile numbers, SMS only.
+  Service list synced daily (`sms_services`, admin can hide); price fetched per service on demand (cached
+  15 min) in USD → Naira via the site dollar rate × (1 + markup), rounded up to ₦10 (`src/core/smsVerify.ts`).
+  Markup in `app_settings.sms_verify.markupBps` (owner set 300% = 30000 on 2026-11-03; editable in
+  /admin/verify, plus pause/resume). Pay-on-delivery: hold `sms_verify` on rent (create with
+  maxPrice = quoted cost), capture to `revenue:sms_verify` when a code arrives, release on
+  cancel/timeout/provider failure. One waiting number per customer. Client polls /api/verify/[id] every
+  5 s; the sync-orders cron sweeps pending ones. Keep "Allow Non-Refundable Services via API" OFF on
+  TextVerified so our refunds match theirs.
 - `app/api/**` route handlers; `app/page.tsx` 3D homepage; `app/signup`, `app/login`,
   `app/dashboard`; `app/admin` (Insights, Growth providers, Services, Pricing, Shop, Listings review; admins only).
 - Shop (`src/server/shop.ts`, /admin/shop, migration 0008): admin categories → products. Delivery
@@ -132,7 +143,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   `dev` (full app) are both pushed.
 - Neon: project **almighty-pumps** (`jolly-dust-18900048`, AWS eu-central-1).
   - `main` branch: production, still empty. Run the migration on it only after approval.
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0012 applied. Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0013 applied. Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

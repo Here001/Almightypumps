@@ -35,7 +35,7 @@ export const holds = pgTable("holds", {
   amount: money("amount").notNull(),
   settled: money("settled").notNull().default(0),
   status: text("status").$type<"active" | "captured" | "released" | "partial">().notNull().default("active"),
-  purpose: text("purpose").$type<"smm_order" | "escrow" | "withdrawal" | "shop_order">().notNull(),
+  purpose: text("purpose").$type<"smm_order" | "escrow" | "withdrawal" | "shop_order" | "sms_verify">().notNull(),
   refId: uuid("ref_id"),
   createdAt: ts("created_at").notNull().defaultNow(),
   closedAt: ts("closed_at"),
@@ -337,4 +337,30 @@ export const listingCategories = pgTable("listing_categories", {
   active: boolean("active").notNull().default(true),
   position: integer("position").notNull().default(0),
   createdAt: ts("created_at").notNull().defaultNow(),
+});
+
+/** "Get Verification Code" (drizzle/0013_sms_verify.sql). */
+export const smsServices = pgTable("sms_services", {
+  name: text("name").primaryKey(),
+  hidden: boolean("hidden").notNull().default(false),
+  costUsdMilli: integer("cost_usd_milli"),
+  pricedAt: ts("priced_at"),
+  seenAt: ts("seen_at").notNull().defaultNow(),
+});
+
+export const smsVerifications = pgTable("sms_verifications", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  serviceName: text("service_name").notNull(),
+  providerId: text("provider_id").unique(),
+  number: text("number"),
+  status: text("status").$type<"pending" | "completed" | "refunded" | "failed">().notNull().default("pending"),
+  priceKobo: bigint("price_kobo", { mode: "number" }).notNull(),
+  costUsdMilli: integer("cost_usd_milli").notNull(),
+  holdId: uuid("hold_id").references(() => holds.id),
+  code: text("code"),
+  smsText: text("sms_text"),
+  endsAt: ts("ends_at"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
 });

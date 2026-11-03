@@ -21,6 +21,10 @@ const schema = z.object({
   FLUTTERWAVE_SECRET_KEY: z.string().optional().default(""),
   // The "secret hash" set in Flutterwave > Settings > Webhooks.
   FLUTTERWAVE_WEBHOOK_HASH: z.string().optional().default(""),
+  // TextVerified ("Get Verification Code"): API V2 key + the account's login email.
+  TEXTVERIFIED_API_KEY: z.string().optional().default(""),
+  TEXTVERIFIED_API_USERNAME: z.string().optional().default(""),
+  TEXTVERIFIED_BASE_URL: z.string().url().optional().default("https://www.textverified.com"),
   CRON_SECRET: z.string().min(16, "CRON_SECRET must be at least 16 characters"),
   MIN_FUNDING_KOBO: z.coerce.number().int().positive().default(100_000), // ₦1,000
   MIN_WITHDRAWAL_KOBO: z.coerce.number().int().positive().default(200_000), // ₦2,000

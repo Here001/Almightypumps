@@ -6,6 +6,7 @@ const DASHBOARD_ANCHORS: Record<string, string> = {
   services: "Services hub",
   boost: "Social Growth",
   growth: "Social Growth",
+  verify: "Verification codes",
   orders: "My orders",
   trades: "P2P Marketplace",
   wallet: "Wallet",
