@@ -48,6 +48,11 @@ function Catalogue() {
   const [cats, setCats] = useState<Category[] | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [quickAdd, setQuickAdd] = useState(false);
+  const [quickCat, setQuickCat] = useState("");
+  const [editCat, setEditCat] = useState(false);
+  const [notice, setNotice] = useState<Msg>(null);
+  const [version, setVersion] = useState(0); // bumps to reload the product list after a quick add
 
   const load = useCallback(async () => {
     try {
@@ -64,15 +69,55 @@ function Catalogue() {
   if (error) return <div className="form-error" role="alert">{error}</div>;
   if (!cats) return <p className="muted" role="status">Loading…</p>;
 
+  const pick = (id: string) => {
+    setSelected(id);
+    setEditCat(false);
+    setTimeout(() => document.getElementById("shop-products")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  };
+
   return (
     <>
+      {cats.length > 0 && (
+        <section className="card glass">
+          <h2>Add a product</h2>
+          {!quickAdd ? (
+            <>
+              <p className="muted" style={{ fontSize: 14 }}>Add a product to any of your categories. It goes live straight away.</p>
+              <button type="button" className="btn btn-primary" style={{ alignSelf: "flex-start" }} onClick={() => { setNotice(null); setQuickCat(selected ?? cats[0].id); setQuickAdd(true); }}>+ Add product</button>
+            </>
+          ) : (
+            <>
+              <div className="field" style={{ maxWidth: 360 }}>
+                <label htmlFor="quick-cat">Which category?</label>
+                <select id="quick-cat" className="select" value={quickCat} onChange={(e) => setQuickCat(e.target.value)}>
+                  {cats.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.products} product{c.products === 1 ? "" : "s"})</option>)}
+                </select>
+              </div>
+              <ProductForm
+                key={quickCat} categoryId={quickCat}
+                onDone={async () => {
+                  const name = cats.find((c) => c.id === quickCat)?.name ?? "the category";
+                  setQuickAdd(false);
+                  setNotice({ ok: true, text: `Product added to “${name}” and live.` });
+                  setSelected(quickCat);
+                  setVersion((v) => v + 1);
+                  await load();
+                }}
+                onCancel={() => setQuickAdd(false)}
+              />
+            </>
+          )}
+          <Note msg={notice} />
+        </section>
+      )}
+
       <section className="card glass">
         <h2>Categories</h2>
-        <p className="muted" style={{ fontSize: 14 }}>A category becomes a tile on the customer Services home once it has at least one live product.</p>
+        <p className="muted" style={{ fontSize: 14 }}>Tap a category to see and add its products. A category shows as a tile on the customer Services home once it has a live product.</p>
         {cats.length > 0 && (
           <div className="ap-platforms">
             {cats.map((c) => (
-              <button key={c.id} type="button" className="ap-platform" aria-pressed={c.id === selected} onClick={() => setSelected(c.id)}>
+              <button key={c.id} type="button" className="ap-platform" aria-pressed={c.id === selected} onClick={() => pick(c.id)}>
                 <span className="ap-mono" aria-hidden="true"><Ico name={c.icon} /></span>
                 <span className="ap-platform-name">{c.name}</span>
                 <span className="ap-platform-count">{c.liveProducts} live product{c.liveProducts === 1 ? "" : "s"}{!c.active ? " · hidden" : ""}</span>
@@ -80,16 +125,25 @@ function Catalogue() {
             ))}
           </div>
         )}
-        <CategoryForm key="new" onSaved={async (c) => { await load(); setSelected(c.id); }} />
+        <CategoryForm key="new" onSaved={async (c) => { await load(); pick(c.id); }} />
       </section>
 
       {current && (
         <>
+          <div id="shop-products" style={{ scrollMarginTop: 12 }}>
+            <Products key={`${current.id}-${version}`} category={current} onChanged={load} />
+          </div>
           <section className="card glass">
-            <h2>Edit “{current.name}”</h2>
-            <CategoryForm key={current.id} category={current} onSaved={load} />
+            {editCat ? (
+              <>
+                <h2>Edit “{current.name}”</h2>
+                <CategoryForm key={current.id} category={current} onSaved={load} />
+                <button type="button" className="ap-link" onClick={() => setEditCat(false)}>Close</button>
+              </>
+            ) : (
+              <button type="button" className="btn btn-ghost ap-mini" style={{ alignSelf: "flex-start" }} onClick={() => setEditCat(true)}>Edit category details (name, icon, visibility)</button>
+            )}
           </section>
-          <Products category={current} onChanged={load} />
         </>
       )}
     </>
