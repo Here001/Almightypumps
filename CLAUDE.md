@@ -60,6 +60,9 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   framework Next.js, Node 22, region fra1. Preview env vars set (DATABASE_URL to Neon `dev`,
   DATABASE_SSL, SESSION_SECRET, CRON_SECRET); FLUTTERWAVE_WEBHOOK_HASH; owner adds
   FLUTTERWAVE_SECRET_KEY (test key) and SMM_PROVIDER_1_KEY. Production env vars are added only when going live.
+- Domain: owner owns `almightypumps.com` (old WooCommerce site there is retired); likely
+  launch domain. Flutterwave Test webhook points at the dev preview (with the Vercel
+  automation-bypass query param); Live webhook untouched until launch.
 - Cron: Hobby only allows daily crons, so `vercel.json` has no `crons` (deploys are refused
   otherwise). The jobs are `GET /api/cron/sync-orders` (every 5 min) and
   `GET /api/cron/escrow` (every 15 min), called with `Authorization: Bearer <CRON_SECRET>`.
@@ -97,6 +100,8 @@ moving to ESLint 9 / Next 16 is a later job.
 
 ## Going live checklist (owner approval required at each step)
 Run `drizzle/0000_init.sql` on Neon `main`; add Production env vars (live Flutterwave key,
-new webhook hash); set the Flutterwave webhook to `https://<domain>/api/webhooks/flutterwave`; add the two production
+new webhook hash); set the Flutterwave **Live** webhook to `https://<domain>/api/webhooks/flutterwave`
+(it currently points at an old WooCommerce site on almightypumps.com, which the owner
+confirmed is no longer in use, so replace it; use a new live secret hash); add the two production
 cron-job.org jobs (see Cron above); merge `dev` into `main`.
 Legal: escrow should run through a licensed partner in Nigeria before real money.
