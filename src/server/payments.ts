@@ -95,15 +95,23 @@ export async function handleFlutterwaveWebhook(
   headers: { verifHash: string | null; signature: string | null },
 ) {
   if (!verifyFlutterwaveWebhook(rawBody, headers, env().FLUTTERWAVE_WEBHOOK_HASH)) {
+    console.warn("[webhook] flutterwave: rejected (signature/secret hash mismatch)");
     throw new AppError(401, "BAD_SIGNATURE", "Invalid signature");
   }
   const event = JSON.parse(rawBody) as { event?: string; data?: { tx_ref?: string; txRef?: string } };
   const ref = event.data?.tx_ref ?? event.data?.txRef;
   if (ref?.startsWith("AP-FUND-")) {
     const [known] = await db.select({ id: payments.id }).from(payments).where(eq(payments.reference, ref));
-    if (!known) return { ignored: "unknown reference" };
-    return confirmFunding(db, ref);
+    if (!known) {
+      console.info(`[webhook] flutterwave ${event.event ?? "?"} ${ref}: unknown reference, ignored`);
+      return { ignored: "unknown reference" };
+    }
+    const result = await confirmFunding(db, ref);
+    // Diagnostics only (no amounts or secrets): shows the webhook arrived and whether it credited.
+    console.info(`[webhook] flutterwave ${event.event ?? "?"} ${ref}: ${result.credited ? "credited" : `no change (${result.status})`}`);
+    return result;
   }
+  console.info(`[webhook] flutterwave ${event.event ?? "?"}: ignored`);
   return { ignored: event.event ?? "unknown" };
 }
 

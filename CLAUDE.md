@@ -142,8 +142,11 @@ moving to ESLint 9 / Next 16 is a later job.
    `DATABASE_URL` (Neon dev pooled), `DATABASE_SSL=true`, `SESSION_SECRET`, `CRON_SECRET`
    (generate fresh: `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`),
    `FLUTTERWAVE_SECRET_KEY` (owner pastes test key), `FLUTTERWAVE_WEBHOOK_HASH`, `SMM_PROVIDER_1_KEY` (owner pastes).
-3. ~~Verify the preview: sign up, dashboard loads, wallet shows ₦0.00.~~ Done. Still to test:
-   Owlet sync from /admin/providers, a Flutterwave test top-up.
+3. ~~Verify the preview~~ Done: signup, Owlet sync (14.8k services), Flutterwave test top-up
+   (₦1,000 credited once, 2026-11-03), cron-job.org sync job running. Webhook delivery not yet
+   confirmed: look for `[webhook] flutterwave` in runtime logs (Hobby keeps 1 hour).
+   Owlet's API has NO recommended flag (only `mode`/`proof`/`targetable` on 179 in-house
+   services); owner to choose: map those, ask Owlet, or star manually.
 4. Admin panel (`/admin`): ~~Insights~~, ~~providers (markup, sync, balance, pause)~~ done;
    still to do: seller verification queue, disputes, withdrawals, platform wallet balance.
 5. Marketplace pages: browse (Bybit P2P-style table, Buy/Sell toggle), listing detail,
