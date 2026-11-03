@@ -97,7 +97,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   15 min) in USD → Naira via the site dollar rate × (1 + markup), rounded up to ₦10 (`src/core/smsVerify.ts`).
   Markup in `app_settings.sms_verify.markupBps` (owner set 300% = 30000 on 2026-11-03; editable in
   /admin/verify, plus pause/resume). Per-app fixed Naira price `sms_services.fixed_price_kobo` (migration 0015,
-  "Set price" in /admin/verify; null = markup; admin warned when below cost). Pay-on-delivery: hold `sms_verify` on rent (create with
+  "Set price" in /admin/verify; null = markup; admin warned when below cost). Owner confirmed the preview working 2026-11-03. Pay-on-delivery: hold `sms_verify` on rent (create with
   maxPrice = quoted cost), capture to `revenue:sms_verify` when a code arrives, release on
   cancel/timeout/provider failure. One waiting number per customer. Client polls /api/verify/[id] every
   5 s; the sync-orders cron sweeps pending ones. Keep "Allow Non-Refundable Services via API" OFF on
