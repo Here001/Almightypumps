@@ -290,3 +290,23 @@ test("provider 'recommended' flag in its many shapes", async () => {
   const [svc] = parseServices([{ service: 1, name: "IG Followers", category: "Instagram", rate: "1.5", min: 10, max: 100, recommended: 1 }]);
   assert.equal(svc.recommended, true);
 });
+
+test("provider extra fields are kept for inspection", async () => {
+  const { extraFields } = await import("../src/core/smm.ts");
+  assert.deepEqual(extraFields({ service: 1, name: "x", rate: "1", min: 1, max: 2, refill: true, cancel: false }), null);
+  assert.deepEqual(extraFields({ service: 1, name: "x", badge: "Recommended", desc: "Fast" }), { badge: "Recommended", desc: "Fast" });
+});
+
+test("automatic dollar rate", async () => {
+  const cur = await import("../src/core/currency.ts");
+  const base = { ...cur.DEFAULT_USD_CONFIG };
+  assert.equal(cur.effectiveUsdRate(base), 0); // nothing fetched yet: dollars off
+  assert.equal(cur.effectiveUsdRate({ ...base, marketKobo: 153_420 }), 153_420);
+  assert.equal(cur.effectiveUsdRate({ ...base, marketKobo: 150_000, adjustBps: 300 }), 154_500); // +3%
+  assert.equal(cur.effectiveUsdRate({ ...base, marketKobo: 150_000, adjustBps: -1000 }), 135_000);
+  assert.equal(cur.effectiveUsdRate({ ...base, mode: "manual", manualKobo: 160_000, marketKobo: 150_000 }), 160_000);
+  assert.equal(cur.effectiveUsdRate({ ...base, mode: "manual", manualKobo: 0, marketKobo: 150_000 }), 0);
+  assert.equal(cur.parseUsdNgn({ result: "success", rates: { USD: 1, NGN: 1534.21 } }), 153_421);
+  assert.throws(() => cur.parseUsdNgn({ rates: {} }));
+  assert.throws(() => cur.parseUsdNgn({ rates: { NGN: 1.2 } }));
+});

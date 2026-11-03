@@ -28,6 +28,13 @@ export const HUB_SERVICES: HubService[] = [
     status: "soon",
   },
   {
+    id: "giftcards",
+    title: "Gift Cards & Subscriptions",
+    description: "Official gift cards and subscription vouchers: Netflix, Spotify, Apple, PlayStation, Steam and more.",
+    icon: "M3 8h18v4H3zM5 12h14v9H5zM12 8v13M12 8c-2-4-6-4-6-1s4 1 6 1c2 0 6 2 6-1s-4-3-6 1",
+    status: "soon",
+  },
+  {
     id: "verify",
     title: "Get Verification Code",
     description: "Receive one-time SMS codes on a virtual number.",

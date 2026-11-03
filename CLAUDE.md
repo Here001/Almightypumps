@@ -37,7 +37,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 ## Layout
 - `src/core/` pure business rules with no dependencies: money (integer kobo), ledger,
   escrow state machine, SMM pricing/parsing, listing policy, crypto helpers.
-  Tested by `tests/core.test.ts` (`npm test`, Node's built-in runner, 25 tests).
+  Tested by `tests/core.test.ts` (`npm test`, Node's built-in runner, 27 tests).
 - `src/server/` database access, wallet (row locks, holds, idempotent ledger),
   market, smm, payments (Flutterwave), auth, env, http helpers.
 - Customer dashboard (`app/dashboard` → `src/components/dashboard/`): tabs Services / Orders /
@@ -47,8 +47,10 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   kind chips + paged service cards (recommended first, then cheapest) + order sheet.
   "Recommended" = provider flag (`provider_recommended`, detected by `isProviderRecommended`;
   sync logs the provider's field names as `[provider] … service fields`) OR admin star
-  (`featured`, /admin/services, kept across syncs). Owner asked for a "Buy Account" tile:
-  not built (selling social/gaming accounts is one of the owner's hard limits). Catalogue data comes from
+  (`featured`, /admin/services, kept across syncs). Owner asked for a "Buy Account" tile, then to
+  rename it: built "Gift Cards & Subscriptions" (official vouchers) instead; selling
+  social/gaming accounts stays out (owner's hard limit). Provider extra per-service fields are
+  stored in `smm_services.provider_extra` to see how a panel tags "recommended". Catalogue data comes from
   `smm_services.platform/kind/display_name`, set at sync by `src/core/catalog.ts`.
 - **Service policy:** `isRestricted` in `src/core/catalog.ts` keeps fake reviews/ratings,
   contest/broadcast/website voting (BBNaija, radio/TV, "IP votes") and fake add-to-carts out
@@ -63,8 +65,10 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   rule changes, provider markup changes and every sync. Minimum order amount lives in
   `app_settings.min_order_kobo` (0 = none), enforced in `placeOrder` (web + /api/v2) and
   shown in the order sheet.
-- Dollar display: `app_settings.usd_rate_kobo` (kobo per US$1, set in /admin/pricing; 0 = off).
-  Display only: wallet, top-ups and charges stay in Naira. Customer ₦/$ switch
+- Dollar display: `app_settings.usd` JSON (`UsdConfig` in `src/core/currency.ts`): mode `auto`
+  (market rate from open.er-api.com, refreshed every 6h by the sync-orders cron and the admin
+  pricing page; optional % adjustment; a failed fetch keeps the last good rate) or `manual`.
+  Override the feed URL with env `FX_RATE_URL` (tests). Display only: wallet, top-ups and charges stay in Naira. Customer ₦/$ switch
   (`src/components/dashboard/Currency.tsx`, remembered in localStorage); formatting in
   `src/core/currency.ts`. Charged amounts always show Naira (`charge()`), with ≈$ alongside.
 - Service visibility: `smm_services.hidden_reason` null = on sale, `admin` (hidden in
@@ -83,7 +87,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   `dev` (full app) are both pushed.
 - Neon: project **almighty-pumps** (`jolly-dust-18900048`, AWS eu-central-1).
   - `main` branch: production, still empty. Run the migration on it only after approval.
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0005 applied. Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0006 applied. Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

@@ -86,7 +86,20 @@ export type ProviderService = {
   cancel: boolean;
   /** The provider flags this service as recommended/featured (field name varies by panel). */
   recommended: boolean;
+  /** Any non-standard fields the provider sent (kept so we can see how it tags services). */
+  extra: Record<string, unknown> | null;
 };
+
+const STANDARD_FIELDS = new Set(["service", "name", "category", "type", "rate", "min", "max", "refill", "cancel", "dripfeed"]);
+
+export function extraFields(row: Record<string, unknown>): Record<string, unknown> | null {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(row)) {
+    if (STANDARD_FIELDS.has(k.toLowerCase())) continue;
+    out[k] = typeof v === "string" ? v.slice(0, 300) : v;
+  }
+  return Object.keys(out).length ? out : null;
+}
 
 const TRUTHY = new Set(["1", "true", "yes", "y"]);
 
@@ -138,6 +151,7 @@ export function parseServices(json: unknown): ProviderService[] {
       refill: r.refill === true || r.refill === 1 || r.refill === "1",
       cancel: r.cancel === true || r.cancel === 1 || r.cancel === "1",
       recommended: isProviderRecommended(r),
+      extra: extraFields(r),
     });
   }
   return out;

@@ -5,6 +5,7 @@
  */
 import { and, eq, isNull, sql, type SQL } from "drizzle-orm";
 import type { Kobo } from "@/core/money";
+import { DEFAULT_USD_CONFIG, effectiveUsdRate, parseUsdNgn, type UsdConfig } from "@/core/currency";
 import type { DbOrTx } from "./db";
 import { appSettings, smmPricingRules, smmProviders, smmServices } from "./db/schema";
 
@@ -24,19 +25,69 @@ export async function setMinOrderKobo(db: DbOrTx, kobo: Kobo) {
   return { minOrderKobo: kobo };
 }
 
-/** Kobo per US$1 for showing dollar prices (display only; we always charge Naira). 0 = dollars off. */
-export async function getUsdRateKobo(db: DbOrTx): Promise<number> {
-  const [r] = await db.select({ value: appSettings.value }).from(appSettings).where(eq(appSettings.key, "usd_rate_kobo"));
-  const n = Number(r?.value ?? 0);
-  return Number.isInteger(n) && n > 0 ? n : 0;
+/* ---------------- dollar display rate ---------------- */
+
+const FX_URL = process.env.FX_RATE_URL || "https://open.er-api.com/v6/latest/USD";
+const FX_MAX_AGE_MS = 6 * 60 * 60 * 1000; // refresh automatic rates every 6 hours
+
+export async function getUsdConfig(db: DbOrTx): Promise<UsdConfig> {
+  const rows = await db.select({ key: appSettings.key, value: appSettings.value }).from(appSettings)
+    .where(sql`${appSettings.key} IN ('usd', 'usd_rate_kobo')`);
+  const cfg = rows.find((r) => r.key === "usd")?.value as Partial<UsdConfig> | undefined;
+  if (cfg) return { ...DEFAULT_USD_CONFIG, ...cfg };
+  // Older builds stored a single manual rate.
+  const legacy = Number(rows.find((r) => r.key === "usd_rate_kobo")?.value ?? 0);
+  return legacy > 0 ? { ...DEFAULT_USD_CONFIG, mode: "manual", manualKobo: legacy } : { ...DEFAULT_USD_CONFIG };
 }
 
-export async function setUsdRateKobo(db: DbOrTx, kobo: number) {
+async function saveUsdConfig(db: DbOrTx, cfg: UsdConfig) {
   await db
     .insert(appSettings)
-    .values({ key: "usd_rate_kobo", value: kobo })
-    .onConflictDoUpdate({ target: appSettings.key, set: { value: kobo, updatedAt: new Date() } });
-  return { usdRateKobo: kobo };
+    .values({ key: "usd", value: cfg })
+    .onConflictDoUpdate({ target: appSettings.key, set: { value: cfg, updatedAt: new Date() } });
+}
+
+/** Kobo per US$1 that customers see; 0 = dollar prices off. */
+export async function getUsdRateKobo(db: DbOrTx): Promise<number> {
+  return effectiveUsdRate(await getUsdConfig(db));
+}
+
+/**
+ * In automatic mode, fetch the market rate if it's older than 6 hours (or `force`).
+ * A failed fetch keeps the last good rate and records the error for the admin page.
+ */
+export async function refreshUsdRate(db: DbOrTx, opts: { force?: boolean } = {}) {
+  const cfg = await getUsdConfig(db);
+  if (cfg.mode !== "auto") return { cfg, refreshed: false };
+  const age = cfg.updatedAt ? Date.now() - new Date(cfg.updatedAt).getTime() : Infinity;
+  if (!opts.force && age < FX_MAX_AGE_MS && cfg.marketKobo > 0) return { cfg, refreshed: false };
+  try {
+    const res = await fetch(FX_URL, { signal: AbortSignal.timeout(8_000), cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const marketKobo = parseUsdNgn(await res.json());
+    const next: UsdConfig = { ...cfg, marketKobo, updatedAt: new Date().toISOString(), source: new URL(FX_URL).hostname, lastError: null };
+    await saveUsdConfig(db, next);
+    return { cfg: next, refreshed: true };
+  } catch (e) {
+    const next: UsdConfig = { ...cfg, lastError: `${new Date().toISOString()}: ${(e as Error).message}`.slice(0, 200) };
+    await saveUsdConfig(db, next);
+    return { cfg: next, refreshed: false };
+  }
+}
+
+/** Admin changes: switch mode, set the manual rate, or the automatic adjustment. */
+export async function updateUsdConfig(db: DbOrTx, input: { mode?: "auto" | "manual"; manualKobo?: number; adjustBps?: number }) {
+  const cfg = await getUsdConfig(db);
+  const next: UsdConfig = {
+    ...cfg,
+    mode: input.mode ?? cfg.mode,
+    manualKobo: input.manualKobo ?? cfg.manualKobo,
+    adjustBps: input.adjustBps ?? cfg.adjustBps,
+  };
+  await saveUsdConfig(db, next);
+  // Switching to automatic with no rate yet: fetch straight away.
+  if (next.mode === "auto" && !(next.marketKobo > 0)) return (await refreshUsdRate(db, { force: true })).cfg;
+  return next;
 }
 
 /* ---------------- markup rules ---------------- */
@@ -83,7 +134,7 @@ export async function reprice(db: DbOrTx, where?: SQL): Promise<number> {
 
 /** For the admin page: which markup each platform/type currently gets, and where it comes from. */
 export async function pricingOverview(db: DbOrTx) {
-  const [rules, groups, providers, minOrderKobo, usdRateKobo] = await Promise.all([
+  const [rules, groups, providers, minOrderKobo, usd] = await Promise.all([
     listRules(db),
     db
       .select({ platform: smmServices.platform, kind: smmServices.kind, count: sql<number>`count(*)::int` })
@@ -93,7 +144,7 @@ export async function pricingOverview(db: DbOrTx) {
       .orderBy(smmServices.platform, smmServices.kind),
     db.select({ name: smmProviders.name, markupBps: smmProviders.markupBps }).from(smmProviders),
     getMinOrderKobo(db),
-    getUsdRateKobo(db),
+    getUsdConfig(db),
   ]);
-  return { rules, groups, providers, minOrderKobo, usdRateKobo };
+  return { rules, groups, providers, minOrderKobo, usd: { ...usd, effectiveKobo: effectiveUsdRate(usd) } };
 }

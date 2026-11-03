@@ -105,7 +105,7 @@ export async function syncServices(db: Db, providerId: string) {
       providerId: p.id, providerServiceId: s.service, name: s.name.slice(0, 300), category: s.category.slice(0, 120), type: s.type,
       providerRate: s.rate, rateKobo, minQty: s.min, maxQty: s.max, refill: s.refill, cancel: s.cancel, updatedAt: new Date(),
       platform: platformFor(s.category), kind: kindFor(s.name), displayName: displayName(s.name).slice(0, 300),
-      active: !blocked, hiddenReason: blocked ? "policy" : null, providerRecommended: s.recommended,
+      active: !blocked, hiddenReason: blocked ? "policy" : null, providerRecommended: s.recommended, providerExtra: s.extra,
     });
   }
 
@@ -125,7 +125,7 @@ export async function syncServices(db: Db, providerId: string) {
           rateKobo: excluded("rate_kobo"), minQty: excluded("min_qty"), maxQty: excluded("max_qty"), refill: excluded("refill"),
           cancel: excluded("cancel"), updatedAt: excluded("updated_at"),
           platform: excluded("platform"), kind: excluded("kind"), displayName: excluded("display_name"),
-          hiddenReason: reason, active: sql`${reason} IS NULL`, providerRecommended: excluded("provider_recommended"),
+          hiddenReason: reason, active: sql`${reason} IS NULL`, providerRecommended: excluded("provider_recommended"), providerExtra: excluded("provider_extra"),
         },
       });
   }

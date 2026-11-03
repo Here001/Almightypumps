@@ -114,6 +114,7 @@ export const smmServices = pgTable("smm_services", {
   hiddenReason: text("hidden_reason").$type<"admin" | "policy" | "provider" | null>(),
   providerRecommended: boolean("provider_recommended").notNull().default(false),
   featured: boolean("featured").notNull().default(false),
+  providerExtra: jsonb("provider_extra"),
   updatedAt: ts("updated_at").notNull().defaultNow(),
 });
 
