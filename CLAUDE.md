@@ -82,7 +82,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   questions; answers are stored in `listings.answers`, policy-checked, and shown to buyers.
   `prepareListing` in `market.ts` does all checks for create and update.
 - P2P tab for everyone = Marketplace (`Marketplace.tsx`, layout inspired by Bybit P2P: seller, badge,
-  orders/completion, price, limits, stock, green Buy) → buy sheet (answers, quantity, escrow). Verified
+  orders/completion, price, limits, stock, orange Buy (same style as .btn-primary)) → buy sheet (answers, quantity, escrow). Verified
   sellers also get "My ads & sales". "Become a seller" lives only in Settings. Buyers' "My trades" has
   `TradeActions.tsx`: confirm received, dispute, or cancel & refund after the 72h ship deadline.
 - `app/api/**` route handlers; `app/page.tsx` 3D homepage; `app/signup`, `app/login`,

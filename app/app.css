@@ -216,7 +216,7 @@ button.btn-ghost { border: 1px solid rgb(var(--ov) / 0.200); }
 .mk-price { font-family: var(--display); font-weight: 800; font-size: clamp(24px, 6vw, 30px); letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
 .mk-meta { font-size: 14px; font-variant-numeric: tabular-nums; }
 .mk-meta span { color: var(--muted); margin-right: 4px; }
-.mk-buy { flex: none; min-width: 104px; min-height: 44px; padding: 10px 26px; border: 0; border-radius: 999px; background: #22C55E; color: #052E12; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
+.mk-buy { flex: none; min-width: 104px; min-height: 44px; padding: 10px 26px; border: 0; border-radius: 999px; background: var(--accent); color: var(--accent-ink); box-shadow: 0 0 0 1px #FF6A2B, 0 12px 40px #FF6A2B66, inset 0 1px 0 #FFFFFF66; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
 .mk-buy:hover { filter: brightness(1.08); }
 .mk-buy[disabled] { opacity: .6; cursor: progress; }
 .mk-buy-lg { width: 100%; min-height: 52px; }
