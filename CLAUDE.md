@@ -57,7 +57,8 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   - `main` branch: production, still empty. Run the migration on it only after approval.
   - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000 and 0001 applied. Provider "Owlet"
     (`https://theowlet.com/api/v2`, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
-    adjusts it in /admin/providers). No human admin yet: promote the owner's account after signup.
+    adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
+    preview 2026-11-03; preview signup, DB and tracking confirmed working).
   - Database name `almighty_pumps`. Use the pooled connection string (host contains `-pooler`).
   - The owner's other Neon projects (Living_Settlement, the-living-world-development)
     belong to a different project. Don't touch them.
@@ -96,7 +97,8 @@ moving to ESLint 9 / Next 16 is a later job.
    `DATABASE_URL` (Neon dev pooled), `DATABASE_SSL=true`, `SESSION_SECRET`, `CRON_SECRET`
    (generate fresh: `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`),
    `FLUTTERWAVE_SECRET_KEY` (owner pastes test key), `FLUTTERWAVE_WEBHOOK_HASH`, `SMM_PROVIDER_1_KEY` (owner pastes).
-3. Verify the preview: sign up, dashboard loads, wallet shows ₦0.00.
+3. ~~Verify the preview: sign up, dashboard loads, wallet shows ₦0.00.~~ Done. Still to test:
+   Owlet sync from /admin/providers, a Flutterwave test top-up.
 4. Admin panel (`/admin`): ~~Insights~~, ~~providers (markup, sync, balance, pause)~~ done;
    still to do: seller verification queue, disputes, withdrawals, platform wallet balance.
 5. Marketplace pages: browse (Bybit P2P-style table, Buy/Sell toggle), listing detail,
