@@ -63,9 +63,13 @@ export function ProviderCard({ p }: { p: P }) {
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
         <button className="btn btn-ghost" disabled={busy !== null} onClick={() => run("sync", async () => {
-          const r = await api<{ upserted: number; providerBalance: { balance: string; currency: string } }>(`/api/admin/providers/${p.id}/sync`, {});
+          const r = await api<{ upserted: number; skipped: number; hidden: number; providerBalance: { balance: string; currency: string } }>(`/api/admin/providers/${p.id}/sync`, {});
           setBalance(`${r.providerBalance.balance} ${r.providerBalance.currency}`);
-          return `Synced: ${r.upserted.toLocaleString("en-NG")} services updated with your ${p.markupBps / 100}% markup.`;
+          const extra = [
+            r.skipped ? `${r.skipped.toLocaleString("en-NG")} free or invalid services skipped` : "",
+            r.hidden ? `${r.hidden.toLocaleString("en-NG")} no longer offered, now hidden` : "",
+          ].filter(Boolean).join("; ");
+          return `Synced: ${r.upserted.toLocaleString("en-NG")} services on sale with your ${p.markupBps / 100}% markup.${extra ? ` (${extra}.)` : ""}`;
         })}>{busy === "sync" ? "Syncing…" : "Sync services"}</button>
         <button className="btn btn-ghost" disabled={busy !== null} onClick={() => run("balance", async () => {
           const r = await api<{ balance: string; currency: string }>(`/api/admin/providers/${p.id}/balance`);

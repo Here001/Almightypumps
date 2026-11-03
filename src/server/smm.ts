@@ -2,7 +2,7 @@
  * Social growth orders. We resell services from one or more upstream panels
  * that speak the standard panel API (services / add / status / balance).
  */
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, notInArray, sql } from "drizzle-orm";
 import {
   orderCost, parseAdd, parseBalance, parseMultiStatus, parseServices, sellRatePer1000, settleOrder, validateQuantity,
   type OrderStatus,
@@ -63,27 +63,60 @@ export async function providerBalance(db: Db, providerId: string) {
   return adminProviderCall(p, async () => parseBalance(await call(p, { action: "balance" })));
 }
 
-/** Pull the provider's catalogue and upsert our priced copy of it. */
+/**
+ * Pull the provider's catalogue and upsert our priced copy of it, in batches
+ * (one round trip per 200 services, not per service). Free/zero-priced services
+ * are skipped, and services the provider no longer lists are hidden.
+ */
 export async function syncServices(db: Db, providerId: string) {
   const [p] = await db.select().from(smmProviders).where(eq(smmProviders.id, providerId));
   if (!p) throw notFound("Provider");
   const list = await adminProviderCall(p, async () => parseServices(await call(p, { action: "services" })));
-  let upserted = 0;
+
+  const rows = new Map<string, typeof smmServices.$inferInsert>();
+  let skipped = 0;
   for (const s of list) {
-    const rateKobo = sellRatePer1000(s.rate, p.fxKoboPerUnit, p.markupBps);
+    let rateKobo = 0;
+    try {
+      rateKobo = sellRatePer1000(s.rate, p.fxKoboPerUnit, p.markupBps);
+    } catch {
+      rateKobo = 0;
+    }
+    if (rateKobo <= 0 || s.min > s.max) {
+      skipped++;
+      continue;
+    }
+    rows.set(s.service, {
+      providerId: p.id, providerServiceId: s.service, name: s.name.slice(0, 300), category: s.category.slice(0, 120), type: s.type,
+      providerRate: s.rate, rateKobo, minQty: s.min, maxQty: s.max, refill: s.refill, cancel: s.cancel, active: true, updatedAt: new Date(),
+    });
+  }
+
+  const values = [...rows.values()];
+  const excluded = (col: string) => sql.raw(`excluded.${col}`);
+  for (let i = 0; i < values.length; i += 200) {
     await db
       .insert(smmServices)
-      .values({
-        providerId: p.id, providerServiceId: s.service, name: s.name, category: s.category, type: s.type,
-        providerRate: s.rate, rateKobo, minQty: s.min, maxQty: s.max, refill: s.refill, cancel: s.cancel,
-      })
+      .values(values.slice(i, i + 200))
       .onConflictDoUpdate({
         target: [smmServices.providerId, smmServices.providerServiceId],
-        set: { name: s.name, category: s.category, type: s.type, providerRate: s.rate, rateKobo, minQty: s.min, maxQty: s.max, refill: s.refill, cancel: s.cancel, updatedAt: new Date() },
+        set: {
+          name: excluded("name"), category: excluded("category"), type: excluded("type"), providerRate: excluded("provider_rate"),
+          rateKobo: excluded("rate_kobo"), minQty: excluded("min_qty"), maxQty: excluded("max_qty"), refill: excluded("refill"),
+          cancel: excluded("cancel"), active: sql`true`, updatedAt: excluded("updated_at"),
+        },
       });
-    upserted++;
   }
-  return { upserted };
+
+  // Hide services the provider has dropped (or that are now free), so customers can't order them.
+  const keep = [...rows.keys()];
+  const hidden = await db
+    .update(smmServices)
+    .set({ active: false, updatedAt: new Date() })
+    .where(and(eq(smmServices.providerId, p.id), eq(smmServices.active, true), keep.length ? notInArray(smmServices.providerServiceId, keep) : sql`true`))
+    .returning({ id: smmServices.id });
+
+  return { upserted: values.length, skipped, hidden: hidden.length };
 }
 
 export async function listServices(db: Db) {
@@ -248,11 +281,16 @@ export async function updateProvider(db: Db, providerId: string, input: { markup
       .returning();
     let repriced = 0;
     if (markupBps !== p.markupBps) {
-      const services = await tx.select({ id: smmServices.id, providerRate: smmServices.providerRate }).from(smmServices).where(eq(smmServices.providerId, p.id));
-      for (const s of services) {
-        await tx.update(smmServices).set({ rateKobo: sellRatePer1000(s.providerRate, p.fxKoboPerUnit, markupBps), updatedAt: new Date() }).where(eq(smmServices.id, s.id));
-        repriced++;
-      }
+      // Same maths as sellRatePer1000 (rate x fx x (1 + markup), rounded up), done in one statement.
+      const res = await tx
+        .update(smmServices)
+        .set({
+          rateKobo: sql`greatest(1, ceil(${smmServices.providerRate}::numeric * ${p.fxKoboPerUnit} * ${10_000 + markupBps} / 10000))::bigint`,
+          updatedAt: new Date(),
+        })
+        .where(eq(smmServices.providerId, p.id))
+        .returning({ id: smmServices.id });
+      repriced = res.length;
     }
     return { provider: updated, repriced };
   });
