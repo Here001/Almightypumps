@@ -248,7 +248,7 @@ function ListingForm({ listing, categories, onCancel, onSaved }: { listing?: Lis
           {cat?.requiresReview && <span className="muted" style={{ fontSize: 12 }}>Ads in this category are checked by our team before going live.</span>}
         </div>
         <div className="field"><label htmlFor="lf-title">Title</label>
-          <input id="lf-title" className="input" value={f.title} onChange={set("title")} placeholder="e.g. iPhone 13, 128GB, UK used" required minLength={4} maxLength={120} /></div>
+          <input id="lf-title" className="input" value={f.title} onChange={set("title")} placeholder="Enter Product Title" required minLength={4} maxLength={120} /></div>
         <div className="field"><label htmlFor="lf-desc">Description</label>
           <textarea id="lf-desc" className="input" rows={4} value={f.description} onChange={set("description")} placeholder="Condition, what's included, how you deliver" required minLength={20} maxLength={4000} />
           <span className="muted" style={{ fontSize: 12 }}>{f.description.trim().length}/20 characters minimum</span></div>
