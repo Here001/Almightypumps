@@ -10,12 +10,21 @@ import type { P2PCategory } from "./SellerPanel";
 type Ad = {
   id: string; title: string; description: string; category: string; categoryName: string | null; deliveryType: string;
   price: number; stock: number; minQty: number; maxQty: number; answers: Record<string, string>;
-  sellerId: string; sellerName: string; sellerVerified: boolean; sellerOrders: number; sellerClosed: number;
+  sellerId: string; sellerName: string; sellerVerified: boolean; sellerAvatar: string | null; sellerOrders: number; sellerClosed: number;
 };
 const DELIVERY: Record<string, string> = { digital: "Instant digital", physical: "Physical item", service: "Service" };
 
 function completion(a: Ad) {
   return a.sellerClosed > 0 ? Math.round((a.sellerOrders / a.sellerClosed) * 100) : null;
+}
+
+function Avatar({ ad }: { ad: Ad }) {
+  const [broken, setBroken] = useState(false);
+  if (ad.sellerAvatar && !broken) {
+    // eslint-disable-next-line @next/next/no-img-element -- tiny pre-sized avatar
+    return <img className="mk-avatar" src={ad.sellerAvatar} alt="" width={28} height={28} loading="lazy" decoding="async" onError={() => setBroken(true)} />;
+  }
+  return <span className="mk-avatar" aria-hidden="true">{ad.sellerName.trim()[0]?.toUpperCase() ?? "?"}</span>;
 }
 
 export function Marketplace({ myId, balance, onAddMoney, onViewTrades }: { myId: string; balance: number; onAddMoney: () => void; onViewTrades: () => void }) {
@@ -80,7 +89,7 @@ export function Marketplace({ myId, balance, onAddMoney, onViewTrades }: { myId:
           return (
             <li key={a.id} className="mk-row">
               <div className="mk-seller">
-                <span className="mk-avatar" aria-hidden="true">{a.sellerName.trim()[0]?.toUpperCase() ?? "?"}</span>
+                <Avatar ad={a} />
                 <span className="mk-name">{a.sellerName}</span>
                 {a.sellerVerified && (
                   <span className="mk-badge" title="Verified seller" aria-label="Verified seller">
@@ -148,7 +157,7 @@ function BuySheet({ ad, questions, mine, balance, onClose, onAddMoney, onDone }:
       <div className="ap-sheet glass" role="dialog" aria-modal="true" aria-labelledby="mk-sheet-title" onClick={(e) => e.stopPropagation()}>
         <div className="ap-sheet-head">
           <div style={{ minWidth: 0 }}>
-            <div className="muted" style={{ fontSize: 13 }}>{ad.sellerName}{ad.sellerVerified ? " · verified seller" : ""}</div>
+            <div className="muted" style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}><Avatar ad={ad} />{ad.sellerName}{ad.sellerVerified ? " · verified seller" : ""}</div>
             <h2 id="mk-sheet-title" className="ap-sheet-title">{ad.title}</h2>
           </div>
           <button type="button" className="ap-close" onClick={onClose} aria-label="Close" ref={ref}>×</button>

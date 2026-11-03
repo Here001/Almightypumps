@@ -7,7 +7,7 @@ import { z } from "zod";
 import { ID_TYPES, NG_BANKS } from "@/core/banks";
 import { blockedReasons } from "@/core/listingPolicy";
 import type { Db } from "./db";
-import { sellerProfiles, users } from "./db/schema";
+import { sellerAvatars, sellerProfiles, users } from "./db/schema";
 import { badRequest, notFound } from "./errors";
 
 const phone = z.string().trim().regex(/^(\+?234|0)[789]\d{9}$/, "Enter a Nigerian phone number, like 0803 123 4567");
@@ -96,4 +96,52 @@ export async function decideSeller(db: Db, userId: string, decision: "verified" 
     const [u] = await tx.update(users).set({ sellerStatus: decision }).where(eq(users.id, userId)).returning({ id: users.id, sellerStatus: users.sellerStatus });
     return u;
   });
+}
+
+/* ---------- Shop picture ---------- */
+
+const AVATAR_TYPES: Record<string, (b: Buffer) => boolean> = {
+  "image/jpeg": (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff,
+  "image/png": (b) => b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])),
+  "image/webp": (b) => b.subarray(0, 4).toString("ascii") === "RIFF" && b.subarray(8, 12).toString("ascii") === "WEBP",
+};
+export const AVATAR_MAX_BYTES = 300 * 1024;
+
+/** Save the seller's shop picture from a data URL (the browser has already cropped it to a small square). */
+export async function setSellerAvatar(db: Db, userId: string, dataUrl: string) {
+  const [p] = await db.select({ id: sellerProfiles.userId }).from(sellerProfiles).where(eq(sellerProfiles.userId, userId));
+  if (!p) throw badRequest("Apply to become a seller first.");
+  const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(dataUrl);
+  if (!m) throw badRequest("Upload a JPG, PNG or WebP picture.");
+  const data = Buffer.from(m[2], "base64");
+  if (data.length > AVATAR_MAX_BYTES) throw badRequest("That picture is too big. Try a smaller one.");
+  if (!AVATAR_TYPES[m[1]](data)) throw badRequest("That file isn't a valid picture.");
+  const values = { contentType: m[1], data, updatedAt: new Date() };
+  await db.insert(sellerAvatars).values({ userId, ...values }).onConflictDoUpdate({ target: sellerAvatars.userId, set: values });
+  return { avatarUrl: avatarUrl(userId, values.updatedAt) };
+}
+
+export async function removeSellerAvatar(db: Db, userId: string) {
+  await db.delete(sellerAvatars).where(eq(sellerAvatars.userId, userId));
+  return { avatarUrl: null };
+}
+
+export async function sellerAvatarUrl(db: Db, userId: string) {
+  const [a] = await db.select({ at: sellerAvatars.updatedAt }).from(sellerAvatars).where(eq(sellerAvatars.userId, userId));
+  return a ? avatarUrl(userId, a.at) : null;
+}
+
+/** The version in the URL changes on every upload, so browsers can cache each picture forever. */
+export function avatarUrl(userId: string, updatedAt: Date | string) {
+  return `/api/sellers/${userId}/avatar?v=${new Date(updatedAt).getTime().toString(36)}`;
+}
+
+/** The picture bytes, only for sellers who are verified (buyers never see unverified shops). */
+export async function sellerAvatarFile(db: Db, userId: string) {
+  const [a] = await db
+    .select({ contentType: sellerAvatars.contentType, data: sellerAvatars.data, status: users.sellerStatus })
+    .from(sellerAvatars)
+    .innerJoin(users, eq(users.id, sellerAvatars.userId))
+    .where(eq(sellerAvatars.userId, userId));
+  return a && a.status === "verified" ? a : null;
 }

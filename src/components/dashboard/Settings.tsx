@@ -6,6 +6,7 @@ import { api } from "../api";
 import { useThemePref, type ThemePref } from "../Theme";
 import { useCurrency } from "./Currency";
 import { ID_TYPES, NG_BANKS } from "@/core/banks";
+import { ShopPhoto } from "./ShopPhoto";
 
 type Me = { name: string; email: string; phone: string | null; sellerStatus: string; isAdmin: boolean };
 type Msg = { ok: boolean; text: string } | null;
@@ -191,6 +192,7 @@ function Seller({ status, onOpenPanel }: { status: string; onOpenPanel: () => vo
         <>
           <div className="form-ok" role="status">You&apos;re a verified seller{profile ? ` as “${profile.businessName}”` : ""}. Post and manage your ads in the P2P tab.</div>
           <button type="button" className="btn btn-primary" style={{ alignSelf: "flex-start" }} onClick={onOpenPanel}>Open my seller panel</button>
+          <ShopPhoto name={profile?.businessName ?? "Shop"} />
           {profile && <p className="muted" style={{ fontSize: 13 }}>Payouts go to {profile.bankName} {profile.accountNumberMasked} ({profile.accountName}). Contact support to change it.</p>}
         </>
       )}
@@ -198,6 +200,7 @@ function Seller({ status, onOpenPanel }: { status: string; onOpenPanel: () => vo
         <>
           <div className="form-ok" role="status">Thanks! Your application is being reviewed. We check your ID and bank details, usually within 24 hours.</div>
           {profile && <p className="muted" style={{ fontSize: 13 }}>{profile.businessName} · {profile.bankName} {profile.accountNumberMasked} · ID {profile.idNumberMasked}</p>}
+          {profile && <ShopPhoto name={profile.businessName} />}
         </>
       )}
       {st === "rejected" && !editing && (

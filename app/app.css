@@ -220,5 +220,11 @@ button.btn-ghost { border: 1px solid rgb(var(--ov) / 0.200); }
 .mk-buy:hover { filter: brightness(1.08); }
 .mk-buy[disabled] { opacity: .6; cursor: progress; }
 .mk-buy-lg { width: 100%; min-height: 52px; }
+img.mk-avatar { object-fit: cover; background: var(--surface-2); }
+.shop-photo { display: flex; flex-direction: column; gap: 8px; }
+.shop-photo.compact { margin: 4px 0 2px; }
+.shop-photo-row { display: flex; align-items: center; gap: 14px; }
+.shop-photo-img { flex: none; width: 64px; height: 64px; border-radius: 999px; object-fit: cover; border: 1px solid rgb(var(--ov) / .16); background: var(--surface-2); }
+.shop-photo-empty { display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); font-weight: 800; font-size: 24px; }
 .mk-stepper { display: flex; align-items: center; gap: 14px; }
 .mk-stepper strong { min-width: 28px; text-align: center; font-size: 18px; font-variant-numeric: tabular-nums; }

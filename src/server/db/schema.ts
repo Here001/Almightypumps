@@ -2,7 +2,7 @@
  * Drizzle table definitions. These mirror drizzle/0000_init.sql exactly;
  * change both together (or regenerate with `npm run db:generate`).
  */
-import { pgTable, uuid, text, boolean, timestamp, bigint, bigserial, integer, serial, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, boolean, timestamp, bigint, bigserial, integer, serial, jsonb, customType } from "drizzle-orm/pg-core";
 
 const money = (name: string) => bigint(name, { mode: "number" });
 const ts = (name: string) => timestamp(name, { withTimezone: true, mode: "date" });
@@ -316,6 +316,15 @@ export const sellerProfiles = pgTable("seller_profiles", {
   reviewNote: text("review_note"),
   submittedAt: ts("submitted_at").notNull().defaultNow(),
   decidedAt: ts("decided_at"),
+});
+
+/** Seller shop picture (drizzle/0012_seller_avatars.sql). Bytes are served by /api/sellers/[id]/avatar. */
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => "bytea" });
+export const sellerAvatars = pgTable("seller_avatars", {
+  userId: uuid("user_id").primaryKey().references(() => users.id),
+  contentType: text("content_type").notNull(),
+  data: bytea("data").notNull(),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
 });
 
 /** P2P categories with per-category seller questions (drizzle/0011_listing_categories.sql). */

@@ -85,6 +85,11 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   orders/completion, price, limits, stock, orange Buy (same style as .btn-primary)) → buy sheet (answers, quantity, escrow). Verified
   sellers also get "My ads & sales". "Become a seller" lives only in Settings. Buyers' "My trades" has
   `TradeActions.tsx`: confirm received, dispute, or cancel & refund after the 72h ship deadline.
+- Shop picture (migration 0012 `seller_avatars`, bytea in its own table): `ShopPhoto.tsx` in Settings
+  (verified/pending) and the Seller panel; the browser crops to a 320px square WebP/JPEG before upload.
+  `POST/DELETE /api/seller/avatar` (data URL, ≤300 KB, magic-byte check); served by
+  `/api/sellers/[id]/avatar?v=…` only for verified sellers, cached immutable. Marketplace rows and the
+  buy sheet show it (initial letter as fallback). Ad photos still need proper file storage (Vercel Blob).
 - `app/api/**` route handlers; `app/page.tsx` 3D homepage; `app/signup`, `app/login`,
   `app/dashboard`; `app/admin` (Insights, Growth providers, Services, Pricing, Shop, Listings review; admins only).
 - Shop (`src/server/shop.ts`, /admin/shop, migration 0008): admin categories → products. Delivery
@@ -127,7 +132,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   `dev` (full app) are both pushed.
 - Neon: project **almighty-pumps** (`jolly-dust-18900048`, AWS eu-central-1).
   - `main` branch: production, still empty. Run the migration on it only after approval.
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0011 applied. Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0012 applied. Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

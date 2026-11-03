@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "../api";
 import { useCurrency } from "./Currency";
 import type { Question } from "@/core/listingQuestions";
+import { ShopPhoto } from "./ShopPhoto";
 
 type Listing = {
   id: string; title: string; description: string; category: string; deliveryType: string; price: number; stock: number;
@@ -72,6 +73,7 @@ export function SellerPanel() {
           <h2>Seller panel</h2>
           <button type="button" className="btn btn-primary ap-mini" onClick={() => { setNotice(null); setForm({}); }}>+ Post an ad</button>
         </div>
+        <ShopPhoto name="Shop" compact />
         <div className="tiles">
           <div className="tile glass"><div className="tile-label">To deliver</div><div className="tile-num">{toFulfil.length}</div></div>
           <div className="tile glass"><div className="tile-label">Waiting for buyer</div><div className="tile-num">{waiting.length}</div></div>

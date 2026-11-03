@@ -9,8 +9,9 @@ import { checkAnswers } from "@/core/listingQuestions";
 import { blockedReasons } from "@/core/listingPolicy";
 import type { Db } from "./db";
 import { allCategories, getCategory } from "./listingCategories";
-import { disputes, listingCategories, listings, sellerProfiles, tradeEvents, tradeMessages, trades, users } from "./db/schema";
+import { disputes, listingCategories, listings, sellerAvatars, sellerProfiles, tradeEvents, tradeMessages, trades, users } from "./db/schema";
 import { badRequest, forbidden, notFound } from "./errors";
+import { avatarUrl } from "./sellers";
 import { linkHold, placeHold, platformWalletId, settleHold, walletIdForUser } from "./wallet";
 
 /**
@@ -111,6 +112,7 @@ export async function browseListings(db: Db, opts: { category?: string; q?: stri
       sellerId: listings.sellerId,
       sellerName: sql<string>`coalesce(${sellerProfiles.businessName}, ${users.name})`,
       sellerVerified: sql<boolean>`${users.sellerStatus} = 'verified'`,
+      sellerAvatarAt: sellerAvatars.updatedAt,
       sellerOrders: sql<number>`(select count(*)::int from trades t where t.seller_id = "listings"."seller_id" and t.status = 'COMPLETED')`,
       sellerClosed: sql<number>`(select count(*)::int from trades t where t.seller_id = "listings"."seller_id" and t.status in ('COMPLETED','CANCELLED','REFUNDED'))`,
     })
@@ -118,11 +120,16 @@ export async function browseListings(db: Db, opts: { category?: string; q?: stri
     .innerJoin(users, eq(users.id, listings.sellerId))
     .leftJoin(sellerProfiles, eq(sellerProfiles.userId, listings.sellerId))
     .leftJoin(listingCategories, eq(listingCategories.slug, listings.category))
+    .leftJoin(sellerAvatars, eq(sellerAvatars.userId, listings.sellerId))
     .where(and(...filters))
     .orderBy(...order)
     .limit(limit + 1)
     .offset(opts.offset ?? 0);
-  return { listings: rows.slice(0, limit), hasMore: rows.length > limit };
+  const out = rows.slice(0, limit).map(({ sellerAvatarAt, ...r }) => ({
+    ...r,
+    sellerAvatar: sellerAvatarAt && r.sellerVerified ? avatarUrl(r.sellerId, sellerAvatarAt) : null,
+  }));
+  return { listings: out, hasMore: rows.length > limit };
 }
 
 /** Buy: lock stock, hold the buyer's money, open the trade. */
