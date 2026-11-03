@@ -246,3 +246,10 @@ img.mk-avatar { object-fit: cover; background: var(--surface-2); }
 .vc-history li { display: flex; flex-direction: column; gap: 6px; padding: 12px 0; border-top: 1px solid rgb(var(--ov) / .08); }
 .vc-admin-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 10px 0; border-top: 1px solid rgb(var(--ov) / .08); }
 .vc-price-form { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-top: 4px; }
+
+/* Admin money tables */
+.mt-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.mt-table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+.mt-table th, .mt-table td { padding: 8px 10px; text-align: right; border-top: 1px solid rgb(var(--ov) / .08); white-space: nowrap; }
+.mt-table th:first-child, .mt-table td:first-child { text-align: left; white-space: normal; }
+.mt-table th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; border-top: 0; }

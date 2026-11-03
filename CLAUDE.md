@@ -103,6 +103,15 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   cancel/timeout/provider failure. One waiting number per customer. Client polls /api/verify/[id] every
   5 s; the sync-orders cron sweeps pending ones. Keep "Allow Non-Refundable Services via API" OFF on
   TextVerified so our refunds match theirs.
+- Money tools (`src/server/adminMoney.ts`, `src/components/AdminMoney.tsx`, GET /api/admin/money?view=…):
+  /admin/money = platform wallet (balance, earnings by ledger kind today/7d/30d/all, customer money held,
+  withdrawals to pay, open disputes); /admin/withdrawals = MANUAL payouts (owner chose manual 2026-11-03):
+  customer requests in Wallet tab (`Withdraw.tsx`, pre-filled from seller payout account or last one, min
+  MIN_WITHDRAWAL_KOBO, max 3 waiting) → hold; admin sends the bank transfer, taps "mark paid" (capture) or
+  rejects with a reason (release). Queue flags stolen-card patterns (unspent top-ups, topped up <24h,
+  account <3 days, account differs from seller profile). /admin/disputes = DISPUTED trades with complaint,
+  seller proof, contacts, timeline/messages → Refund buyer / Pay seller (`act` RESOLVE_*). Wallet history
+  lines without a memo get friendly names (`kindLabel` in app/dashboard/page.tsx).
 - `app/api/**` route handlers; `app/page.tsx` 3D homepage; `app/signup`, `app/login`,
   `app/dashboard`; `app/admin` (Insights, Growth providers, Services, Pricing, Shop, Listings review; admins only).
 - Shop (`src/server/shop.ts`, /admin/shop, migration 0008): admin categories → products. Delivery
@@ -195,7 +204,7 @@ moving to ESLint 9 / Next 16 is a later job.
    Owlet's API has NO recommended flag (only `mode`/`proof`/`targetable` on 179 in-house
    services); owner chose (2026-11-03) to star manually in /admin/services.
 4. Admin panel (`/admin`): ~~Insights~~, ~~providers (markup, sync, balance, pause)~~ done;
-   ~~seller verification queue~~ done; still to do: disputes, withdrawals, platform wallet balance.
+   ~~seller verification queue~~ done; ~~disputes, withdrawals, platform wallet~~ done 2026-11-03.
 5. Marketplace pages: browse (Bybit P2P-style table, Buy/Sell toggle), listing detail,
    post an ad, trade room (timer, steps, chat, release/dispute), my trades.
 6. Rate limiting on auth, funding and order routes.

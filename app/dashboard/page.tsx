@@ -51,7 +51,22 @@ export default async function DashboardPage() {
       catalog={catalog}
       orders={orders.map((o) => ({ id: o.id, service: o.service, platform: o.platform, link: o.link, quantity: o.quantity, amount: o.charged || o.cost, status: o.status, remains: o.remains, when: when(o.createdAt) }))}
       trades={trades.map((t) => ({ id: t.publicId, uuid: t.id, title: t.title, role: t.buyerId === user.id ? "Buying" : "Selling", amount: t.amount, status: t.status, when: when(t.createdAt), shipBy: t.shipBy.toISOString(), inspectionEndsAt: t.inspectionEndsAt?.toISOString() ?? null, proof: t.buyerId === user.id ? t.deliveryProof : null }))}
-      history={history.map((h) => ({ id: h.id, what: h.memo ?? h.kind, change: h.availableChange, after: h.availableAfter, when: when(h.createdAt) }))}
+      history={history.map((h) => ({ id: h.id, what: h.memo ?? kindLabel(h.kind), change: h.availableChange, after: h.availableAfter, when: when(h.createdAt) }))}
     />
   );
+}
+
+/** Friendly names for wallet history lines that have no memo. */
+function kindLabel(kind: string) {
+  const [verb, what] = kind.split(":");
+  const thing: Record<string, string> = {
+    smm_order: "Boost order", escrow: "P2P purchase", withdrawal: "Withdrawal", shop_order: "Shop order", sms_verify: "Verification code",
+  };
+  const t = thing[what ?? ""] ?? what ?? "";
+  if (kind === "deposit") return "Wallet top-up";
+  if (kind === "escrow:payout") return "P2P sale paid to you";
+  if (verb === "capture") return what === "withdrawal" ? "Withdrawal paid to your bank" : `${t}: charged`;
+  if (verb === "release") return what === "withdrawal" ? "Withdrawal returned to wallet" : `${t}: refunded`;
+  if (verb === "hold") return `${t}: money set aside`;
+  return kind;
 }

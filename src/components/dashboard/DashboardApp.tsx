@@ -7,6 +7,7 @@ import { Boost, type CatalogPlatform } from "./Boost";
 import { CurrencyProvider, CurrencySwitch, useCurrency } from "./Currency";
 import { HUB_SERVICES } from "./services";
 import { VerifyCode } from "./VerifyCode";
+import { Withdraw } from "./Withdraw";
 import { ShopCategory } from "./Shop";
 import { Settings } from "./Settings";
 import { SellerPanel } from "./SellerPanel";
@@ -253,6 +254,7 @@ function Dashboard(props: Props) {
                 <p className="muted" style={{ fontSize: 14 }}>{show(props.wallet.held)} held for orders, escrow and withdrawals</p>
                 <FundWallet />
               </section>
+              <Withdraw available={props.wallet.available} hidden={hideBal} />
               <section className="card glass">
                 <h2>Wallet activity</h2>
                 {props.history.length === 0 ? <div className="empty">Your top-ups, orders and refunds will appear here.</div> : (

@@ -6,7 +6,7 @@
 import { and, eq, inArray } from "drizzle-orm";
 import * as L from "@/core/ledger";
 import type { Kobo } from "@/core/money";
-import type { Tx } from "./db";
+import type { DbOrTx, Tx } from "./db";
 import { holds, ledgerEntries, users, wallets } from "./db/schema";
 import { AppError, notFound } from "./errors";
 
@@ -20,13 +20,13 @@ export async function lockWallets(tx: Tx, ids: string[]): Promise<Map<string, Wa
   return new Map(rows.map((r) => [r.id, r]));
 }
 
-export async function walletIdForUser(tx: Tx, userId: string): Promise<string> {
+export async function walletIdForUser(tx: DbOrTx, userId: string): Promise<string> {
   const [w] = await tx.select({ id: wallets.id }).from(wallets).where(eq(wallets.userId, userId));
   if (!w) throw notFound("Wallet");
   return w.id;
 }
 
-export async function platformWalletId(tx: Tx): Promise<string> {
+export async function platformWalletId(tx: DbOrTx): Promise<string> {
   const [w] = await tx
     .select({ id: wallets.id })
     .from(wallets)

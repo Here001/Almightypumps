@@ -3,11 +3,12 @@
  * Funding is only credited after we verify the transaction with Flutterwave's
  * API, and each payment reference can credit a wallet once.
  */
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
+import { NG_BANKS } from "@/core/banks";
 import { paymentReference, verifyFlutterwaveWebhook } from "@/core/crypto";
 import type { Kobo } from "@/core/money";
 import type { Db } from "./db";
-import { payments, users, withdrawals } from "./db/schema";
+import { payments, sellerProfiles, users, wallets, withdrawals } from "./db/schema";
 import { env } from "./env";
 import { AppError, badRequest, notFound } from "./errors";
 import { creditWallet, placeHold, settleHold, walletIdForUser } from "./wallet";
@@ -124,10 +125,16 @@ export async function requestWithdrawal(
 ) {
   if (input.amount < env().MIN_WITHDRAWAL_KOBO) throw badRequest(`The minimum withdrawal is ₦${(env().MIN_WITHDRAWAL_KOBO / 100).toLocaleString("en-NG")}.`);
   if (!/^\d{10}$/.test(input.accountNumber)) throw badRequest("Account number must be 10 digits.");
-  if (!/^\d{3,6}$/.test(input.bankCode)) throw badRequest("Choose your bank.");
+  if (!NG_BANKS.some((b) => b.code === input.bankCode)) throw badRequest("Choose your bank.");
   if (input.accountName.trim().length < 3) throw badRequest("Enter the account name.");
   return db.transaction(async (tx) => {
     const walletId = await walletIdForUser(tx, userId);
+    const [open] = await tx.select({ n: sql<number>`count(*)::int` }).from(withdrawals).where(and(eq(withdrawals.userId, userId), eq(withdrawals.status, "requested")));
+    if (open.n >= 3) throw badRequest("You already have 3 withdrawals waiting. Please wait for those to be paid.");
+    const [bal] = await tx.select({ available: wallets.available }).from(wallets).where(eq(wallets.id, walletId));
+    if (!bal || bal.available < input.amount) {
+      throw badRequest(`You can withdraw up to ₦${((bal?.available ?? 0) / 100).toLocaleString("en-NG", { minimumFractionDigits: 2 })}.`);
+    }
     const holdId = await placeHold(tx, walletId, input.amount, "withdrawal", { memo: "Withdrawal request" });
     const [w] = await tx
       .insert(withdrawals)
@@ -146,4 +153,23 @@ export async function decideWithdrawal(db: Db, withdrawalId: string, decision: "
     const [u] = await tx.update(withdrawals).set({ status: decision, note, decidedAt: new Date() }).where(eq(withdrawals.id, w.id)).returning();
     return u;
   });
+}
+
+/** The customer's withdrawals, plus bank details to pre-fill (their seller payout account, or the last one used). */
+export async function myWithdrawals(db: Db, userId: string) {
+  const list = await db.select({
+    id: withdrawals.id, amount: withdrawals.amount, status: withdrawals.status, note: withdrawals.note,
+    bankCode: withdrawals.bankCode, accountNumber: withdrawals.accountNumber, accountName: withdrawals.accountName,
+    createdAt: withdrawals.createdAt, decidedAt: withdrawals.decidedAt,
+  }).from(withdrawals).where(eq(withdrawals.userId, userId)).orderBy(desc(withdrawals.createdAt)).limit(20);
+  const [sp] = await db.select({ bankCode: sellerProfiles.bankCode, accountNumber: sellerProfiles.accountNumber, accountName: sellerProfiles.accountName })
+    .from(sellerProfiles).where(eq(sellerProfiles.userId, userId));
+  const last = list[0];
+  const bank = sp ?? (last ? { bankCode: last.bankCode, accountNumber: last.accountNumber, accountName: last.accountName } : null);
+  const name = (code: string) => NG_BANKS.find((b) => b.code === code)?.name ?? code;
+  return {
+    minKobo: env().MIN_WITHDRAWAL_KOBO,
+    bank,
+    withdrawals: list.map((w) => ({ ...w, bankName: name(w.bankCode) })),
+  };
 }

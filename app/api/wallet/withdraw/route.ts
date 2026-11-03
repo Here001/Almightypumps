@@ -3,7 +3,7 @@ import { nairaToKobo } from "@/core/money";
 import { getDb } from "@/server/db";
 import { requireUser } from "@/server/auth";
 import { body, route } from "@/server/http";
-import { requestWithdrawal } from "@/server/payments";
+import { myWithdrawals, requestWithdrawal } from "@/server/payments";
 
 const schema = z.object({
   amount: z.union([z.string(), z.number()]),
@@ -16,4 +16,12 @@ export const POST = route(async (req: Request) => {
   const user = await requireUser();
   const input = await body(req, schema);
   return requestWithdrawal(getDb(), user.id, { ...input, amount: nairaToKobo(input.amount) });
+});
+
+export const dynamic = "force-dynamic";
+
+/** My withdrawals and the bank details to pre-fill. */
+export const GET = route(async () => {
+  const user = await requireUser();
+  return myWithdrawals(getDb(), user.id);
 });
