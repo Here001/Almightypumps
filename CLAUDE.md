@@ -66,7 +66,8 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   boot script in <head>, `html[data-theme=light]` tokens in app.css; homepage "/" always dark),
   ₦/$, change password + log out other devices (`users.session_version` in the JWT `v` claim,
   migration 0009), seller application, reseller API keys (create/revoke), admin link, log out.
-  App colours use `rgb(var(--ov) / a)` overlays + tokens so both themes work; keep it that way.
+  Dashboard balance card has an eye button (hide/show balance as *****, remembered in localStorage
+  `ap_hide_balance`; also masks the Wallet tab amounts). App colours use `rgb(var(--ov) / a)` overlays + tokens so both themes work; keep it that way.
 - Sellers (`src/server/sellers.ts`, migration 0010 `seller_profiles`): Settings → "Become a seller" form
   (shop name, phone, what they sell, bank from `src/core/banks.ts`, 10-digit account, account name,
   ID type+number). Status none → pending → verified/rejected (reason required; re-apply allowed).

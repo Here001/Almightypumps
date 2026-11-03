@@ -70,6 +70,12 @@ function Dashboard(props: Props) {
     window.addEventListener("hashchange", read);
     return () => window.removeEventListener("hashchange", read);
   }, []);
+  // Hide/show balance (eye icon), remembered on this device.
+  const [hideBal, setHideBal] = useState(false);
+  useEffect(() => { try { setHideBal(localStorage.getItem("ap_hide_balance") === "1"); } catch { /* private mode */ } }, []);
+  const toggleHide = () => setHideBal((h) => { try { localStorage.setItem("ap_hide_balance", h ? "0" : "1"); } catch { /* ignore */ } return !h; });
+  const show = (kobo: number) => (hideBal ? "*****" : money(kobo));
+
   const go = (t: Tab) => {
     if (window.location.hash !== `#${t}`) window.location.hash = t;
     setTab(t);
@@ -117,11 +123,19 @@ function Dashboard(props: Props) {
             </div>
             <div className="ap-top-right">
             <CurrencySwitch />
-            <button type="button" className="ap-balance glass" onClick={() => go("wallet")} aria-label={`Wallet balance ${money(props.wallet.available)}. Add money`}>
-              <span className="ap-balance-label">Balance</span>
-              <span className="ap-balance-num">{money(props.wallet.available)}</span>
-              <span className="ap-balance-add">+ Add money</span>
-            </button>
+            <div className="ap-balance glass">
+              <span className="ap-balance-label">
+                Balance
+                <button type="button" className="ap-eye" onClick={toggleHide} aria-pressed={hideBal} aria-label={hideBal ? "Show balance" : "Hide balance"} title={hideBal ? "Show balance" : "Hide balance"}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" />
+                    {hideBal && <path d="M3 3l18 18" />}
+                  </svg>
+                </button>
+              </span>
+              <button type="button" className="ap-balance-num" onClick={() => go("wallet")} aria-label={hideBal ? "Balance hidden. Open wallet" : `Wallet balance ${money(props.wallet.available)}. Open wallet`}>{show(props.wallet.available)}</button>
+              <button type="button" className="ap-balance-add" onClick={() => go("wallet")}>+ Add money</button>
+            </div>
             </div>
           </header>
 
@@ -234,9 +248,9 @@ function Dashboard(props: Props) {
             <>
               <section className="card glass">
                 <h2>Wallet</h2>
-                <div className="big">{money(props.wallet.available)}</div>
-                {currency === "USD" && <p className="muted" style={{ fontSize: 13 }}>{charge(props.wallet.available)} · your wallet is in Naira; dollar amounts are approximate.</p>}
-                <p className="muted" style={{ fontSize: 14 }}>{money(props.wallet.held)} held for orders, escrow and withdrawals</p>
+                <div className="big">{show(props.wallet.available)}</div>
+                {currency === "USD" && !hideBal && <p className="muted" style={{ fontSize: 13 }}>{charge(props.wallet.available)} · your wallet is in Naira; dollar amounts are approximate.</p>}
+                <p className="muted" style={{ fontSize: 14 }}>{show(props.wallet.held)} held for orders, escrow and withdrawals</p>
                 <FundWallet />
               </section>
               <section className="card glass">
@@ -248,7 +262,7 @@ function Dashboard(props: Props) {
                         <div style={{ minWidth: 0 }}><div className="ap-row-title">{h.what}</div><div className="muted ap-row-sub">{h.when}</div></div>
                         <div className="ap-row-end">
                           <strong style={{ color: h.change >= 0 ? "var(--ok)" : "var(--fg)" }}>{h.change >= 0 ? "+" : "−"}{money(Math.abs(h.change))}</strong>
-                          <span className="muted ap-row-sub">Balance {money(h.after)}</span>
+                          <span className="muted ap-row-sub">Balance {show(h.after)}</span>
                         </div>
                       </li>
                     ))}
