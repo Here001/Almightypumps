@@ -46,7 +46,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 - `src/server/` database access, wallet (row locks, holds, idempotent ledger),
   market, smm, payments (Flutterwave), auth, env, http helpers.
 - Customer dashboard (`app/dashboard` → `src/components/dashboard/`): tabs Services / Orders /
-  Wallet / P2P (URL hash; bottom tab bar on phones). Services = hub of service tiles from
+  Wallet / P2P / Settings (URL hash; bottom tab bar on phones). Services = hub of service tiles from
   `src/components/dashboard/services.ts` (Boost Account live; eSIMs, Get Verification Code
   "coming soon"). Boost Account (#boost) = all SMM/Owlet services: search + platform tiles +
   kind chips + paged service cards (recommended first, then cheapest) + order sheet.
@@ -62,6 +62,12 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   of the store (hidden at sync). 2026-11-03: owner asked to sell these; agreed to allow
   social-media poll votes only (kind "Poll votes"); Claude declined to enable fake reviews,
   contest votes and add-to-carts (third-party deception, FCCPC/FTC risk, payment-provider risk).
+- Settings tab (`Settings.tsx`, `/api/me/settings`): profile (name/phone; email read-only, no email
+  sending yet), theme Dark/Light/Match phone (`src/components/Theme.tsx`: localStorage `ap_theme`,
+  boot script in <head>, `html[data-theme=light]` tokens in app.css; homepage "/" always dark),
+  ₦/$, change password + log out other devices (`users.session_version` in the JWT `v` claim,
+  migration 0009), seller application, reseller API keys (create/revoke), admin link, log out.
+  App colours use `rgb(var(--ov) / a)` overlays + tokens so both themes work; keep it that way.
 - `app/api/**` route handlers; `app/page.tsx` 3D homepage; `app/signup`, `app/login`,
   `app/dashboard`; `app/admin` (Insights, Growth providers, Services, Pricing, Shop, Listings review; admins only).
 - Shop (`src/server/shop.ts`, /admin/shop, migration 0008): admin categories → products. Delivery
@@ -100,7 +106,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   `dev` (full app) are both pushed.
 - Neon: project **almighty-pumps** (`jolly-dust-18900048`, AWS eu-central-1).
   - `main` branch: production, still empty. Run the migration on it only after approval.
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0008 applied. Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0009 applied. Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

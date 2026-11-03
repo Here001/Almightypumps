@@ -9,6 +9,7 @@ const DASHBOARD_ANCHORS: Record<string, string> = {
   orders: "My orders",
   trades: "P2P Marketplace",
   wallet: "Wallet",
+  settings: "Settings",
 };
 
 const PREFIXES: [string, string][] = [

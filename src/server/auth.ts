@@ -4,7 +4,7 @@
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Db } from "./db";
 import { getDb } from "./db";
@@ -56,7 +56,8 @@ export async function login(db: Db, input: z.infer<typeof loginSchema>) {
 }
 
 export async function startSession(userId: string) {
-  const token = await new SignJWT({}).setProtectedHeader({ alg: "HS256" }).setSubject(userId).setIssuedAt().setExpirationTime(`${MAX_AGE}s`).sign(key());
+  const [u] = await getDb().select({ v: users.sessionVersion }).from(users).where(eq(users.id, userId));
+  const token = await new SignJWT({ v: u?.v ?? 0 }).setProtectedHeader({ alg: "HS256" }).setSubject(userId).setIssuedAt().setExpirationTime(`${MAX_AGE}s`).sign(key());
   (await cookies()).set(COOKIE, token, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: MAX_AGE });
 }
 
@@ -64,7 +65,7 @@ export async function endSession() {
   (await cookies()).delete(COOKIE);
 }
 
-export type SessionUser = { id: string; name: string; email: string; role: "user" | "admin"; sellerStatus: string };
+export type SessionUser = { id: string; name: string; email: string; phone: string | null; role: "user" | "admin"; sellerStatus: string };
 
 export async function currentUser(): Promise<SessionUser | null> {
   const token = (await cookies()).get(COOKIE)?.value;
@@ -73,10 +74,13 @@ export async function currentUser(): Promise<SessionUser | null> {
     const { payload } = await jwtVerify(token, key());
     if (!payload.sub) return null;
     const [u] = await getDb()
-      .select({ id: users.id, name: users.name, email: users.email, role: users.role, sellerStatus: users.sellerStatus })
+      .select({ id: users.id, name: users.name, email: users.email, phone: users.phone, role: users.role, sellerStatus: users.sellerStatus, v: users.sessionVersion })
       .from(users)
       .where(eq(users.id, payload.sub));
-    return u ?? null;
+    // Sessions from before a password change or "log out everywhere" are no longer valid.
+    if (!u || (Number(payload.v ?? 0) !== u.v)) return null;
+    const { v: _v, ...user } = u;
+    return user;
   } catch {
     return null;
   }
@@ -92,4 +96,40 @@ export async function requireAdmin(): Promise<SessionUser> {
   const u = await requireUser();
   if (u.role !== "admin") throw new AppError(403, "FORBIDDEN", "Admins only.");
   return u;
+}
+
+/* ---------------- account settings ---------------- */
+
+export const profileSchema = z.object({
+  name: z.string().trim().min(2, "Enter your name").max(80),
+  phone: z.string().trim().regex(/^(\+?234|0)[789]\d{9}$/, "Enter a Nigerian phone number, like 0803 123 4567").optional().or(z.literal("")),
+});
+
+export async function updateProfile(db: Db, userId: string, input: z.infer<typeof profileSchema>) {
+  const [u] = await db.update(users).set({ name: input.name, phone: input.phone || null }).where(eq(users.id, userId))
+    .returning({ name: users.name, phone: users.phone });
+  return u;
+}
+
+export const passwordSchema = z.object({
+  current: z.string().min(1, "Enter your current password"),
+  next: z.string().min(8, "Use at least 8 characters").max(200),
+});
+
+/** Change password; every other device is logged out, this one gets a fresh session. */
+export async function changePassword(db: Db, userId: string, input: z.infer<typeof passwordSchema>) {
+  const [u] = await db.select({ hash: users.passwordHash }).from(users).where(eq(users.id, userId));
+  if (!u || !(await bcrypt.compare(input.current, u.hash))) throw badRequest("Your current password isn't right.");
+  if (input.current === input.next) throw badRequest("Choose a new password that's different from the current one.");
+  const passwordHash = await bcrypt.hash(input.next, 12);
+  await db.update(users).set({ passwordHash, sessionVersion: sql`${users.sessionVersion} + 1` }).where(eq(users.id, userId));
+  await startSession(userId);
+  return { changed: true };
+}
+
+/** Log out every other device; this one stays signed in with a fresh session. */
+export async function logoutEverywhere(db: Db, userId: string) {
+  await db.update(users).set({ sessionVersion: sql`${users.sessionVersion} + 1` }).where(eq(users.id, userId));
+  await startSession(userId);
+  return { loggedOutOthers: true };
 }

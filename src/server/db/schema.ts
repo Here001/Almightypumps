@@ -16,6 +16,8 @@ export const users = pgTable("users", {
   role: text("role").$type<"user" | "admin">().notNull().default("user"),
   sellerStatus: text("seller_status").$type<"none" | "pending" | "verified" | "rejected">().notNull().default("none"),
   isSystem: boolean("is_system").notNull().default(false),
+  /** Bumped on password change / "log out everywhere"; older sessions stop working. */
+  sessionVersion: integer("session_version").notNull().default(0),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 

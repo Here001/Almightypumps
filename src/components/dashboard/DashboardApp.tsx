@@ -7,6 +7,7 @@ import { Boost, type CatalogPlatform } from "./Boost";
 import { CurrencyProvider, CurrencySwitch, useCurrency } from "./Currency";
 import { HUB_SERVICES } from "./services";
 import { ShopCategory } from "./Shop";
+import { Settings } from "./Settings";
 import { SHOP_ICON_PATHS } from "../icons";
 
 type Order = { id: number; service: string; platform: string; link: string; quantity: number; amount: number; status: string; remains: number | null; when: string };
@@ -18,6 +19,7 @@ const TABS = [
   { id: "orders", label: "Orders", icon: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" },
   { id: "wallet", label: "Wallet", icon: "M3 7h18v12H3zM3 7l2-3h12l2 3M16 13h2" },
   { id: "trades", label: "P2P", icon: "M7 7h11l-3-3M17 17H6l3 3" },
+  { id: "settings", label: "Settings", icon: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" },
 ] as const;
 /** Screens: the tabs, plus service screens opened from the Services hub. */
 type Tab = (typeof TABS)[number]["id"] | "boost" | `shop-${string}`;
@@ -38,6 +40,7 @@ function Icon({ d }: { d: string }) {
 type Props = {
   greeting: string; isAdmin: boolean; wallet: { available: number; held: number }; minOrderKobo: number; usdRateKobo: number;
   catalog: CatalogPlatform[]; orders: Order[]; trades: Trade[]; history: Entry[];
+  me: { name: string; email: string; phone: string | null; sellerStatus: string };
   shopCategories: { slug: string; name: string; description: string; icon: string; products: number }[];
   shopOrders: { id: number; product: string; amount: number; status: string; content: string | null; note: string | null; when: string }[];
 };
@@ -210,6 +213,8 @@ function Dashboard(props: Props) {
             </section>
           )}
 
+          {tab === "settings" && <Settings me={{ ...props.me, isAdmin: props.isAdmin }} />}
+
           {tab === "wallet" && (
             <>
               <section className="card glass">
@@ -265,7 +270,7 @@ function Dashboard(props: Props) {
             <Icon d={t.icon} /><span>{t.label}</span>
           </a>
         ))}
-        {props.isAdmin && <a href="/admin"><Icon d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z" /><span>Admin</span></a>}
+
       </nav>
     </div>
   );

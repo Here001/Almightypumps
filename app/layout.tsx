@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./landing.css";
 import "./app.css";
 import { Tracker } from "@/components/Tracker";
+import { THEME_BOOT_SCRIPT, ThemeSync } from "@/components/Theme";
 
 export const metadata: Metadata = {
   title: "Almighty Pumps",
@@ -12,8 +13,9 @@ export const viewport: Viewport = { themeColor: "#04050A", width: "device-width"
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
@@ -25,6 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <Tracker />
+        <ThemeSync />
       </body>
     </html>
   );

@@ -40,6 +40,7 @@ export default async function DashboardPage() {
     <DashboardApp
       greeting={`${greeting()}, ${user.name.split(" ")[0]}`}
       isAdmin={user.role === "admin"}
+      me={{ name: user.name, email: user.email, phone: user.phone, sellerStatus: user.sellerStatus }}
       wallet={{ available: wallet.available, held: wallet.held }}
       minOrderKobo={minOrderKobo}
       usdRateKobo={usdRateKobo}
