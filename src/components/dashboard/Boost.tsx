@@ -7,7 +7,7 @@ import { api } from "../api";
 import { useCurrency } from "./Currency";
 
 export type CatalogPlatform = { platform: string; count: number; kinds: { kind: string; count: number }[] };
-type Service = { id: number; name: string; platform: string; kind: string; rateKobo: number; min: number; max: number; refill: boolean };
+type Service = { id: number; name: string; platform: string; kind: string; rateKobo: number; min: number; max: number; refill: boolean; recommended?: boolean };
 
 const MONOGRAM: Record<string, string> = {
   Instagram: "IG", TikTok: "TT", YouTube: "YT", Facebook: "FB", "X (Twitter)": "X", Telegram: "TG", WhatsApp: "WA",
@@ -138,7 +138,7 @@ export function Boost({ catalog, balance, minOrderKobo, onAddMoney, onViewOrders
             </div>
           )}
 
-          <p className="muted" style={{ fontSize: 13 }}>Cheapest first · price per 1,000</p>
+          <p className="muted" style={{ fontSize: 13 }}>Recommended first, then cheapest · price per 1,000</p>
           {loadError && <div className="form-error" role="alert">{loadError} <button type="button" className="ap-link" onClick={() => void load(0)}>Try again</button></div>}
           {!loading && !loadError && services.length === 0 && (
             <div className="empty">{searching ? "Nothing matches that. Try fewer or different words." : "No services here yet."}</div>
@@ -153,6 +153,7 @@ export function Boost({ catalog, balance, minOrderKobo, onAddMoney, onViewOrders
                     <span className="ap-service-meta">
                       {searching && <span className="ap-tag">{s.platform}</span>}
                       <span className="ap-tag">{s.kind}</span>
+                      {s.recommended && <span className="ap-tag rec">★ Recommended</span>}
                       {s.refill && <span className="ap-tag ok">Refill</span>}
                       <span className="muted">{s.min.toLocaleString("en-NG")}–{s.max.toLocaleString("en-NG")}</span>
                     </span>

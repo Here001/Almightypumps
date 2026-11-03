@@ -275,3 +275,18 @@ test("display currency formatting", async () => {
   assert.equal(cur.formatMoney(150_000, "USD", 0), "\u20a61,500.00"); // no rate set: stay in Naira
   assert.equal(cur.formatMoney(150_000, "NGN", rate), "\u20a61,500.00");
 });
+
+test("provider 'recommended' flag in its many shapes", async () => {
+  const { isProviderRecommended, parseServices } = await import("../src/core/smm.ts");
+  assert.equal(isProviderRecommended({ recommended: true }), true);
+  assert.equal(isProviderRecommended({ is_recommended: "1" }), true);
+  assert.equal(isProviderRecommended({ featured: "yes" }), true);
+  assert.equal(isProviderRecommended({ tag: "Recommended" }), true);
+  assert.equal(isProviderRecommended({ badges: ["hot", "recommended"] }), true);
+  assert.equal(isProviderRecommended({ recommended: false, tag: "" }), false);
+  assert.equal(isProviderRecommended({ recommended: 0 }), false);
+  // A Facebook "Recommendations" review in the NAME is not a recommended flag.
+  assert.equal(isProviderRecommended({ name: "Facebook Page Recommendations", category: "Facebook" }), false);
+  const [svc] = parseServices([{ service: 1, name: "IG Followers", category: "Instagram", rate: "1.5", min: 10, max: 100, recommended: 1 }]);
+  assert.equal(svc.recommended, true);
+});

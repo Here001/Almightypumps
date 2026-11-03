@@ -5,18 +5,20 @@ import { Suspense, useEffect, useState } from "react";
 import { FundWallet, LogoutButton, PaymentReturn } from "../DashboardActions";
 import { Boost, type CatalogPlatform } from "./Boost";
 import { CurrencyProvider, CurrencySwitch, useCurrency } from "./Currency";
+import { HUB_SERVICES } from "./services";
 
 type Order = { id: number; service: string; platform: string; link: string; quantity: number; amount: number; status: string; remains: number | null; when: string };
 type Trade = { id: number; title: string; role: string; amount: number; status: string; when: string };
 type Entry = { id: string; what: string; change: number; after: number; when: string };
 
 const TABS = [
-  { id: "boost", label: "Boost", icon: "M13 2 3 14h7l-1 8 10-12h-7l1-8z" },
+  { id: "services", label: "Services", icon: "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" },
   { id: "orders", label: "Orders", icon: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" },
   { id: "wallet", label: "Wallet", icon: "M3 7h18v12H3zM3 7l2-3h12l2 3M16 13h2" },
   { id: "trades", label: "P2P", icon: "M7 7h11l-3-3M17 17H6l3 3" },
 ] as const;
-type Tab = (typeof TABS)[number]["id"];
+/** Screens: the tabs, plus service screens opened from the Services hub. */
+type Tab = (typeof TABS)[number]["id"] | "boost";
 
 const ORDER_STATUS: Record<string, { label: string; tone: string }> = {
   PENDING: { label: "Starting", tone: "" }, PROCESSING: { label: "Delivering", tone: "info" }, COMPLETED: { label: "Delivered", tone: "ok" },
@@ -42,7 +44,7 @@ export function DashboardApp(props: Props) {
 
 function Dashboard(props: Props) {
   const { money, currency, charge } = useCurrency();
-  const [tab, setTab] = useState<Tab>("boost");
+  const [tab, setTab] = useState<Tab>("services");
 
   // Tabs live in the URL hash so the back button and Insights tracking work.
   useEffect(() => {
@@ -50,7 +52,7 @@ function Dashboard(props: Props) {
       const h = window.location.hash.replace("#", "");
       const legacy: Record<string, Tab> = { growth: "boost" };
       const next = (legacy[h] ?? h) as Tab;
-      if (TABS.some((t) => t.id === next)) setTab(next);
+      if (next === "boost" || TABS.some((t) => t.id === next)) setTab(next);
     };
     read();
     window.addEventListener("hashchange", read);
@@ -72,7 +74,7 @@ function Dashboard(props: Props) {
           <Link href="/" className="logo" style={{ color: "var(--fg)", fontSize: 15 }}><span className="logo-mark">AP</span>ALMIGHTY PUMPS</Link>
           <nav className="ap-sidenav" aria-label="Dashboard">
             {TABS.map((t) => (
-              <a key={t.id} href={`#${t.id}`} aria-current={tab === t.id ? "page" : undefined} onClick={(e) => { e.preventDefault(); go(t.id); }}>
+              <a key={t.id} href={`#${t.id}`} aria-current={(tab === "boost" ? "services" : tab) === t.id ? "page" : undefined} onClick={(e) => { e.preventDefault(); go(t.id); }}>
                 <Icon d={t.icon} />{t.label}
               </a>
             ))}
@@ -99,13 +101,38 @@ function Dashboard(props: Props) {
 
           <Suspense fallback={null}><PaymentReturn /></Suspense>
 
+          {tab === "services" && (
+            <section className="card glass">
+              <h2>What would you like to do?</h2>
+              <div className="ap-hub">
+                {HUB_SERVICES.map((svc) => (
+                  <button
+                    key={svc.id} type="button" className="ap-hub-tile" disabled={svc.status !== "live"}
+                    onClick={() => svc.status === "live" && go(svc.id as Tab)}
+                  >
+                    <span className="ap-hub-icon" aria-hidden="true"><Icon d={svc.icon} /></span>
+                    <span className="ap-hub-title">{svc.title}{svc.status === "soon" && <span className="ap-tag">Coming soon</span>}</span>
+                    <span className="ap-hub-desc">{svc.description}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {tab === "boost" && (
+            <div className="ap-crumb">
+              <button type="button" className="ap-link" onClick={() => go("services")}>← All services</button>
+              <span className="muted">/</span>
+              <strong>Boost Account</strong>
+            </div>
+          )}
           {tab === "boost" && <Boost catalog={props.catalog} balance={props.wallet.available} minOrderKobo={props.minOrderKobo} onAddMoney={() => go("wallet")} onViewOrders={() => go("orders")} />}
 
           {tab === "orders" && (
             <section className="card glass">
               <h2>My orders</h2>
               {props.orders.length === 0 ? (
-                <div className="empty">No orders yet. <button type="button" className="ap-link" onClick={() => go("boost")}>Boost a post</button> to place your first one.</div>
+                <div className="empty">No orders yet. <button type="button" className="ap-link" onClick={() => go("boost")}>Boost an account</button> to place your first one.</div>
               ) : (
                 <ul className="ap-list">
                   {props.orders.map((o) => {
@@ -180,7 +207,7 @@ function Dashboard(props: Props) {
 
       <nav className="ap-tabbar" aria-label="Dashboard">
         {TABS.map((t) => (
-          <a key={t.id} href={`#${t.id}`} aria-current={tab === t.id ? "page" : undefined} onClick={(e) => { e.preventDefault(); go(t.id); }}>
+          <a key={t.id} href={`#${t.id}`} aria-current={(tab === "boost" ? "services" : tab) === t.id ? "page" : undefined} onClick={(e) => { e.preventDefault(); go(t.id); }}>
             <Icon d={t.icon} /><span>{t.label}</span>
           </a>
         ))}

@@ -84,7 +84,29 @@ export type ProviderService = {
   max: number;
   refill: boolean;
   cancel: boolean;
+  /** The provider flags this service as recommended/featured (field name varies by panel). */
+  recommended: boolean;
 };
+
+const TRUTHY = new Set(["1", "true", "yes", "y"]);
+
+/**
+ * Panels mark their picks in different ways: `recommended: true`, `is_recommended: 1`,
+ * `featured: "yes"`, or a tag/badge/label field containing "recommended". Accept any of them.
+ */
+export function isProviderRecommended(row: Record<string, unknown>): boolean {
+  for (const [key, value] of Object.entries(row)) {
+    const k = key.toLowerCase();
+    if (/recommend|featured|is_?top|best_?seller/.test(k)) {
+      if (value === true || value === 1 || TRUTHY.has(String(value).trim().toLowerCase())) return true;
+    }
+    if (/tag|badge|label|flag|highlight|status/.test(k)) {
+      const text = Array.isArray(value) ? value.join(" ") : typeof value === "string" ? value : "";
+      if (/recommend/i.test(text)) return true;
+    }
+  }
+  return false;
+}
 
 function providerError(json: unknown): string | null {
   if (json && typeof json === "object" && "error" in json) {
@@ -115,6 +137,7 @@ export function parseServices(json: unknown): ProviderService[] {
       max: Math.max(1, Math.floor(max)),
       refill: r.refill === true || r.refill === 1 || r.refill === "1",
       cancel: r.cancel === true || r.cancel === 1 || r.cancel === "1",
+      recommended: isProviderRecommended(r),
     });
   }
   return out;

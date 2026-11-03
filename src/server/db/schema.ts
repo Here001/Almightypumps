@@ -112,6 +112,8 @@ export const smmServices = pgTable("smm_services", {
   displayName: text("display_name").notNull().default(""),
   /** null = on sale; "admin" hidden by an admin; "policy" not allowed; "provider" dropped upstream. */
   hiddenReason: text("hidden_reason").$type<"admin" | "policy" | "provider" | null>(),
+  providerRecommended: boolean("provider_recommended").notNull().default(false),
+  featured: boolean("featured").notNull().default(false),
   updatedAt: ts("updated_at").notNull().defaultNow(),
 });
 

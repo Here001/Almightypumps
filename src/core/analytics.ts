@@ -3,6 +3,7 @@
  * Returns null for views we don't count (admin pages, API).
  */
 const DASHBOARD_ANCHORS: Record<string, string> = {
+  services: "Services hub",
   boost: "Social Growth",
   growth: "Social Growth",
   orders: "My orders",

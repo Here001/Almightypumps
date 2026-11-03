@@ -7,6 +7,7 @@ type Status = "all" | "on_sale" | "admin" | "policy" | "provider";
 type Row = {
   id: number; name: string; providerName: string; providerServiceId: string; platform: string; kind: string;
   rateKobo: number; costKobo: number; min: number; max: number; refill: boolean; hiddenReason: "admin" | "policy" | "provider" | null;
+  featured: boolean; providerRecommended: boolean;
 };
 type Data = { services: Row[]; hasMore: boolean; counts: Record<Exclude<Status, "all">, number>; platforms: string[]; kinds: string[]; bulk: { canHide: number; canShow: number } };
 
@@ -96,6 +97,20 @@ export function AdminServices() {
     }
   }
 
+  async function star(r: Row) {
+    setBusyId(r.id);
+    setNotice(null);
+    try {
+      await api(`/api/admin/services/${r.id}`, { featured: !r.featured });
+      setRows((prev) => prev.map((x) => (x.id === r.id ? { ...x, featured: !r.featured } : x)));
+      setNotice(!r.featured ? `Recommended: “${r.name}” now shows first for customers.` : `No longer recommended by you: “${r.name}”.`);
+    } catch (e) {
+      setNotice((e as Error).message);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   const current = STATUS.find((s) => s.id === status)!;
   const total = data ? data.counts.on_sale + data.counts.admin + data.counts.policy + data.counts.provider : 0;
   const filtered = Boolean(platform || kind || search.trim().length >= 2);
@@ -160,6 +175,7 @@ export function AdminServices() {
                   <span className="ap-tag">{r.platform}</span>
                   <span className="ap-tag">{r.kind}</span>
                   {r.refill && <span className="ap-tag ok">Refill</span>}
+                  {r.providerRecommended && <span className="ap-tag rec">Recommended by {r.providerName}</span>}
                   <span className={`status ${st.tone}`}>{st.label}</span>
                 </div>
                 <div className="muted ap-row-sub" style={{ marginTop: 6 }}>
@@ -169,6 +185,12 @@ export function AdminServices() {
               <div className="ap-row-end">
                 <strong>{naira(r.rateKobo)}<span className="muted" style={{ fontWeight: 400, fontSize: 12 }}> /1k</span></strong>
                 <span className="muted ap-row-sub">cost {naira(r.costKobo)}</span>
+                {r.hiddenReason !== "policy" && (
+                  <button type="button" className="ap-star" aria-pressed={r.featured} disabled={busyId === r.id} onClick={() => void star(r)}
+                    aria-label={r.featured ? `Stop recommending ${r.name}` : `Recommend ${r.name}`}>
+                    {r.featured ? "★ Recommended" : "☆ Recommend"}
+                  </button>
+                )}
                 {canToggle ? (
                   <button
                     type="button" role="switch" aria-checked={r.hiddenReason === null} className="ap-switch"

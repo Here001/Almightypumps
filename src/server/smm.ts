@@ -73,7 +73,16 @@ export async function providerBalance(db: Db, providerId: string) {
 export async function syncServices(db: Db, providerId: string) {
   const [p] = await db.select().from(smmProviders).where(eq(smmProviders.id, providerId));
   if (!p) throw notFound("Provider");
-  const list = await adminProviderCall(p, async () => parseServices(await call(p, { action: "services" })));
+  const list = await adminProviderCall(p, async () => {
+    const raw = await call(p, { action: "services" });
+    // Diagnostics: which fields this panel sends (e.g. how it marks "recommended"). No secrets here.
+    if (Array.isArray(raw) && raw[0] && typeof raw[0] === "object") {
+      const flagged = raw.filter((r) => r && typeof r === "object" && Object.keys(r).some((k) => /recommend|featured|tag|badge|label/i.test(k)));
+      console.info(`[provider] ${p.name} service fields: ${Object.keys(raw[0]).join(", ")}; rows with tag-like fields: ${flagged.length}`);
+      if (flagged[0]) console.info(`[provider] ${p.name} sample tagged row: ${JSON.stringify(flagged[0]).slice(0, 400)}`);
+    }
+    return parseServices(raw);
+  });
 
   const rows = new Map<string, typeof smmServices.$inferInsert>();
   let skipped = 0;
@@ -96,7 +105,7 @@ export async function syncServices(db: Db, providerId: string) {
       providerId: p.id, providerServiceId: s.service, name: s.name.slice(0, 300), category: s.category.slice(0, 120), type: s.type,
       providerRate: s.rate, rateKobo, minQty: s.min, maxQty: s.max, refill: s.refill, cancel: s.cancel, updatedAt: new Date(),
       platform: platformFor(s.category), kind: kindFor(s.name), displayName: displayName(s.name).slice(0, 300),
-      active: !blocked, hiddenReason: blocked ? "policy" : null,
+      active: !blocked, hiddenReason: blocked ? "policy" : null, providerRecommended: s.recommended,
     });
   }
 
@@ -116,7 +125,7 @@ export async function syncServices(db: Db, providerId: string) {
           rateKobo: excluded("rate_kobo"), minQty: excluded("min_qty"), maxQty: excluded("max_qty"), refill: excluded("refill"),
           cancel: excluded("cancel"), updatedAt: excluded("updated_at"),
           platform: excluded("platform"), kind: excluded("kind"), displayName: excluded("display_name"),
-          hiddenReason: reason, active: sql`${reason} IS NULL`,
+          hiddenReason: reason, active: sql`${reason} IS NULL`, providerRecommended: excluded("provider_recommended"),
         },
       });
   }
@@ -199,11 +208,13 @@ export async function browseServices(db: Db, input: BrowseInput) {
       id: smmServices.publicId, name: sql<string>`coalesce(nullif(${smmServices.displayName}, ''), ${smmServices.name})`,
       platform: smmServices.platform, kind: smmServices.kind, rateKobo: smmServices.rateKobo,
       min: smmServices.minQty, max: smmServices.maxQty, refill: smmServices.refill, cancel: smmServices.cancel,
+      recommended: sql<boolean>`(${smmServices.featured} OR ${smmServices.providerRecommended})`,
     })
     .from(smmServices)
     .innerJoin(smmProviders, eq(smmProviders.id, smmServices.providerId))
     .where(and(...filters))
-    .orderBy(smmServices.rateKobo, smmServices.publicId)
+    // Recommended (by the provider or starred by an admin) first, then cheapest.
+    .orderBy(sql`(${smmServices.featured} OR ${smmServices.providerRecommended}) DESC`, smmServices.rateKobo, smmServices.publicId)
     .limit(limit + 1)
     .offset(offset);
   return { services: rows.slice(0, limit), hasMore: rows.length > limit };
@@ -398,11 +409,12 @@ export async function adminServices(db: Db, input: AdminServiceFilter & { offset
         providerName: smmProviders.name, providerServiceId: smmServices.providerServiceId, platform: smmServices.platform, kind: smmServices.kind,
         rateKobo: smmServices.rateKobo, providerRate: smmServices.providerRate, fx: smmProviders.fxKoboPerUnit,
         min: smmServices.minQty, max: smmServices.maxQty, refill: smmServices.refill, hiddenReason: smmServices.hiddenReason,
+        featured: smmServices.featured, providerRecommended: smmServices.providerRecommended,
       })
       .from(smmServices)
       .innerJoin(smmProviders, eq(smmProviders.id, smmServices.providerId))
       .where(where)
-      .orderBy(smmServices.platform, smmServices.rateKobo, smmServices.publicId)
+      .orderBy(smmServices.platform, sql`(${smmServices.featured} OR ${smmServices.providerRecommended}) DESC`, smmServices.rateKobo, smmServices.publicId)
       .limit(51)
       .offset(offset),
     db
@@ -470,4 +482,15 @@ export async function setServicesHiddenBulk(db: Db, filter: Omit<AdminServiceFil
     .where(and(...filters))
     .returning({ id: smmServices.id });
   return { changed: changed.length };
+}
+
+/** Star (or un-star) a service so customers see it first. Kept across syncs. */
+export async function setServiceFeatured(db: Db, publicId: number, featured: boolean) {
+  const [u] = await db
+    .update(smmServices)
+    .set({ featured, updatedAt: new Date() })
+    .where(eq(smmServices.publicId, publicId))
+    .returning({ id: smmServices.publicId, featured: smmServices.featured });
+  if (!u) throw notFound("Service");
+  return u;
 }

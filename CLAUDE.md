@@ -37,12 +37,18 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 ## Layout
 - `src/core/` pure business rules with no dependencies: money (integer kobo), ledger,
   escrow state machine, SMM pricing/parsing, listing policy, crypto helpers.
-  Tested by `tests/core.test.ts` (`npm test`, Node's built-in runner, 24 tests).
+  Tested by `tests/core.test.ts` (`npm test`, Node's built-in runner, 25 tests).
 - `src/server/` database access, wallet (row locks, holds, idempotent ledger),
   market, smm, payments (Flutterwave), auth, env, http helpers.
-- Customer dashboard (`app/dashboard` → `src/components/dashboard/`): tabs Boost / Orders /
-  Wallet / P2P (URL hash; bottom tab bar on phones). Boost = search + platform tiles + kind
-  chips + paged service cards (cheapest first) + order sheet. Catalogue data comes from
+- Customer dashboard (`app/dashboard` → `src/components/dashboard/`): tabs Services / Orders /
+  Wallet / P2P (URL hash; bottom tab bar on phones). Services = hub of service tiles from
+  `src/components/dashboard/services.ts` (Boost Account live; eSIMs, Get Verification Code
+  "coming soon"). Boost Account (#boost) = all SMM/Owlet services: search + platform tiles +
+  kind chips + paged service cards (recommended first, then cheapest) + order sheet.
+  "Recommended" = provider flag (`provider_recommended`, detected by `isProviderRecommended`;
+  sync logs the provider's field names as `[provider] … service fields`) OR admin star
+  (`featured`, /admin/services, kept across syncs). Owner asked for a "Buy Account" tile:
+  not built (selling social/gaming accounts is one of the owner's hard limits). Catalogue data comes from
   `smm_services.platform/kind/display_name`, set at sync by `src/core/catalog.ts`.
 - **Service policy:** `isRestricted` in `src/core/catalog.ts` keeps fake reviews/ratings,
   contest/broadcast/website voting (BBNaija, radio/TV, "IP votes") and fake add-to-carts out
@@ -77,7 +83,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   `dev` (full app) are both pushed.
 - Neon: project **almighty-pumps** (`jolly-dust-18900048`, AWS eu-central-1).
   - `main` branch: production, still empty. Run the migration on it only after approval.
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0004 applied. Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0005 applied. Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).
