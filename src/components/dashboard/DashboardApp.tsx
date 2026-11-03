@@ -6,6 +6,8 @@ import { FundWallet, LogoutButton, PaymentReturn } from "../DashboardActions";
 import { Boost, type CatalogPlatform } from "./Boost";
 import { CurrencyProvider, CurrencySwitch, useCurrency } from "./Currency";
 import { HUB_SERVICES } from "./services";
+import { ShopCategory } from "./Shop";
+import { SHOP_ICON_PATHS } from "../icons";
 
 type Order = { id: number; service: string; platform: string; link: string; quantity: number; amount: number; status: string; remains: number | null; when: string };
 type Trade = { id: number; title: string; role: string; amount: number; status: string; when: string };
@@ -18,7 +20,7 @@ const TABS = [
   { id: "trades", label: "P2P", icon: "M7 7h11l-3-3M17 17H6l3 3" },
 ] as const;
 /** Screens: the tabs, plus service screens opened from the Services hub. */
-type Tab = (typeof TABS)[number]["id"] | "boost";
+type Tab = (typeof TABS)[number]["id"] | "boost" | `shop-${string}`;
 
 const ORDER_STATUS: Record<string, { label: string; tone: string }> = {
   PENDING: { label: "Starting", tone: "" }, PROCESSING: { label: "Delivering", tone: "info" }, COMPLETED: { label: "Delivered", tone: "ok" },
@@ -36,6 +38,8 @@ function Icon({ d }: { d: string }) {
 type Props = {
   greeting: string; isAdmin: boolean; wallet: { available: number; held: number }; minOrderKobo: number; usdRateKobo: number;
   catalog: CatalogPlatform[]; orders: Order[]; trades: Trade[]; history: Entry[];
+  shopCategories: { slug: string; name: string; description: string; icon: string; products: number }[];
+  shopOrders: { id: number; product: string; amount: number; status: string; content: string | null; note: string | null; when: string }[];
 };
 
 export function DashboardApp(props: Props) {
@@ -52,7 +56,7 @@ function Dashboard(props: Props) {
       const h = window.location.hash.replace("#", "");
       const legacy: Record<string, Tab> = { growth: "boost" };
       const next = (legacy[h] ?? h) as Tab;
-      if (next === "boost" || TABS.some((t) => t.id === next)) setTab(next);
+      if (next === "boost" || next.startsWith("shop-") || TABS.some((t) => t.id === next)) setTab(next);
     };
     read();
     window.addEventListener("hashchange", read);
@@ -64,6 +68,20 @@ function Dashboard(props: Props) {
     window.scrollTo({ top: 0 });
   };
 
+  // Services home: Boost Account, then the admin's shop categories, then "coming soon" tiles
+  // (a shop category with the same name replaces its "coming soon" tile).
+  const shopNames = new Set(props.shopCategories.map((c) => c.name.trim().toLowerCase()));
+  const hubTiles = [
+    ...HUB_SERVICES.filter((s) => s.status === "live").map((s) => ({ ...s, sub: s.id === "boost" ? `${props.catalog.length} platforms` : "Open" })),
+    ...props.shopCategories.map((c) => ({
+      id: `shop-${c.slug}`, title: c.name, description: c.description, icon: SHOP_ICON_PATHS[c.icon] ?? SHOP_ICON_PATHS.bag,
+      status: "live" as const, sub: `${c.products} product${c.products === 1 ? "" : "s"}`,
+    })),
+    ...HUB_SERVICES.filter((s) => s.status === "soon" && !shopNames.has(s.title.trim().toLowerCase())).map((s) => ({ ...s, sub: "Coming soon" })),
+  ];
+  const shopSlug = tab.startsWith("shop-") ? tab.slice(5) : null;
+  const shopName = props.shopCategories.find((c) => c.slug === shopSlug)?.name ?? "Shop";
+
   const delivering = props.orders.filter((o) => o.status === "PENDING" || o.status === "PROCESSING").length;
 
   return (
@@ -74,7 +92,7 @@ function Dashboard(props: Props) {
           <Link href="/" className="logo" style={{ color: "var(--fg)", fontSize: 15 }}><span className="logo-mark">AP</span>ALMIGHTY PUMPS</Link>
           <nav className="ap-sidenav" aria-label="Dashboard">
             {TABS.map((t) => (
-              <a key={t.id} href={`#${t.id}`} aria-current={(tab === "boost" ? "services" : tab) === t.id ? "page" : undefined} onClick={(e) => { e.preventDefault(); go(t.id); }}>
+              <a key={t.id} href={`#${t.id}`} aria-current={(tab === "boost" || tab.startsWith("shop-") ? "services" : tab) === t.id ? "page" : undefined} onClick={(e) => { e.preventDefault(); go(t.id); }}>
                 <Icon d={t.icon} />{t.label}
               </a>
             ))}
@@ -105,16 +123,14 @@ function Dashboard(props: Props) {
             <section className="card glass">
               <h2>What do you want to do?</h2>
               <div className="ap-platforms">
-                {HUB_SERVICES.map((svc) => (
+                {hubTiles.map((svc) => (
                   <button
                     key={svc.id} type="button" className="ap-platform ap-hub-tile" disabled={svc.status !== "live"} title={svc.description}
                     onClick={() => svc.status === "live" && go(svc.id as Tab)}
                   >
                     <span className="ap-mono ap-hub-icon" aria-hidden="true"><Icon d={svc.icon} /></span>
                     <span className="ap-platform-name">{svc.title}</span>
-                    <span className="ap-platform-count">
-                      {svc.status === "soon" ? "Coming soon" : svc.id === "boost" ? `${props.catalog.length} platforms` : "Open"}
-                    </span>
+                    <span className="ap-platform-count">{svc.sub}</span>
                   </button>
                 ))}
               </div>
@@ -127,6 +143,16 @@ function Dashboard(props: Props) {
               <span className="muted">/</span>
               <strong>Boost Account</strong>
             </div>
+          )}
+          {shopSlug && (
+            <>
+              <div className="ap-crumb">
+                <button type="button" className="ap-link" onClick={() => go("services")}>← All services</button>
+                <span className="muted">/</span>
+                <strong>{shopName}</strong>
+              </div>
+              <ShopCategory key={shopSlug} slug={shopSlug} balance={props.wallet.available} onAddMoney={() => go("wallet")} onViewOrders={() => go("orders")} />
+            </>
           )}
           {tab === "boost" && <Boost catalog={props.catalog} balance={props.wallet.available} minOrderKobo={props.minOrderKobo} onAddMoney={() => go("wallet")} onViewOrders={() => go("orders")} />}
 
@@ -155,6 +181,32 @@ function Dashboard(props: Props) {
                   })}
                 </ul>
               )}
+            </section>
+          )}
+
+          {tab === "orders" && props.shopOrders.length > 0 && (
+            <section className="card glass">
+              <h2>Shop orders</h2>
+              <ul className="ap-list">
+                {props.shopOrders.map((o) => (
+                  <li key={o.id} className="ap-row" style={{ flexDirection: "column", gap: 8 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div className="ap-row-title">{o.product}</div>
+                        <div className="muted ap-row-sub">#S-{o.id} · {o.when}</div>
+                      </div>
+                      <div className="ap-row-end">
+                        <strong>{money(o.amount)}</strong>
+                        <span className={`status ${o.status === "delivered" ? "ok" : o.status === "refunded" ? "bad" : "info"}`}>
+                          {o.status === "delivered" ? "Delivered" : o.status === "refunded" ? "Refunded" : "Being prepared"}
+                        </span>
+                      </div>
+                    </div>
+                    {o.content && <RevealCode content={o.content} />}
+                    {o.note && <div className="muted ap-row-sub">Note from us: {o.note}</div>}
+                  </li>
+                ))}
+              </ul>
             </section>
           )}
 
@@ -209,12 +261,25 @@ function Dashboard(props: Props) {
 
       <nav className="ap-tabbar" aria-label="Dashboard">
         {TABS.map((t) => (
-          <a key={t.id} href={`#${t.id}`} aria-current={(tab === "boost" ? "services" : tab) === t.id ? "page" : undefined} onClick={(e) => { e.preventDefault(); go(t.id); }}>
+          <a key={t.id} href={`#${t.id}`} aria-current={(tab === "boost" || tab.startsWith("shop-") ? "services" : tab) === t.id ? "page" : undefined} onClick={(e) => { e.preventDefault(); go(t.id); }}>
             <Icon d={t.icon} /><span>{t.label}</span>
           </a>
         ))}
         {props.isAdmin && <a href="/admin"><Icon d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z" /><span>Admin</span></a>}
       </nav>
+    </div>
+  );
+}
+
+/** Codes stay hidden until tapped, so they aren't exposed on a shared screen. */
+function RevealCode({ content }: { content: string }) {
+  const [shown, setShown] = useState(false);
+  const [copied, setCopied] = useState(false);
+  if (!shown) return <button type="button" className="btn btn-ghost ap-mini" style={{ alignSelf: "flex-start" }} onClick={() => setShown(true)}>Show what you received</button>;
+  return (
+    <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+      <div className="ap-code" style={{ flex: "1 1 200px" }}>{content}</div>
+      <button type="button" className="btn btn-ghost ap-mini" onClick={async () => { try { await navigator.clipboard.writeText(content); setCopied(true); } catch { /* ignore */ } }}>{copied ? "Copied" : "Copy"}</button>
     </div>
   );
 }

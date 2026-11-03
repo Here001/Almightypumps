@@ -108,11 +108,12 @@ export async function setRule(db: DbOrTx, platform: string, kind: string | null,
   return { repriced: await reprice(db, where) };
 }
 
-/** The markup that applies to a service row, as SQL (used inside UPDATE smm_services). */
+/** The markup that applies to a service row, as SQL (used inside UPDATE smm_services). Outer columns are
+ * named in full so the correlated subqueries can never bind to the inner table by mistake. */
 const effectiveMarkup = sql`coalesce(
-  (SELECT r.markup_bps FROM smm_pricing_rules r WHERE r.platform = ${smmServices.platform} AND r.kind = ${smmServices.kind}),
-  (SELECT r.markup_bps FROM smm_pricing_rules r WHERE r.platform = ${smmServices.platform} AND r.kind IS NULL),
-  (SELECT p.markup_bps FROM smm_providers p WHERE p.id = ${smmServices.providerId})
+  (SELECT r.markup_bps FROM smm_pricing_rules r WHERE r.platform = "smm_services"."platform" AND r.kind = "smm_services"."kind"),
+  (SELECT r.markup_bps FROM smm_pricing_rules r WHERE r.platform = "smm_services"."platform" AND r.kind IS NULL),
+  (SELECT p.markup_bps FROM smm_providers p WHERE p.id = "smm_services"."provider_id")
 )`;
 
 /**
@@ -120,7 +121,7 @@ const effectiveMarkup = sql`coalesce(
  * Same maths as sellRatePer1000 in src/core/smm.ts.
  */
 export async function reprice(db: DbOrTx, where?: SQL): Promise<number> {
-  const fx = sql`(SELECT p.fx_kobo_per_unit FROM smm_providers p WHERE p.id = ${smmServices.providerId})`;
+  const fx = sql`(SELECT p.fx_kobo_per_unit FROM smm_providers p WHERE p.id = "smm_services"."provider_id")`;
   const res = await db
     .update(smmServices)
     .set({

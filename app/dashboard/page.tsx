@@ -7,6 +7,7 @@ import { currentUser } from "@/server/auth";
 import { myOrders, serviceCatalog } from "@/server/smm";
 import { myTrades } from "@/server/market";
 import { getMinOrderKobo, getUsdRateKobo } from "@/server/pricing";
+import { hubCategories, myShopOrders } from "@/server/shop";
 import { DashboardApp } from "@/components/dashboard/DashboardApp";
 
 export const metadata: Metadata = { title: "Dashboard · Almighty Pumps" };
@@ -24,13 +25,15 @@ export default async function DashboardPage() {
   if (!user) redirect("/login");
   const db = getDb();
   const [wallet] = await db.select().from(wallets).where(eq(wallets.userId, user.id));
-  const [history, orders, trades, catalog, minOrderKobo, usdRateKobo] = await Promise.all([
+  const [history, orders, trades, catalog, minOrderKobo, usdRateKobo, shopCats, shopOrders] = await Promise.all([
     db.select().from(ledgerEntries).where(eq(ledgerEntries.walletId, wallet.id)).orderBy(desc(ledgerEntries.createdAt)).limit(20),
     myOrders(db, user.id),
     myTrades(db, user.id),
     serviceCatalog(db),
     getMinOrderKobo(db),
     getUsdRateKobo(db),
+    hubCategories(db),
+    myShopOrders(db, user.id),
   ]);
 
   return (
@@ -40,6 +43,8 @@ export default async function DashboardPage() {
       wallet={{ available: wallet.available, held: wallet.held }}
       minOrderKobo={minOrderKobo}
       usdRateKobo={usdRateKobo}
+      shopCategories={shopCats}
+      shopOrders={shopOrders.map((o) => ({ id: o.id, product: o.product, amount: o.amount, status: o.status, content: o.content, note: o.note, when: when(o.createdAt) }))}
       catalog={catalog}
       orders={orders.map((o) => ({ id: o.id, service: o.service, platform: o.platform, link: o.link, quantity: o.quantity, amount: o.charged || o.cost, status: o.status, remains: o.remains, when: when(o.createdAt) }))}
       trades={trades.map((t) => ({ id: t.publicId, title: t.title, role: t.buyerId === user.id ? "Buying" : "Selling", amount: t.amount, status: t.status, when: when(t.createdAt) }))}

@@ -26,7 +26,11 @@ export function sectionFor(path: string, hash = ""): string | null {
   const p = (path.split(/[?#]/)[0] || "/").replace(/\/+$/, "") || "/";
   if (p.startsWith("/admin") || p.startsWith("/api") || p.startsWith("/_next")) return null;
   if (p === "/") return "Home page";
-  if (p === "/dashboard") return DASHBOARD_ANCHORS[hash.replace(/^#/, "")] ?? "Dashboard";
+  if (p === "/dashboard") {
+    const h = hash.replace(/^#/, "");
+    if (h.startsWith("shop-")) return "Shop";
+    return DASHBOARD_ANCHORS[h] ?? "Dashboard";
+  }
   for (const [prefix, name] of PREFIXES) {
     if (p === prefix || p.startsWith(prefix + "/")) return name;
   }

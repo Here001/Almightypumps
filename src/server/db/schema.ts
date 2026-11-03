@@ -33,7 +33,7 @@ export const holds = pgTable("holds", {
   amount: money("amount").notNull(),
   settled: money("settled").notNull().default(0),
   status: text("status").$type<"active" | "captured" | "released" | "partial">().notNull().default("active"),
-  purpose: text("purpose").$type<"smm_order" | "escrow" | "withdrawal">().notNull(),
+  purpose: text("purpose").$type<"smm_order" | "escrow" | "withdrawal" | "shop_order">().notNull(),
   refId: uuid("ref_id"),
   createdAt: ts("created_at").notNull().defaultNow(),
   closedAt: ts("closed_at"),
@@ -161,7 +161,9 @@ export const listings = pgTable("listings", {
   stock: integer("stock").notNull(),
   minQty: integer("min_qty").notNull().default(1),
   maxQty: integer("max_qty").notNull().default(1),
-  status: text("status").$type<"active" | "paused" | "removed">().notNull().default("active"),
+  status: text("status").$type<"active" | "paused" | "removed" | "pending" | "declined">().notNull().default("active"),
+  /** Why it's waiting for review, or why an admin declined it. */
+  reviewNote: text("review_note"),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 
@@ -238,5 +240,59 @@ export const smmPricingRules = pgTable("smm_pricing_rules", {
 export const appSettings = pgTable("app_settings", {
   key: text("key").primaryKey(),
   value: jsonb("value").notNull(),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+});
+
+/* ---------------- platform shop (drizzle/0008_shop.sql) ---------------- */
+
+export const shopCategories = pgTable("shop_categories", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  slug: text("slug").notNull().unique(),
+  name: text("name").notNull(),
+  description: text("description").notNull().default(""),
+  icon: text("icon").notNull().default("bag"),
+  showOnHub: boolean("show_on_hub").notNull().default(true),
+  active: boolean("active").notNull().default(true),
+  position: integer("position").notNull().default(0),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+
+export const shopProducts = pgTable("shop_products", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  publicId: serial("public_id").unique(),
+  categoryId: uuid("category_id").notNull().references(() => shopCategories.id),
+  name: text("name").notNull(),
+  description: text("description").notNull().default(""),
+  price: money("price").notNull(),
+  delivery: text("delivery").$type<"code" | "manual">().notNull(),
+  askCustomer: text("ask_customer"),
+  stockLimit: integer("stock_limit"),
+  active: boolean("active").notNull().default(true),
+  position: integer("position").notNull().default(0),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+});
+
+export const shopCodes = pgTable("shop_codes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  productId: uuid("product_id").notNull().references(() => shopProducts.id),
+  code: text("code").notNull(),
+  orderId: uuid("order_id"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  usedAt: ts("used_at"),
+});
+
+export const shopOrders = pgTable("shop_orders", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  publicId: serial("public_id").unique(),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  productId: uuid("product_id").notNull().references(() => shopProducts.id),
+  amount: money("amount").notNull(),
+  holdId: uuid("hold_id").notNull().references(() => holds.id),
+  status: text("status").$type<"pending" | "delivered" | "refunded">().notNull(),
+  customerInput: text("customer_input"),
+  deliveredContent: text("delivered_content"),
+  adminNote: text("admin_note"),
+  createdAt: ts("created_at").notNull().defaultNow(),
   updatedAt: ts("updated_at").notNull().defaultNow(),
 });

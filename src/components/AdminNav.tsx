@@ -8,6 +8,8 @@ const LINKS = [
   { href: "/admin/providers", label: "Growth providers" },
   { href: "/admin/services", label: "Services" },
   { href: "/admin/pricing", label: "Pricing" },
+  { href: "/admin/shop", label: "Shop" },
+  { href: "/admin/listings", label: "Listings review" },
 ];
 
 export function AdminNav() {

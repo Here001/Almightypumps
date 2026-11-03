@@ -44,7 +44,7 @@ button.btn { border: 0; cursor: pointer; font: inherit; font-weight: 600; }
 .status.warn { background: #422006; color: #FDE68A; }
 .status.bad { background: #7F1D1D; color: #FECACA; }
 .empty { padding: 18px; border-radius: 14px; border: 1px dashed #FFFFFF2E; color: var(--muted); font-size: 14px; }
-@media (max-width: 860px) { .dash-side { max-width: none; flex-basis: 100%; border-width: 0 0 1px 0; } .dash-side nav { flex-direction: row; overflow-x: auto; } }
+@media (max-width: 860px) { .dash-side { max-width: none; min-width: 0; flex-basis: 100%; border-width: 0 0 1px 0; } .dash-side nav { flex-direction: row; flex-wrap: wrap; gap: 4px; } .dash-side nav a { padding: 8px 10px; } }
 
 /* Admin */
 button.btn-ghost { border: 1px solid #FFFFFF33; }
@@ -168,3 +168,5 @@ button.btn-ghost { border: 1px solid #FFFFFF33; }
 .ap-hub-tile:not([disabled]) .ap-hub-icon { background: var(--accent); color: var(--accent-ink); }
 .ap-hub-icon svg { width: 18px; height: 18px; }
 .ap-crumb { display: flex; align-items: center; gap: 8px; font-size: 15px; }
+.ap-subform { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 16px; border: 1px dashed #FFFFFF33; }
+.ap-code { padding: 12px 14px; border-radius: 12px; background: #04050ACC; border: 1px solid var(--line); font-family: var(--mono); font-size: 15px; overflow-wrap: anywhere; user-select: all; }

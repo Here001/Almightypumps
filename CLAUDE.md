@@ -25,9 +25,14 @@ A Nigerian platform (Naira wallet) with:
    staff ID cards), website templates.
 4. Reseller API (`/api/v2`) so others can resell our services.
 
-Hard limits agreed with the owner: no fake/forged documents (IDs, passports, bank
-statements, utility bills, payslips), no selling social media/gaming accounts,
-no counterfeit goods. `src/core/listingPolicy.ts` enforces this on listings.
+Listing rules (`src/core/listingPolicy.ts`): BLOCKED = refused outright, not adjustable:
+fake/forged ID and financial documents, counterfeit goods, social media/gaming/email account
+sales, stolen cards/logs/hacking tools, weapons and drugs. 2026-11-03 the owner asked to drop
+these "hard limits"; Claude declined to (fraud/illegal goods harming third parties) and
+softened the rest instead: fewer false positives ("no fakes" is fine), gift cards & crypto
+allowed on P2P via the REVIEW queue (listing status `pending` until an admin approves in
+/admin/listings), ambiguous "fake" wording also goes to review. The same BLOCKED list
+(`blockedReasons`) applies to admin shop products.
 
 ## Stack
 Next.js 15.5 (App Router) + React 19 + TypeScript, PostgreSQL on Neon via drizzle-orm + pg,
@@ -37,7 +42,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 ## Layout
 - `src/core/` pure business rules with no dependencies: money (integer kobo), ledger,
   escrow state machine, SMM pricing/parsing, listing policy, crypto helpers.
-  Tested by `tests/core.test.ts` (`npm test`, Node's built-in runner, 27 tests).
+  Tested by `tests/core.test.ts` (`npm test`, Node's built-in runner, 28 tests).
 - `src/server/` database access, wallet (row locks, holds, idempotent ledger),
   market, smm, payments (Flutterwave), auth, env, http helpers.
 - Customer dashboard (`app/dashboard` → `src/components/dashboard/`): tabs Services / Orders /
@@ -58,7 +63,15 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   social-media poll votes only (kind "Poll votes"); Claude declined to enable fake reviews,
   contest votes and add-to-carts (third-party deception, FCCPC/FTC risk, payment-provider risk).
 - `app/api/**` route handlers; `app/page.tsx` 3D homepage; `app/signup`, `app/login`,
-  `app/dashboard`; `app/admin` (Insights, Growth providers, Services, Pricing; admins only).
+  `app/dashboard`; `app/admin` (Insights, Growth providers, Services, Pricing, Shop, Listings review; admins only).
+- Shop (`src/server/shop.ts`, /admin/shop, migration 0008): admin categories → products. Delivery
+  `code` (admin pastes codes; buyer instantly gets the next unused one, paid at once) or `manual`
+  (hold placed; admin marks delivered = capture to platform wallet `revenue:shop`, or refunds).
+  Optional `ask_customer` question and `stock_limit` for manual. Categories with a live product
+  show as tiles on the customer Services home (`#shop-<slug>`), replacing a same-named
+  "coming soon" tile. Customer shop orders + codes show under Orders. NOTE: correlated SQL
+  subqueries must name the outer table explicitly ("shop_products"."id"); drizzle renders
+  single-table columns unqualified, which silently binds to the inner table.
 - Pricing (`src/server/pricing.ts`, /admin/pricing): markup = most specific of
   `smm_pricing_rules` platform+kind → platform (kind NULL) → provider `markup_bps`.
   `reprice()` recomputes `rate_kobo` in SQL (same maths as `sellRatePer1000`); called after
@@ -87,7 +100,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   `dev` (full app) are both pushed.
 - Neon: project **almighty-pumps** (`jolly-dust-18900048`, AWS eu-central-1).
   - `main` branch: production, still empty. Run the migration on it only after approval.
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0006 applied. Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0008 applied. Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

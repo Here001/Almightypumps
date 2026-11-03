@@ -166,7 +166,7 @@ test("provider responses are parsed defensively", () => {
 const good = { title: "Leather crossbody bag", description: "Genuine leather, tan colour, handmade in Lagos. Fits a phone and wallet.", category: "fashion", deliveryType: "physical", priceKobo: 2_850_000, stock: 14, minQty: 1, maxQty: 3 };
 
 test("a normal listing passes", () => {
-  assert.deepEqual(checkListing(good), { ok: true, problems: [] });
+  assert.deepEqual(checkListing(good), { ok: true, problems: [], review: [] });
 });
 
 test("banned items are rejected with a reason", () => {
@@ -309,4 +309,25 @@ test("automatic dollar rate", async () => {
   assert.equal(cur.parseUsdNgn({ result: "success", rates: { USD: 1, NGN: 1534.21 } }), 153_421);
   assert.throws(() => cur.parseUsdNgn({ rates: {} }));
   assert.throws(() => cur.parseUsdNgn({ rates: { NGN: 1.2 } }));
+});
+
+test("listing policy: fewer false positives, review queue for borderline items", () => {
+  // Honest wording no longer trips the counterfeit check.
+  assert.deepEqual(checkListing({ ...good, description: "100% original sneakers, no fakes, comes with receipt and box." }).review, []);
+  assert.equal(checkListing({ ...good, description: "Original perfume, not fake, sealed and with receipt." }).ok, true);
+  // "fake" on its own goes to review rather than being rejected.
+  const amb = checkListing({ ...good, description: "Fake leather jacket, black, size L, brand new." });
+  assert.equal(amb.ok, true);
+  assert.equal(amb.review.length, 1);
+  // Gift cards and crypto are allowed but reviewed.
+  const gc = checkListing({ ...good, title: "Amazon gift card $100", description: "Selling a $100 Amazon gift card, code sent after payment." });
+  assert.equal(gc.ok, true);
+  assert.match(gc.review.join(" "), /checked by our team/);
+  assert.equal(checkListing({ ...good, category: "gift-cards-crypto" }).review.length, 1);
+  // Blocked items stay blocked and are never just "reviewed".
+  const bad = checkListing({ ...good, title: "Aged Instagram account plus USDT" });
+  assert.equal(bad.ok, false);
+  assert.deepEqual(bad.review, []);
+  assert.equal(checkListing({ ...good, title: "Replica designer sneakers" }).ok, false);
+  assert.equal(checkListing({ ...good, description: "Selling fresh bank logs and fullz, message me." }).ok, false);
 });

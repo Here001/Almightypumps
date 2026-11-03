@@ -30,8 +30,37 @@ export async function createListing(db: Db, sellerId: string, input: ListingInpu
       stock: input.stock,
       minQty: input.minQty,
       maxQty: input.maxQty,
+      // Borderline listings wait for an admin instead of being rejected.
+      status: check.review.length ? "pending" : "active",
+      reviewNote: check.review.length ? check.review.join(" ") : null,
     })
     .returning();
+  return { ...row, message: check.review.length ? "Thanks! Your ad will go live once our team has checked it, usually within a few hours." : "Your ad is live." };
+}
+
+/** Admin review queue: pending (default) or declined listings, newest first. */
+export async function listingsForReview(db: Db, status: "pending" | "declined" = "pending") {
+  return db
+    .select({
+      id: listings.id, title: listings.title, description: listings.description, category: listings.category,
+      price: listings.price, stock: listings.stock, reviewNote: listings.reviewNote, createdAt: listings.createdAt,
+      sellerName: users.name, sellerEmail: users.email,
+    })
+    .from(listings)
+    .innerJoin(users, eq(users.id, listings.sellerId))
+    .where(eq(listings.status, status))
+    .orderBy(sql`${listings.createdAt} DESC`)
+    .limit(100);
+}
+
+/** Approve (goes live) or decline (with a note the seller can see) a listing waiting for review. */
+export async function reviewListing(db: Db, listingId: string, decision: "approve" | "decline", note?: string) {
+  const [row] = await db
+    .update(listings)
+    .set(decision === "approve" ? { status: "active", reviewNote: null } : { status: "declined", reviewNote: note?.trim() || "Declined by our team." })
+    .where(and(eq(listings.id, listingId), sql`${listings.status} IN ('pending', 'declined')`))
+    .returning({ id: listings.id, status: listings.status });
+  if (!row) throw notFound("Listing waiting for review");
   return row;
 }
 
