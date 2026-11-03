@@ -3,14 +3,15 @@
 import { useEffect, useState } from "react";
 import { api, naira } from "./api";
 
-type Status = "on_sale" | "admin" | "policy" | "provider";
+type Status = "all" | "on_sale" | "admin" | "policy" | "provider";
 type Row = {
   id: number; name: string; providerName: string; providerServiceId: string; platform: string; kind: string;
-  rateKobo: number; costKobo: number; min: number; max: number; refill: boolean; hiddenReason: Exclude<Status, "on_sale"> | null;
+  rateKobo: number; costKobo: number; min: number; max: number; refill: boolean; hiddenReason: "admin" | "policy" | "provider" | null;
 };
-type Data = { services: Row[]; hasMore: boolean; counts: Record<Status, number>; platforms: string[] };
+type Data = { services: Row[]; hasMore: boolean; counts: Record<Exclude<Status, "all">, number>; platforms: string[]; kinds: string[]; bulk: { canHide: number; canShow: number } };
 
 const STATUS: { id: Status; label: string; help: string; tone: string }[] = [
+  { id: "all", label: "All", help: "Everything your providers offer. Use the switch to turn a service on or off.", tone: "" },
   { id: "on_sale", label: "On sale", help: "Customers can see and buy these.", tone: "ok" },
   { id: "admin", label: "Hidden by you", help: "You hid these. Unhide any time; syncing won't undo your choice.", tone: "warn" },
   { id: "provider", label: "No longer offered", help: "The provider dropped these or priced them at ₦0. They come back automatically if the provider lists them again.", tone: "" },
@@ -18,8 +19,10 @@ const STATUS: { id: Status; label: string; help: string; tone: string }[] = [
 ];
 
 export function AdminServices() {
-  const [status, setStatus] = useState<Status>("on_sale");
+  const [status, setStatus] = useState<Status>("all");
   const [platform, setPlatform] = useState("");
+  const [kind, setKind] = useState("");
+  const [bulkBusy, setBulkBusy] = useState(false);
   const [search, setSearch] = useState("");
   const [data, setData] = useState<Data | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
@@ -29,8 +32,10 @@ export function AdminServices() {
   const [notice, setNotice] = useState<string | null>(null);
 
   async function load(offset: number) {
-    const p = new URLSearchParams({ status });
+    const p = new URLSearchParams();
+    if (status !== "all") p.set("status", status);
     if (platform) p.set("platform", platform);
+    if (kind) p.set("kind", kind);
     if (search.trim().length >= 2) p.set("q", search.trim());
     if (offset) p.set("offset", String(offset));
     setLoading(true);
@@ -50,7 +55,7 @@ export function AdminServices() {
     const t = setTimeout(() => void load(0), search ? 350 : 0);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, platform, search]);
+  }, [status, platform, kind, search]);
 
   async function toggle(r: Row) {
     const hide = r.hiddenReason === null;
@@ -58,12 +63,15 @@ export function AdminServices() {
     setNotice(null);
     try {
       await api(`/api/admin/services/${r.id}`, { hidden: hide });
-      setRows((prev) => prev.filter((x) => x.id !== r.id));
+      setRows((prev) => status === "all"
+        ? prev.map((x) => (x.id === r.id ? { ...x, hiddenReason: hide ? "admin" : null } : x))
+        : prev.filter((x) => x.id !== r.id));
       setData((d) => d && {
         ...d,
         counts: { ...d.counts, on_sale: d.counts.on_sale + (hide ? -1 : 1), admin: d.counts.admin + (hide ? 1 : -1) },
+        bulk: { canHide: d.bulk.canHide + (hide ? -1 : 1), canShow: d.bulk.canShow + (hide ? 1 : -1) },
       });
-      setNotice(hide ? `Hidden: “${r.name}”. Find it under “Hidden by you”.` : `Back on sale: “${r.name}”.`);
+      setNotice(hide ? `Turned off: “${r.name}”.` : `Turned on: “${r.name}”. Customers can buy it again.`);
     } catch (e) {
       setNotice((e as Error).message);
     } finally {
@@ -71,14 +79,33 @@ export function AdminServices() {
     }
   }
 
+  async function bulk(hide: boolean) {
+    const n = hide ? data?.bulk.canHide ?? 0 : data?.bulk.canShow ?? 0;
+    const what = [platform || null, kind || null, search.trim().length >= 2 ? `matching “${search.trim()}”` : null].filter(Boolean).join(" · ");
+    if (!window.confirm(`${hide ? "Turn OFF" : "Turn ON"} ${n.toLocaleString("en-NG")} services (${what})?`)) return;
+    setBulkBusy(true);
+    setNotice(null);
+    try {
+      const r = await api<{ changed: number }>("/api/admin/services/bulk", { hidden: hide, platform: platform || undefined, kind: kind || undefined, q: search.trim() || undefined });
+      setNotice(`${hide ? "Turned off" : "Turned on"} ${r.changed.toLocaleString("en-NG")} services.`);
+      await load(0);
+    } catch (e) {
+      setNotice((e as Error).message);
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
   const current = STATUS.find((s) => s.id === status)!;
+  const total = data ? data.counts.on_sale + data.counts.admin + data.counts.policy + data.counts.provider : 0;
+  const filtered = Boolean(platform || kind || search.trim().length >= 2);
 
   return (
     <section className="card glass">
       <div className="ap-chips ap-chips-wrap" role="group" aria-label="Status">
         {STATUS.map((s) => (
           <button key={s.id} type="button" className="ap-chip" aria-pressed={status === s.id} onClick={() => setStatus(s.id)}>
-            {s.label} <span>{data ? data.counts[s.id].toLocaleString("en-NG") : "…"}</span>
+            {s.label} <span>{data ? (s.id === "all" ? total : data.counts[s.id]).toLocaleString("en-NG") : "…"}</span>
           </button>
         ))}
       </div>
@@ -91,12 +118,31 @@ export function AdminServices() {
         </div>
         <div className="field" style={{ flex: "1 1 180px" }}>
           <label htmlFor="sv-platform">Platform</label>
-          <select id="sv-platform" className="select" value={platform} onChange={(e) => setPlatform(e.target.value)}>
+          <select id="sv-platform" className="select" value={platform} onChange={(e) => { setPlatform(e.target.value); setKind(""); }}>
             <option value="">All platforms</option>
             {data?.platforms.map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
         </div>
+        {platform && (
+          <div className="field" style={{ flex: "1 1 160px" }}>
+            <label htmlFor="sv-kind">Type</label>
+            <select id="sv-kind" className="select" value={kind} onChange={(e) => setKind(e.target.value)}>
+              <option value="">All types</option>
+              {data?.kinds.map((k) => <option key={k} value={k}>{k}</option>)}
+            </select>
+          </div>
+        )}
       </div>
+
+      {filtered && data && (data.bulk.canHide > 0 || data.bulk.canShow > 0) && (
+        <div className="ap-bulk">
+          <span className="muted" style={{ fontSize: 14 }}>Switch everything that matches at once:</span>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {data.bulk.canHide > 0 && <button type="button" className="btn btn-ghost ap-mini" disabled={bulkBusy} onClick={() => void bulk(true)}>Turn off all {data.bulk.canHide.toLocaleString("en-NG")}</button>}
+            {data.bulk.canShow > 0 && <button type="button" className="btn btn-ghost ap-mini" disabled={bulkBusy} onClick={() => void bulk(false)}>Turn on all {data.bulk.canShow.toLocaleString("en-NG")}</button>}
+          </div>
+        </div>
+      )}
 
       {notice && <div className="form-ok" role="status">{notice}</div>}
       {error && <div className="form-error" role="alert">{error}</div>}
@@ -123,10 +169,17 @@ export function AdminServices() {
               <div className="ap-row-end">
                 <strong>{naira(r.rateKobo)}<span className="muted" style={{ fontWeight: 400, fontSize: 12 }}> /1k</span></strong>
                 <span className="muted ap-row-sub">cost {naira(r.costKobo)}</span>
-                {canToggle && (
-                  <button type="button" className="btn btn-ghost ap-mini" disabled={busyId === r.id} onClick={() => void toggle(r)}>
-                    {busyId === r.id ? "Saving…" : r.hiddenReason === null ? "Hide" : "Unhide"}
+                {canToggle ? (
+                  <button
+                    type="button" role="switch" aria-checked={r.hiddenReason === null} className="ap-switch"
+                    aria-label={`${r.name}: ${r.hiddenReason === null ? "on sale" : "off"}`}
+                    disabled={busyId === r.id} onClick={() => void toggle(r)}
+                  >
+                    <span className="ap-switch-track"><span className="ap-switch-dot" /></span>
+                    <span className="ap-switch-text">{busyId === r.id ? "…" : r.hiddenReason === null ? "On" : "Off"}</span>
                   </button>
+                ) : (
+                  <span className="muted ap-row-sub">{r.hiddenReason === "policy" ? "Locked" : "Not offered"}</span>
                 )}
               </div>
             </li>

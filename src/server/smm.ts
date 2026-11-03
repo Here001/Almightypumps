@@ -373,16 +373,24 @@ export async function updateProvider(db: Db, providerId: string, input: { markup
 export type ServiceStatus = "on_sale" | "admin" | "policy" | "provider";
 
 /** Admin view of every service, with why it's hidden. */
-export async function adminServices(db: Db, input: { status?: ServiceStatus; platform?: string; q?: string; offset?: number }) {
+export type AdminServiceFilter = { status?: ServiceStatus; platform?: string; kind?: string; q?: string };
+
+function adminFilters(input: AdminServiceFilter) {
   const filters = [];
   if (input.status === "on_sale") filters.push(sql`${smmServices.hiddenReason} IS NULL`);
   else if (input.status) filters.push(eq(smmServices.hiddenReason, input.status));
   if (input.platform) filters.push(eq(smmServices.platform, input.platform));
+  if (input.kind) filters.push(eq(smmServices.kind, input.kind));
   const words = (input.q ?? "").toLowerCase().split(/\s+/).filter((w) => w.length >= 2).slice(0, 6);
   for (const w of words) {
     const like = `%${w.replace(/[\\%_]/g, (c) => "\\" + c)}%`;
     filters.push(sql`(${smmServices.name} ILIKE ${like} OR ${smmServices.platform} ILIKE ${like} OR ${smmServices.providerServiceId} = ${w})`);
   }
+  return filters;
+}
+
+export async function adminServices(db: Db, input: AdminServiceFilter & { offset?: number }) {
+  const filters = adminFilters(input);
   const where = filters.length ? and(...filters) : undefined;
   const offset = Math.max(input.offset ?? 0, 0);
   const [rows, counts, platforms] = await Promise.all([
@@ -406,6 +414,9 @@ export async function adminServices(db: Db, input: { status?: ServiceStatus; pla
       .groupBy(smmServices.hiddenReason),
     db.selectDistinct({ platform: smmServices.platform }).from(smmServices).orderBy(smmServices.platform),
   ]);
+  const kinds = input.platform
+    ? await db.selectDistinct({ kind: smmServices.kind }).from(smmServices).where(eq(smmServices.platform, input.platform)).orderBy(smmServices.kind)
+    : [];
   const count = (r: string | null) => counts.find((c) => c.reason === r)?.n ?? 0;
   return {
     services: rows.slice(0, 50).map((r) => ({
@@ -416,6 +427,9 @@ export async function adminServices(db: Db, input: { status?: ServiceStatus; pla
     hasMore: rows.length > 50,
     counts: { on_sale: count(null), admin: count("admin"), policy: count("policy"), provider: count("provider") },
     platforms: platforms.map((p) => p.platform),
+    kinds: kinds.map((k) => k.kind),
+    // How many services matching platform/kind/search each bulk button would change.
+    bulk: await bulkCounts(db, input),
   };
 }
 
@@ -431,4 +445,31 @@ export async function setServiceHidden(db: Db, publicId: number, hidden: boolean
     .where(eq(smmServices.id, svc.id))
     .returning({ id: smmServices.publicId, hiddenReason: smmServices.hiddenReason });
   return u;
+}
+
+async function bulkCounts(db: Db, input: AdminServiceFilter) {
+  const filters = adminFilters({ ...input, status: undefined });
+  const [r] = await db
+    .select({
+      canHide: sql<number>`count(*) filter (where ${smmServices.hiddenReason} is null)::int`,
+      canShow: sql<number>`count(*) filter (where ${smmServices.hiddenReason} = 'admin')::int`,
+    })
+    .from(smmServices)
+    .where(filters.length ? and(...filters) : undefined);
+  return r ?? { canHide: 0, canShow: 0 };
+}
+
+/**
+ * Switch every service matching a filter on or off at once. Only touches services
+ * that are on sale or hidden by an admin; "not allowed" and "no longer offered" stay as they are.
+ */
+export async function setServicesHiddenBulk(db: Db, filter: Omit<AdminServiceFilter, "status">, hidden: boolean) {
+  const filters = adminFilters(filter);
+  filters.push(hidden ? sql`${smmServices.hiddenReason} IS NULL` : eq(smmServices.hiddenReason, "admin"));
+  const changed = await db
+    .update(smmServices)
+    .set({ hiddenReason: hidden ? "admin" : null, active: !hidden, updatedAt: new Date() })
+    .where(and(...filters))
+    .returning({ id: smmServices.id });
+  return { changed: changed.length };
 }

@@ -14,6 +14,7 @@ export const GET = route(async (req: Request) => {
   return adminServices(getDb(), {
     status,
     platform: p.get("platform")?.slice(0, 100) || undefined,
+    kind: p.get("kind")?.slice(0, 50) || undefined,
     q: p.get("q")?.slice(0, 100) || undefined,
     offset: Number(p.get("offset") ?? 0) || 0,
   });
