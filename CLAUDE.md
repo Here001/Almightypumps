@@ -154,6 +154,8 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   Preview jobs call `https://almightypumps-git-dev-otedola.vercel.app` and also send
   `x-vercel-protection-bypass: <automation bypass secret>` (Vercel deployment protection;
   secret is in Vercel > Settings > Deployment Protection, note "cron-job.org scheduler").
+  Both preview jobs confirmed working 2026-11-03 (escrow job had been auto-disabled after 302s because
+  its bypass header was missing; owner fixed it). A 302 from a job = missing/wrong bypass header.
   At launch, add two more jobs for the production domain with the production CRON_SECRET
   (production domain is not behind Vercel login, so no bypass header).
 
