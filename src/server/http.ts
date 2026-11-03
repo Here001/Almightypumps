@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { ZodSchema } from "zod";
+import type { ZodType, ZodTypeDef } from "zod";
 import { env } from "./env";
 import { AppError, badRequest, toAppError } from "./errors";
 
@@ -17,7 +17,7 @@ export function route<A extends unknown[]>(fn: (...args: A) => Promise<unknown>)
   };
 }
 
-export async function body<T>(req: Request, schema: ZodSchema<T>): Promise<T> {
+export async function body<T>(req: Request, schema: ZodType<T, ZodTypeDef, unknown>): Promise<T> {
   let json: unknown;
   try {
     json = await req.json();

@@ -47,8 +47,8 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 - `scripts/migrate.mjs`, `scripts/seed.mjs`.
 
 ## Infrastructure state (as of 2026-11-03)
-- GitHub: `Here001/Almightypumps` (private). Local branches `main` (placeholder README
-  only) and `dev` (full app) have NOT been pushed yet.
+- GitHub: `Here001/Almightypumps` (private). `main` (placeholder README only) and
+  `dev` (full app) are both pushed.
 - Neon: project **almighty-pumps** (`jolly-dust-18900048`, AWS eu-central-1).
   - `main` branch: production, still empty. Run the migration on it only after approval.
   - `dev` branch (`br-dawn-silence-ban4sxrz`): schema 0000_init.sql applied.
@@ -59,14 +59,15 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   Plan: link to the GitHub repo, framework Next.js, region fra1, Preview env vars pointing
   at the Neon `dev` branch, Production env vars added only when going live.
 
-## Never built yet: the first real build
-This code has never been through `npm install` / `next build` (the original workspace
-had no npm access). First job: `npm install`, `npm run typecheck`, `npm run build`,
-fix whatever fails, then `npm test`.
+## Build status
+First real build done 2026-11-03: `npm install`, `npm run typecheck`, `npm run lint`,
+`npm run build` and `npm test` (21/21) all pass on `dev`. `package-lock.json` is committed.
+API routes that read the database must export `dynamic = "force-dynamic"` so the build
+never tries to prerender them.
 
 ## Next tasks, in order
-1. Install, type-check, build and fix. Commit to `dev`.
-2. Push `main` (placeholder) and `dev`. Create the Vercel project with preview env vars:
+1. ~~Install, type-check, build and fix. Commit to `dev`.~~ Done.
+2. Create the Vercel project with preview env vars:
    `DATABASE_URL` (Neon dev pooled), `DATABASE_SSL=true`, `SESSION_SECRET`, `CRON_SECRET`
    (generate fresh: `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`),
    `PAYSTACK_SECRET_KEY` (owner pastes test key), `SMM_PROVIDER_1_KEY` (owner pastes).
