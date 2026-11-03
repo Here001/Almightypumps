@@ -92,7 +92,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 - Get Verification Code (#verify, migration 0013, `src/server/smsVerify.ts`, `src/server/textverified.ts`,
   `VerifyCode.tsx`, /admin/verify): TextVerified API v2 (auth POST /api/pub/v2/auth with X-API-KEY +
   X-API-USERNAME → bearer; env TEXTVERIFIED_API_KEY / TEXTVERIFIED_API_USERNAME, both set in Vercel
-  Preview(dev)+Production; TEXTVERIFIED_BASE_URL overrides for local mocks). US mobile numbers, SMS only.
+  Preview(dev)+Production; TEXTVERIFIED_BASE_URL overrides for local mocks). US mobile numbers, SMS only. Provider list: ~4.7k rows, `capability` is "Sms" (capital S), `description` = display name (stored in `sms_services.label`, migration 0014); "servicenotlisted" and non-refundable ones are skipped.
   Service list synced daily (`sms_services`, admin can hide); price fetched per service on demand (cached
   15 min) in USD → Naira via the site dollar rate × (1 + markup), rounded up to ₦10 (`src/core/smsVerify.ts`).
   Markup in `app_settings.sms_verify.markupBps` (owner set 300% = 30000 on 2026-11-03; editable in
@@ -143,7 +143,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   `dev` (full app) are both pushed.
 - Neon: project **almighty-pumps** (`jolly-dust-18900048`, AWS eu-central-1).
   - `main` branch: production, still empty. Run the migration on it only after approval.
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0013 applied. Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0014 applied. Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

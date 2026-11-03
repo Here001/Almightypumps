@@ -120,7 +120,8 @@ export function VerifyCode({ balance, onAddMoney }: { balance: number; onAddMone
 
   const list = useMemo(() => {
     const s = q.trim().toLowerCase().replace(/\s+/g, "");
-    return (services ?? []).filter((x) => !s || x.name.toLowerCase().replace(/[\s_-]+/g, "").includes(s));
+    const norm = (t: string) => t.toLowerCase().replace(/[\s_.-]+/g, "");
+    return (services ?? []).filter((x) => !s || norm(x.name).includes(s) || norm(x.label).includes(s));
   }, [services, q]);
 
   return (

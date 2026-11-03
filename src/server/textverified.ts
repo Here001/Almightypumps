@@ -77,11 +77,12 @@ export type TvSms = { id: string; smsContent?: string | null; parsedCode?: strin
 export const TextVerified = {
   account: () => tv<{ username: string; currentBalance: number }>("GET", "/api/pub/v2/account/me"),
   /** Services for one-time verifications. Accepts a bare array or { data: [...] }; logs the shape for debugging. */
-  async services(numberType?: string): Promise<{ serviceName: string; capability?: string }[]> {
+  async services(numberType?: string): Promise<{ serviceName: string; capability?: string; description?: string; refundability?: string }[]> {
     const raw = await tv<unknown>("GET", "/api/pub/v2/services", { params: { reservationType: "verification", ...(numberType ? { numberType } : {}) } });
     const list = (Array.isArray(raw) ? raw : ((raw as { data?: unknown[] })?.data ?? [])) as Record<string, unknown>[];
     console.log(`[textverified] services numberType=${numberType ?? "-"} type=${Array.isArray(raw) ? "array" : typeof raw} keys=${raw && !Array.isArray(raw) ? Object.keys(raw as object).join(",") : ""} count=${list.length} sample=${JSON.stringify(list.slice(0, 2)).slice(0, 300)}`);
-    return list.map((s) => ({ serviceName: String(s.serviceName ?? s.name ?? ""), capability: s.capability === undefined ? undefined : String(s.capability) }));
+    const str = (v: unknown) => (v === undefined || v === null ? undefined : String(v));
+    return list.map((s) => ({ serviceName: String(s.serviceName ?? s.name ?? ""), capability: str(s.capability), description: str(s.description), refundability: str(s.refundability) }));
   },
   price: (serviceName: string) =>
     tv<{ serviceName: string; price: number }>("POST", "/api/pub/v2/pricing/verifications", {

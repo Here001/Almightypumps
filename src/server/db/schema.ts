@@ -342,6 +342,7 @@ export const listingCategories = pgTable("listing_categories", {
 /** "Get Verification Code" (drizzle/0013_sms_verify.sql). */
 export const smsServices = pgTable("sms_services", {
   name: text("name").primaryKey(),
+  label: text("label"),
   hidden: boolean("hidden").notNull().default(false),
   costUsdMilli: integer("cost_usd_milli"),
   pricedAt: ts("priced_at"),
@@ -352,6 +353,7 @@ export const smsVerifications = pgTable("sms_verifications", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().references(() => users.id),
   serviceName: text("service_name").notNull(),
+  label: text("label"),
   providerId: text("provider_id").unique(),
   number: text("number"),
   status: text("status").$type<"pending" | "completed" | "refunded" | "failed">().notNull().default("pending"),

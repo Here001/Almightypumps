@@ -3,7 +3,7 @@
  * Pay-on-delivery: the price is held when the number is rented, captured when a code
  * arrives, and released (refunded) if no code comes or the customer cancels.
  */
-import { and, asc, desc, eq, ilike, inArray, notInArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, notInArray, or, sql } from "drizzle-orm";
 import { extractCode, outcomeFor, sellPriceKobo, serviceLabel, usdToMilli } from "@/core/smsVerify";
 import type { Db, DbOrTx } from "./db";
 import { appSettings, smsServices, smsVerifications, users } from "./db/schema";
@@ -43,16 +43,29 @@ export async function updateVerifyConfig(db: Db, input: { markupBps?: number; en
 
 /** Pull the provider's service list (names only; prices are fetched when a customer opens one). */
 export async function syncSmsServices(db: Db) {
-  const pick = (list: { serviceName: string; capability?: string }[]) =>
-    [...new Set(list.filter((s) => !s.capability || /sms/i.test(s.capability)).map((s) => s.serviceName.trim()).filter(Boolean))];
-  let names = pick(await TextVerified.services("mobile"));
-  if (names.length === 0) names = pick(await TextVerified.services());
+  type Raw = { serviceName: string; capability?: string; description?: string; refundability?: string };
+  // SMS-capable, refundable (we refund customers when no code comes), and not the free-text "service not listed".
+  const pick = (list: Raw[]) => {
+    const out = new Map<string, string>();
+    for (const s of list) {
+      const name = s.serviceName.trim();
+      if (!name || /^servicenotlisted/i.test(name)) continue;
+      if (s.capability && !/sms/i.test(s.capability)) continue;
+      if (s.refundability && /non/i.test(s.refundability)) continue;
+      const label = (s.description ?? "").trim();
+      if (!out.has(name) || (label && label !== name)) out.set(name, label && label !== name ? label.slice(0, 80) : out.get(name) ?? "");
+    }
+    return out;
+  };
+  let found = pick(await TextVerified.services("mobile"));
+  if (found.size === 0) found = pick(await TextVerified.services());
+  const names = [...found.keys()];
   if (names.length === 0) throw new AppError(502, "PROVIDER_ERROR", "The provider returned no services.");
   const now = new Date();
   await db.transaction(async (tx) => {
     for (let i = 0; i < names.length; i += 500) {
-      await tx.insert(smsServices).values(names.slice(i, i + 500).map((name) => ({ name, seenAt: now })))
-        .onConflictDoUpdate({ target: smsServices.name, set: { seenAt: now } });
+      await tx.insert(smsServices).values(names.slice(i, i + 500).map((name) => ({ name, label: found.get(name) || null, seenAt: now })))
+        .onConflictDoUpdate({ target: smsServices.name, set: { seenAt: now, label: sql`excluded.label` } });
     }
     await tx.delete(smsServices).where(notInArray(smsServices.name, names));
   });
@@ -81,13 +94,16 @@ export async function listSmsServices(db: Db, q?: string) {
   await ensureSynced(db);
   const rate = await getUsdRateKobo(db);
   const filters = [eq(smsServices.hidden, false)];
-  if (q && q.trim().length >= 1) filters.push(ilike(smsServices.name, `%${q.trim().replace(/[%_\\]/g, "\\$&").replace(/\s+/g, "%")}%`));
+  if (q && q.trim().length >= 1) {
+    const like = `%${q.trim().replace(/[%_\\]/g, "\\$&").replace(/\s+/g, "%")}%`;
+    filters.push(or(ilike(smsServices.name, like), ilike(smsServices.label, like))!);
+  }
   const rows = await db.select().from(smsServices).where(and(...filters)).orderBy(asc(smsServices.name));
   const rank = (n: string) => { const i = POPULAR.indexOf(n.toLowerCase()); return i === -1 ? 999 : i; };
-  rows.sort((a, b) => rank(a.name) - rank(b.name) || a.name.localeCompare(b.name));
+  rows.sort((a, b) => rank(a.name) - rank(b.name) || (a.label || a.name).localeCompare(b.label || b.name, "en", { sensitivity: "base" }));
   return rows.map((r) => ({
     name: r.name,
-    label: serviceLabel(r.name),
+    label: r.label || serviceLabel(r.name),
     popular: rank(r.name) < 999,
     priceKobo: r.costUsdMilli && r.pricedAt && Date.now() - r.pricedAt.getTime() < 6 * 3600_000 ? sellPriceKobo(r.costUsdMilli, rate, cfg.markupBps) : null,
   }));
@@ -107,7 +123,7 @@ export async function quoteSmsService(db: Db, name: string) {
   }
   const rate = await getUsdRateKobo(db);
   if (!rate) throw new AppError(503, "NO_RATE", "Prices are being updated. Please try again in a few minutes.");
-  return { name, label: serviceLabel(name), priceKobo: sellPriceKobo(costMilli, rate, cfg.markupBps), costMilli };
+  return { name, label: s.label || serviceLabel(name), priceKobo: sellPriceKobo(costMilli, rate, cfg.markupBps), costMilli };
 }
 
 /** Rent a number. `expectedKobo` is the price the customer saw; if it moved, they confirm again. */
@@ -122,7 +138,7 @@ export async function startVerification(db: Db, userId: string, name: string, ex
   const [v] = await db.transaction(async (tx) => {
     const wallet = await walletIdForUser(tx, userId);
     const holdId = await placeHold(tx, wallet, q.priceKobo, "sms_verify", { memo: `Verification code: ${q.label}` });
-    const row = await tx.insert(smsVerifications).values({ userId, serviceName: name, priceKobo: q.priceKobo, costUsdMilli: q.costMilli, holdId }).returning();
+    const row = await tx.insert(smsVerifications).values({ userId, serviceName: name, label: q.label, priceKobo: q.priceKobo, costUsdMilli: q.costMilli, holdId }).returning();
     await linkHold(tx, holdId, row[0].id);
     return row;
   });
@@ -177,7 +193,7 @@ export async function refreshVerification(db: Db, id: string) {
 
 function present(v: typeof smsVerifications.$inferSelect) {
   return {
-    id: v.id, service: v.serviceName, label: serviceLabel(v.serviceName), number: v.number, status: v.status,
+    id: v.id, service: v.serviceName, label: v.label || serviceLabel(v.serviceName), number: v.number, status: v.status,
     priceKobo: v.priceKobo, code: v.code, smsText: v.smsText, endsAt: v.endsAt, createdAt: v.createdAt,
   };
 }
@@ -255,13 +271,13 @@ export async function verifyAdminOverview(db: Db) {
     id: smsVerifications.id, service: smsVerifications.serviceName, status: smsVerifications.status, priceKobo: smsVerifications.priceKobo,
     costMilli: smsVerifications.costUsdMilli, createdAt: smsVerifications.createdAt, email: users.email,
   }).from(smsVerifications).innerJoin(users, eq(users.id, smsVerifications.userId)).orderBy(desc(smsVerifications.createdAt)).limit(25);
-  const services = await db.select({ name: smsServices.name, hidden: smsServices.hidden, costMilli: smsServices.costUsdMilli })
+  const services = await db.select({ name: smsServices.name, providerLabel: smsServices.label, hidden: smsServices.hidden, costMilli: smsServices.costUsdMilli })
     .from(smsServices).orderBy(asc(smsServices.name));
   return {
     config: cfg, configured, balance, usdRateKobo: rate,
     stats: { ...stats, revenueKobo: Number(stats.revenueKobo), costKobo: Math.round((Number(stats.costMilli) * rate) / 1000) },
     recent,
-    services: services.map((s) => ({ ...s, label: serviceLabel(s.name), priceKobo: s.costMilli ? sellPriceKobo(s.costMilli, rate, cfg.markupBps) : null })),
+    services: services.map(({ providerLabel, ...s }) => ({ ...s, label: providerLabel || serviceLabel(s.name), priceKobo: s.costMilli ? sellPriceKobo(s.costMilli, rate, cfg.markupBps) : null })),
   };
 }
 
