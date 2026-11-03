@@ -103,16 +103,18 @@ function Dashboard(props: Props) {
 
           {tab === "services" && (
             <section className="card glass">
-              <h2>What would you like to do?</h2>
-              <div className="ap-hub">
+              <h2>What do you want to do?</h2>
+              <div className="ap-platforms">
                 {HUB_SERVICES.map((svc) => (
                   <button
-                    key={svc.id} type="button" className="ap-hub-tile" disabled={svc.status !== "live"}
+                    key={svc.id} type="button" className="ap-platform ap-hub-tile" disabled={svc.status !== "live"} title={svc.description}
                     onClick={() => svc.status === "live" && go(svc.id as Tab)}
                   >
-                    <span className="ap-hub-icon" aria-hidden="true"><Icon d={svc.icon} /></span>
-                    <span className="ap-hub-title">{svc.title}{svc.status === "soon" && <span className="ap-tag">Coming soon</span>}</span>
-                    <span className="ap-hub-desc">{svc.description}</span>
+                    <span className="ap-mono ap-hub-icon" aria-hidden="true"><Icon d={svc.icon} /></span>
+                    <span className="ap-platform-name">{svc.title}</span>
+                    <span className="ap-platform-count">
+                      {svc.status === "soon" ? "Coming soon" : svc.id === "boost" ? `${props.catalog.length} platforms` : "Open"}
+                    </span>
                   </button>
                 ))}
               </div>
