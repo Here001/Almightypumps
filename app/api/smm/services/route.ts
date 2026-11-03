@@ -1,19 +1,25 @@
 import { getDb } from "@/server/db";
 import { route } from "@/server/http";
-import { findServices, listCategories } from "@/server/smm";
+import { browseServices, serviceCatalog } from "@/server/smm";
 
 export const dynamic = "force-dynamic";
 
 /**
- * GET                       -> categories with counts
- * GET ?category=Instagram   -> services in that category (cheapest first)
- * GET ?q=instagram+followers -> services matching every word, across categories
+ * GET                                   -> catalogue: platforms with kinds and counts
+ * GET ?platform=Instagram&kind=Followers -> one page of services, cheapest first
+ *     &q=words  &refill=1  &offset=30
  */
 export const GET = route(async (req: Request) => {
-  const url = new URL(req.url);
-  const category = url.searchParams.get("category")?.slice(0, 200) || undefined;
-  const q = url.searchParams.get("q")?.slice(0, 100) || undefined;
+  const p = new URL(req.url).searchParams;
   const db = getDb();
-  if (!category && !q) return { categories: await listCategories(db) };
-  return { services: await findServices(db, { category, q }) };
+  const platform = p.get("platform")?.slice(0, 100) || undefined;
+  const q = p.get("q")?.slice(0, 100) || undefined;
+  if (!platform && !q) return { platforms: await serviceCatalog(db) };
+  return browseServices(db, {
+    platform,
+    kind: p.get("kind")?.slice(0, 50) || undefined,
+    q,
+    refillOnly: p.get("refill") === "1",
+    offset: Number(p.get("offset") ?? 0) || 0,
+  });
 });

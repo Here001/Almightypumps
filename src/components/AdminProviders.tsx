@@ -63,11 +63,12 @@ export function ProviderCard({ p }: { p: P }) {
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
         <button className="btn btn-ghost" disabled={busy !== null} onClick={() => run("sync", async () => {
-          const r = await api<{ upserted: number; skipped: number; hidden: number; providerBalance: { balance: string; currency: string } }>(`/api/admin/providers/${p.id}/sync`, {});
+          const r = await api<{ upserted: number; skipped: number; restricted: number; hidden: number; providerBalance: { balance: string; currency: string } }>(`/api/admin/providers/${p.id}/sync`, {});
           setBalance(`${r.providerBalance.balance} ${r.providerBalance.currency}`);
           const extra = [
             r.skipped ? `${r.skipped.toLocaleString("en-NG")} free or invalid services skipped` : "",
-            r.hidden ? `${r.hidden.toLocaleString("en-NG")} no longer offered, now hidden` : "",
+            r.restricted ? `${r.restricted.toLocaleString("en-NG")} fake review/vote services left out` : "",
+            r.hidden ? `${r.hidden.toLocaleString("en-NG")} hidden (no longer offered or not allowed)` : "",
           ].filter(Boolean).join("; ");
           return `Synced: ${r.upserted.toLocaleString("en-NG")} services on sale with your ${p.markupBps / 100}% markup.${extra ? ` (${extra}.)` : ""}`;
         })}>{busy === "sync" ? "Syncing…" : "Sync services"}</button>

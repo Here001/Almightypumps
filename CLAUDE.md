@@ -37,9 +37,15 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 ## Layout
 - `src/core/` pure business rules with no dependencies: money (integer kobo), ledger,
   escrow state machine, SMM pricing/parsing, listing policy, crypto helpers.
-  Tested by `tests/core.test.ts` (`npm test`, Node's built-in runner, 22 tests).
+  Tested by `tests/core.test.ts` (`npm test`, Node's built-in runner, 23 tests).
 - `src/server/` database access, wallet (row locks, holds, idempotent ledger),
   market, smm, payments (Flutterwave), auth, env, http helpers.
+- Customer dashboard (`app/dashboard` → `src/components/dashboard/`): tabs Boost / Orders /
+  Wallet / P2P (URL hash; bottom tab bar on phones). Boost = search + platform tiles + kind
+  chips + paged service cards (cheapest first) + order sheet. Catalogue data comes from
+  `smm_services.platform/kind/display_name`, set at sync by `src/core/catalog.ts`.
+- **Service policy (owner's limits):** `isRestricted` in `src/core/catalog.ts` keeps fake
+  reviews/ratings, rigged votes/polls and fake add-to-carts out of the store (hidden at sync).
 - `app/api/**` route handlers; `app/page.tsx` 3D homepage; `app/signup`, `app/login`,
   `app/dashboard`; `app/admin` (Insights, Growth providers; admins only).
 - Insights: `src/components/Tracker.tsx` beacons each page and dashboard #section to
@@ -55,7 +61,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   `dev` (full app) are both pushed.
 - Neon: project **almighty-pumps** (`jolly-dust-18900048`, AWS eu-central-1).
   - `main` branch: production, still empty. Run the migration on it only after approval.
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000 and 0001 applied. Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000, 0001, 0002 applied. Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

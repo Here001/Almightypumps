@@ -216,3 +216,39 @@ test("site sections", async () => {
   assert.equal(isBot("Googlebot/2.1"), true);
   assert.equal(isBot(null), true);
 });
+
+/* ---------------- catalog ---------------- */
+test("catalog: platforms, kinds, policy, names", async () => {
+  const { platformFor, kindFor, isRestricted, displayName } = await import("../src/core/catalog.ts");
+  assert.equal(platformFor("tiktok"), "TikTok");
+  assert.equal(platformFor("TikTok"), "TikTok");
+  assert.equal(platformFor("twitter"), "X (Twitter)");
+  assert.equal(platformFor("X (Twitter)"), "X (Twitter)");
+  assert.equal(platformFor("apple_music"), "Apple Music");
+  assert.equal(platformFor("some_new_thing"), "Some New Thing");
+  assert.equal(kindFor("Instagram Followers | Non Drop"), "Followers");
+  assert.equal(kindFor("TikTok Comment Likes"), "Likes");
+  assert.equal(kindFor("Instagram Custom Comments"), "Comments");
+  assert.equal(kindFor("YouTube Live Stream Views | 15 Minutes"), "Live viewers");
+  assert.equal(kindFor("S2 TikTok Saves (100/20K) [R30]"), "Saves");
+  assert.equal(kindFor("Spotify Track Plays"), "Plays");
+  assert.equal(kindFor("Telegram Post Views | Cheapest"), "Views");
+  assert.equal(kindFor("X (Twitter) Reposts"), "Shares");
+  assert.equal(kindFor("YouTube Subscribers"), "Followers");
+  assert.equal(kindFor("WhatsApp Channel Post Reaction | 👍"), "Likes");
+  assert.equal(kindFor("Smart View (New , Old Posts)"), "Views");
+  assert.equal(kindFor("Transcription / Data Entry"), "Other");
+  assert.equal(isRestricted("Trustpilot Reviews", "trustpilot"), true);
+  assert.equal(isRestricted("Amazon Star Rating", "amazon"), true);
+  assert.equal(isRestricted("BBNaija Votes", "bbnaija"), true);
+  assert.equal(isRestricted("Telegram Poll Votes", "telegram"), true);
+  assert.equal(isRestricted("Jumia / Konga Add-to-Cart", "marketplace"), true);
+  assert.equal(isRestricted("Instagram Followers", "Instagram"), false);
+  assert.equal(isRestricted("WhatsApp Channel Post Reaction", "WhatsApp"), false);
+  assert.equal(displayName("S19 Instagram likes private (1/100K)"), "Instagram likes private (1/100K)");
+  assert.equal(displayName("⭐ Twitch Live Stream Viewers"), "Twitch Live Stream Viewers");
+  assert.equal(displayName("🖱️ LinkedIn Article Clicks"), "LinkedIn Article Clicks");
+  assert.equal(displayName("S1 ⭐ Instagram Followers | Non Drop"), "Instagram Followers | Non Drop");
+  assert.equal(displayName("★ S12 TikTok Views"), "TikTok Views");
+  assert.equal(displayName("⭐"), "⭐");
+});

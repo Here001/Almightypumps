@@ -3,7 +3,9 @@
  * Returns null for views we don't count (admin pages, API).
  */
 const DASHBOARD_ANCHORS: Record<string, string> = {
+  boost: "Social Growth",
   growth: "Social Growth",
+  orders: "My orders",
   trades: "P2P Marketplace",
   wallet: "Wallet",
 };

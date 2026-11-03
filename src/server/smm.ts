@@ -7,6 +7,7 @@ import {
   orderCost, parseAdd, parseBalance, parseMultiStatus, parseServices, sellRatePer1000, settleOrder, validateQuantity,
   type OrderStatus,
 } from "@/core/smm";
+import { displayName, isRestricted, kindFor, platformFor, POPULAR_PLATFORMS } from "@/core/catalog";
 import type { Db } from "./db";
 import { smmOrders, smmProviders, smmServices } from "./db/schema";
 import { AppError, badRequest, notFound } from "./errors";
@@ -75,7 +76,12 @@ export async function syncServices(db: Db, providerId: string) {
 
   const rows = new Map<string, typeof smmServices.$inferInsert>();
   let skipped = 0;
+  let restricted = 0;
   for (const s of list) {
+    if (isRestricted(s.name, s.category)) {
+      restricted++;
+      continue;
+    }
     let rateKobo = 0;
     try {
       rateKobo = sellRatePer1000(s.rate, p.fxKoboPerUnit, p.markupBps);
@@ -89,6 +95,7 @@ export async function syncServices(db: Db, providerId: string) {
     rows.set(s.service, {
       providerId: p.id, providerServiceId: s.service, name: s.name.slice(0, 300), category: s.category.slice(0, 120), type: s.type,
       providerRate: s.rate, rateKobo, minQty: s.min, maxQty: s.max, refill: s.refill, cancel: s.cancel, active: true, updatedAt: new Date(),
+      platform: platformFor(s.category), kind: kindFor(s.name), displayName: displayName(s.name).slice(0, 300),
     });
   }
 
@@ -104,6 +111,7 @@ export async function syncServices(db: Db, providerId: string) {
           name: excluded("name"), category: excluded("category"), type: excluded("type"), providerRate: excluded("provider_rate"),
           rateKobo: excluded("rate_kobo"), minQty: excluded("min_qty"), maxQty: excluded("max_qty"), refill: excluded("refill"),
           cancel: excluded("cancel"), active: sql`true`, updatedAt: excluded("updated_at"),
+          platform: excluded("platform"), kind: excluded("kind"), displayName: excluded("display_name"),
         },
       });
   }
@@ -116,7 +124,7 @@ export async function syncServices(db: Db, providerId: string) {
     .where(and(eq(smmServices.providerId, p.id), eq(smmServices.active, true), keep.length ? notInArray(smmServices.providerServiceId, keep) : sql`true`))
     .returning({ id: smmServices.id });
 
-  return { upserted: values.length, skipped, hidden: hidden.length };
+  return { upserted: values.length, skipped, restricted, hidden: hidden.length };
 }
 
 const serviceColumns = {
@@ -135,34 +143,62 @@ export async function listServices(db: Db) {
     .orderBy(smmServices.category, smmServices.name);
 }
 
-/** Categories with how many services each has. Small enough to send with the dashboard. */
-export async function listCategories(db: Db) {
-  return db
-    .select({ category: smmServices.category, count: sql<number>`count(*)::int` })
+export type CatalogPlatform = { platform: string; count: number; kinds: { kind: string; count: number }[] };
+
+/** Platforms (popular ones first) with their service kinds and counts. Small: sent with the dashboard. */
+export async function serviceCatalog(db: Db): Promise<CatalogPlatform[]> {
+  const rows = await db
+    .select({ platform: smmServices.platform, kind: smmServices.kind, count: sql<number>`count(*)::int` })
     .from(smmServices)
     .innerJoin(smmProviders, eq(smmProviders.id, smmServices.providerId))
     .where(onSale())
-    .groupBy(smmServices.category)
-    .orderBy(smmServices.category);
+    .groupBy(smmServices.platform, smmServices.kind);
+  const map = new Map<string, CatalogPlatform>();
+  for (const r of rows) {
+    const p = map.get(r.platform) ?? { platform: r.platform, count: 0, kinds: [] };
+    p.count += r.count;
+    p.kinds.push({ kind: r.kind, count: r.count });
+    map.set(r.platform, p);
+  }
+  const rank = (name: string) => {
+    const i = POPULAR_PLATFORMS.indexOf(name);
+    return i === -1 ? POPULAR_PLATFORMS.length : i;
+  };
+  const kindOrder = ["Followers", "Likes", "Views", "Comments", "Shares", "Saves", "Plays", "Live viewers", "Traffic", "Other"];
+  return [...map.values()]
+    .map((p) => ({ ...p, kinds: p.kinds.sort((a, b) => kindOrder.indexOf(a.kind) - kindOrder.indexOf(b.kind)) }))
+    .sort((a, b) => rank(a.platform) - rank(b.platform) || b.count - a.count);
 }
 
-/** Services in one category, or matching every word of a search, cheapest first. */
-export async function findServices(db: Db, input: { category?: string; q?: string }, limit = 500) {
+export type BrowseInput = { platform?: string; kind?: string; q?: string; refillOnly?: boolean; offset?: number; limit?: number };
+
+/** One page of services for the customer browser, cheapest first. */
+export async function browseServices(db: Db, input: BrowseInput) {
+  const limit = Math.min(Math.max(input.limit ?? 30, 1), 100);
+  const offset = Math.max(input.offset ?? 0, 0);
   const filters = [onSale()];
-  if (input.category) filters.push(eq(smmServices.category, input.category));
+  if (input.platform) filters.push(eq(smmServices.platform, input.platform));
+  if (input.kind) filters.push(eq(smmServices.kind, input.kind));
+  if (input.refillOnly) filters.push(eq(smmServices.refill, true));
   const words = (input.q ?? "").toLowerCase().split(/\s+/).filter((w) => w.length >= 2).slice(0, 6);
   for (const w of words) {
     const like = `%${w.replace(/[\\%_]/g, (c) => "\\" + c)}%`;
-    filters.push(sql`(${smmServices.name} ILIKE ${like} OR ${smmServices.category} ILIKE ${like})`);
+    filters.push(sql`(${smmServices.name} ILIKE ${like} OR ${smmServices.platform} ILIKE ${like} OR ${smmServices.kind} ILIKE ${like})`);
   }
-  if (!input.category && words.length === 0) return [];
-  return db
-    .select(serviceColumns)
+  if (!input.platform && words.length === 0) return { services: [], hasMore: false };
+  const rows = await db
+    .select({
+      id: smmServices.publicId, name: sql<string>`coalesce(nullif(${smmServices.displayName}, ''), ${smmServices.name})`,
+      platform: smmServices.platform, kind: smmServices.kind, rateKobo: smmServices.rateKobo,
+      min: smmServices.minQty, max: smmServices.maxQty, refill: smmServices.refill, cancel: smmServices.cancel,
+    })
     .from(smmServices)
     .innerJoin(smmProviders, eq(smmProviders.id, smmServices.providerId))
     .where(and(...filters))
-    .orderBy(smmServices.rateKobo, smmServices.name)
-    .limit(limit);
+    .orderBy(smmServices.rateKobo, smmServices.publicId)
+    .limit(limit + 1)
+    .offset(offset);
+  return { services: rows.slice(0, limit), hasMore: rows.length > limit };
 }
 
 function validLink(link: string): boolean {
@@ -291,7 +327,7 @@ export async function myOrders(db: Db, userId: string, ids?: number[]) {
     : eq(smmOrders.userId, userId);
   return db
     .select({
-      id: smmOrders.publicId, service: smmServices.name, link: smmOrders.link, quantity: smmOrders.quantity,
+      id: smmOrders.publicId, service: sql<string>`coalesce(nullif(${smmServices.displayName}, ''), ${smmServices.name})`, platform: smmServices.platform, link: smmOrders.link, quantity: smmOrders.quantity,
       cost: smmOrders.cost, charged: smmOrders.charged, status: smmOrders.status, startCount: smmOrders.startCount,
       remains: smmOrders.remains, createdAt: smmOrders.createdAt,
     })

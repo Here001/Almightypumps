@@ -107,6 +107,9 @@ export const smmServices = pgTable("smm_services", {
   refill: boolean("refill").notNull().default(false),
   cancel: boolean("cancel").notNull().default(false),
   active: boolean("active").notNull().default(true),
+  platform: text("platform").notNull().default("More services"),
+  kind: text("kind").notNull().default("Other"),
+  displayName: text("display_name").notNull().default(""),
   updatedAt: ts("updated_at").notNull().defaultNow(),
 });
 
