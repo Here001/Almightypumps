@@ -119,16 +119,50 @@ export async function syncServices(db: Db, providerId: string) {
   return { upserted: values.length, skipped, hidden: hidden.length };
 }
 
+const serviceColumns = {
+  id: smmServices.publicId, name: smmServices.name, category: smmServices.category, type: smmServices.type,
+  rateKobo: smmServices.rateKobo, min: smmServices.minQty, max: smmServices.maxQty, refill: smmServices.refill, cancel: smmServices.cancel,
+};
+const onSale = () => and(eq(smmServices.active, true), eq(smmProviders.active, true));
+
+/** Every service on sale (used by the reseller API, which expects the full list). */
 export async function listServices(db: Db) {
   return db
-    .select({
-      id: smmServices.publicId, name: smmServices.name, category: smmServices.category, type: smmServices.type,
-      rateKobo: smmServices.rateKobo, min: smmServices.minQty, max: smmServices.maxQty, refill: smmServices.refill, cancel: smmServices.cancel,
-    })
+    .select(serviceColumns)
     .from(smmServices)
     .innerJoin(smmProviders, eq(smmProviders.id, smmServices.providerId))
-    .where(and(eq(smmServices.active, true), eq(smmProviders.active, true)))
+    .where(onSale())
     .orderBy(smmServices.category, smmServices.name);
+}
+
+/** Categories with how many services each has. Small enough to send with the dashboard. */
+export async function listCategories(db: Db) {
+  return db
+    .select({ category: smmServices.category, count: sql<number>`count(*)::int` })
+    .from(smmServices)
+    .innerJoin(smmProviders, eq(smmProviders.id, smmServices.providerId))
+    .where(onSale())
+    .groupBy(smmServices.category)
+    .orderBy(smmServices.category);
+}
+
+/** Services in one category, or matching every word of a search, cheapest first. */
+export async function findServices(db: Db, input: { category?: string; q?: string }, limit = 500) {
+  const filters = [onSale()];
+  if (input.category) filters.push(eq(smmServices.category, input.category));
+  const words = (input.q ?? "").toLowerCase().split(/\s+/).filter((w) => w.length >= 2).slice(0, 6);
+  for (const w of words) {
+    const like = `%${w.replace(/[\\%_]/g, (c) => "\\" + c)}%`;
+    filters.push(sql`(${smmServices.name} ILIKE ${like} OR ${smmServices.category} ILIKE ${like})`);
+  }
+  if (!input.category && words.length === 0) return [];
+  return db
+    .select(serviceColumns)
+    .from(smmServices)
+    .innerJoin(smmProviders, eq(smmProviders.id, smmServices.providerId))
+    .where(and(...filters))
+    .orderBy(smmServices.rateKobo, smmServices.name)
+    .limit(limit);
 }
 
 function validLink(link: string): boolean {

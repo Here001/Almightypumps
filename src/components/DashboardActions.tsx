@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { api, naira } from "./api";
 
 export function FundWallet() {
@@ -58,24 +58,60 @@ export function PaymentReturn() {
 }
 
 type Service = { id: number; name: string; category: string; rateKobo: number; min: number; max: number; refill: boolean };
+type Category = { category: string; count: number };
 
-export function QuickOrder({ services }: { services: Service[] }) {
+/** Most-wanted platform first, if the panel has it. */
+function defaultCategory(categories: Category[]): string {
+  const ig = categories.find((c) => /instagram/i.test(c.category));
+  return (ig ?? categories[0])?.category ?? "";
+}
+
+export function QuickOrder({ categories }: { categories: Category[] }) {
   const router = useRouter();
-  const categories = useMemo(() => [...new Set(services.map((s) => s.category))], [services]);
-  const [cat, setCat] = useState(categories[0] ?? "");
-  const inCat = services.filter((s) => s.category === cat);
-  const [serviceId, setServiceId] = useState<number | null>(inCat[0]?.id ?? null);
-  const svc = services.find((s) => s.id === serviceId) ?? inCat[0];
+  const [cat, setCat] = useState(() => defaultCategory(categories));
+  const [search, setSearch] = useState("");
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [serviceId, setServiceId] = useState<number | null>(null);
+  const svc = services.find((s) => s.id === serviceId) ?? services[0];
   const [link, setLink] = useState("");
-  const [qty, setQty] = useState(String(svc?.min ?? 100));
+  const [qty, setQty] = useState("100");
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  if (!services.length) return <div className="empty">No services yet. An admin needs to add a provider and run a sync.</div>;
+  // Load services for the chosen category, or for the search words (after a short pause in typing).
+  useEffect(() => {
+    const q = search.trim();
+    if (!cat && q.length < 2) return;
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setLoading(true);
+      setLoadError(null);
+      try {
+        const params = q.length >= 2 ? `q=${encodeURIComponent(q)}` : `category=${encodeURIComponent(cat)}`;
+        const res = await fetch(`/api/smm/services?${params}`, { signal: controller.signal });
+        const json = (await res.json()) as { ok: boolean; data?: { services: Service[] }; error?: { message: string } };
+        if (!json.ok || !json.data) throw new Error(json.error?.message ?? "Couldn't load services.");
+        setServices(json.data.services);
+        const first = json.data.services[0];
+        setServiceId(first?.id ?? null);
+        setQty(String(first?.min ?? 100));
+      } catch (e) {
+        if ((e as Error).name !== "AbortError") setLoadError((e as Error).message || "Couldn't load services. Check your connection.");
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    }, q.length >= 2 ? 350 : 0);
+    return () => { controller.abort(); clearTimeout(timer); };
+  }, [cat, search]);
+
+  if (!categories.length) return <div className="empty">No services yet. An admin needs to add a provider and run a sync.</div>;
 
   const q = Number(qty);
   const total = svc && Number.isInteger(q) && q > 0 ? Math.max(1, Math.ceil((svc.rateKobo * q) / 1000)) : 0;
+  const searching = search.trim().length >= 2;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -98,17 +134,30 @@ export function QuickOrder({ services }: { services: Service[] }) {
   return (
     <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <div className="field">
-        <label htmlFor="qo-cat">Platform</label>
-        <select id="qo-cat" className="select" value={cat} onChange={(e) => { setCat(e.target.value); const first = services.find((s) => s.category === e.target.value); setServiceId(first?.id ?? null); setQty(String(first?.min ?? 100)); }}>
-          {categories.map((c) => <option key={c}>{c}</option>)}
-        </select>
+        <label htmlFor="qo-search">Search services</label>
+        <input id="qo-search" className="input" type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="e.g. instagram followers, tiktok views" autoComplete="off" />
       </div>
+      {!searching && (
+        <div className="field">
+          <label htmlFor="qo-cat">Or pick a platform</label>
+          <select id="qo-cat" className="select" value={cat} onChange={(e) => setCat(e.target.value)}>
+            {categories.map((c) => <option key={c.category} value={c.category}>{c.category} ({c.count})</option>)}
+          </select>
+        </div>
+      )}
       <div className="field">
-        <label htmlFor="qo-svc">Service</label>
-        <select id="qo-svc" className="select" value={svc?.id ?? ""} onChange={(e) => { const s = services.find((x) => x.id === Number(e.target.value)); setServiceId(s?.id ?? null); setQty(String(s?.min ?? 100)); }}>
-          {inCat.map((s) => <option key={s.id} value={s.id}>{s.name} · {naira(s.rateKobo)}/1k{s.refill ? " · refill" : ""}</option>)}
+        <label htmlFor="qo-svc">
+          Service{" "}
+          <span className="muted">
+            {loading ? "· loading…" : searching ? `· ${services.length >= 500 ? "500+" : services.length} match${services.length === 1 ? "" : "es"}, cheapest first` : "· cheapest first"}
+          </span>
+        </label>
+        <select id="qo-svc" className="select" value={svc?.id ?? ""} disabled={loading || services.length === 0} onChange={(e) => { const s = services.find((x) => x.id === Number(e.target.value)); setServiceId(s?.id ?? null); setQty(String(s?.min ?? 100)); }}>
+          {services.length === 0 && <option value="">{loading ? "Loading…" : searching ? "No services match. Try other words." : "No services in this platform"}</option>}
+          {services.map((s) => <option key={s.id} value={s.id}>{s.name} · {naira(s.rateKobo)}/1k{s.refill ? " · refill" : ""}</option>)}
         </select>
       </div>
+      {loadError && <div className="form-error" role="alert">{loadError}</div>}
       <div className="field">
         <label htmlFor="qo-link">Post or profile link</label>
         <input id="qo-link" className="input" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://" required />
@@ -120,7 +169,7 @@ export function QuickOrder({ services }: { services: Service[] }) {
       <div style={{ display: "flex", justifyContent: "space-between" }}><span className="muted">Total</span><strong>{naira(total)}</strong></div>
       {error && <div className="form-error" role="alert">{error}</div>}
       {ok && <div className="form-ok" role="status">{ok}</div>}
-      <button className="btn btn-primary" disabled={busy || !svc}>{busy ? "Placing order…" : "Place order"}</button>
+      <button className="btn btn-primary" disabled={busy || !svc || loading}>{busy ? "Placing order…" : "Place order"}</button>
     </form>
   );
 }

@@ -6,7 +6,7 @@ import { desc, eq } from "drizzle-orm";
 import { getDb } from "@/server/db";
 import { ledgerEntries, wallets } from "@/server/db/schema";
 import { currentUser } from "@/server/auth";
-import { listServices, myOrders } from "@/server/smm";
+import { listCategories, myOrders } from "@/server/smm";
 import { myTrades } from "@/server/market";
 import { FundWallet, LogoutButton, PaymentReturn, QuickOrder } from "@/components/DashboardActions";
 import { naira } from "@/components/api";
@@ -28,11 +28,11 @@ export default async function DashboardPage() {
   if (!user) redirect("/login");
   const db = getDb();
   const [wallet] = await db.select().from(wallets).where(eq(wallets.userId, user.id));
-  const [history, orders, trades, services] = await Promise.all([
+  const [history, orders, trades, categories] = await Promise.all([
     db.select().from(ledgerEntries).where(eq(ledgerEntries.walletId, wallet.id)).orderBy(desc(ledgerEntries.createdAt)).limit(8),
     myOrders(db, user.id),
     myTrades(db, user.id),
-    listServices(db),
+    listCategories(db),
   ]);
   const activeTrades = trades.filter((t) => ["PAID", "SHIPPED", "DISPUTED"].includes(t.status));
 
@@ -71,7 +71,7 @@ export default async function DashboardPage() {
             </section>
             <section className="card glass" id="growth">
               <h2>Boost a post</h2>
-              <QuickOrder services={services} />
+              <QuickOrder categories={categories} />
             </section>
           </div>
 
