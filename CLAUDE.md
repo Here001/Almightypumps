@@ -30,8 +30,8 @@ statements, utility bills, payslips), no selling social media/gaming accounts,
 no counterfeit goods. `src/core/listingPolicy.ts` enforces this on listings.
 
 ## Stack
-Next.js 14 (App Router) + TypeScript, PostgreSQL on Neon via drizzle-orm + pg,
-jose sessions, bcryptjs, zod, Paystack, three.js/gsap/lenis for the 3D homepage.
+Next.js 15.5 (App Router) + React 19 + TypeScript, PostgreSQL on Neon via drizzle-orm + pg,
+jose sessions, bcryptjs, zod 4, Paystack, three.js/gsap/lenis for the 3D homepage.
 Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 
 ## Layout
@@ -64,6 +64,11 @@ First real build done 2026-11-03: `npm install`, `npm run typecheck`, `npm run l
 `npm run build` and `npm test` (21/21) all pass on `dev`. `package-lock.json` is committed.
 API routes that read the database must export `dynamic = "force-dynamic"` so the build
 never tries to prerender them.
+Upgraded 2026-11-03 for security (Next 14 no longer gets fixes): Next 15.5, React 19,
+drizzle-orm 0.45, zod 4; `postcss` pinned via `overrides`. `npm audit --omit=dev` is clean.
+Next 15 rules: route `params` is a Promise (`const { id } = await params`) and
+`cookies()` must be awaited. Remaining audit findings are ESLint 8 dev tooling only;
+moving to ESLint 9 / Next 16 is a later job.
 
 ## Next tasks, in order
 1. ~~Install, type-check, build and fix. Commit to `dev`.~~ Done.

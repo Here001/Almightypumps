@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { ZodType, ZodTypeDef } from "zod";
+import { z } from "zod";
 import { env } from "./env";
 import { AppError, badRequest, toAppError } from "./errors";
 
@@ -17,7 +17,7 @@ export function route<A extends unknown[]>(fn: (...args: A) => Promise<unknown>)
   };
 }
 
-export async function body<T>(req: Request, schema: ZodType<T, ZodTypeDef, unknown>): Promise<T> {
+export async function body<S extends z.ZodType>(req: Request, schema: S): Promise<z.output<S>> {
   let json: unknown;
   try {
     json = await req.json();
@@ -26,7 +26,7 @@ export async function body<T>(req: Request, schema: ZodType<T, ZodTypeDef, unkno
   }
   const parsed = schema.safeParse(json);
   if (!parsed.success) {
-    throw badRequest(parsed.error.issues[0]?.message ?? "Check the form and try again.", parsed.error.flatten().fieldErrors);
+    throw badRequest(parsed.error.issues[0]?.message ?? "Check the form and try again.", z.flattenError(parsed.error).fieldErrors);
   }
   return parsed.data;
 }

@@ -7,8 +7,9 @@ import { decideWithdrawal } from "@/server/payments";
 const schema = z.object({ decision: z.enum(["paid", "rejected"]), note: z.string().max(500).optional() });
 
 /** Mark a withdrawal as paid after sending the bank transfer, or reject it to refund the wallet. */
-export const POST = route(async (req: Request, { params }: { params: { id: string } }) => {
+export const POST = route(async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
+  const { id } = await params;
   await requireAdmin();
   const { decision, note } = await body(req, schema);
-  return decideWithdrawal(getDb(), params.id, decision, note);
+  return decideWithdrawal(getDb(), id, decision, note);
 });

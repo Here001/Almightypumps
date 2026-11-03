@@ -57,17 +57,17 @@ export async function login(db: Db, input: z.infer<typeof loginSchema>) {
 
 export async function startSession(userId: string) {
   const token = await new SignJWT({}).setProtectedHeader({ alg: "HS256" }).setSubject(userId).setIssuedAt().setExpirationTime(`${MAX_AGE}s`).sign(key());
-  cookies().set(COOKIE, token, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: MAX_AGE });
+  (await cookies()).set(COOKIE, token, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: MAX_AGE });
 }
 
-export function endSession() {
-  cookies().delete(COOKIE);
+export async function endSession() {
+  (await cookies()).delete(COOKIE);
 }
 
 export type SessionUser = { id: string; name: string; email: string; role: "user" | "admin"; sellerStatus: string };
 
 export async function currentUser(): Promise<SessionUser | null> {
-  const token = cookies().get(COOKIE)?.value;
+  const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, key());

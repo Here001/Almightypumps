@@ -2,6 +2,6 @@ import { endSession } from "@/server/auth";
 import { route } from "@/server/http";
 
 export const POST = route(async () => {
-  endSession();
+  await endSession();
   return { loggedOut: true };
 });

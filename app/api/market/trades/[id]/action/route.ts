@@ -11,8 +11,9 @@ const schema = z.object({
   deliveryProof: z.string().max(2000).optional(),
 });
 
-export const POST = route(async (req: Request, { params }: { params: { id: string } }) => {
+export const POST = route(async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
+  const { id } = await params;
   const user = await requireUser();
   const input = await body(req, schema);
-  return act(getDb(), params.id, input.action, { userId: user.id }, { note: input.note, deliveryProof: input.deliveryProof });
+  return act(getDb(), id, input.action, { userId: user.id }, { note: input.note, deliveryProof: input.deliveryProof });
 });

@@ -7,8 +7,9 @@ import { act } from "@/server/market";
 const schema = z.object({ action: z.enum(["RESOLVE_BUYER", "RESOLVE_SELLER", "CANCEL"]), note: z.string().max(2000).optional() });
 
 /** Dispute team decisions. */
-export const POST = route(async (req: Request, { params }: { params: { id: string } }) => {
+export const POST = route(async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
+  const { id } = await params;
   const admin = await requireAdmin();
   const { action, note } = await body(req, schema);
-  return act(getDb(), params.id, action, { userId: admin.id, isAdmin: true }, { note });
+  return act(getDb(), id, action, { userId: admin.id, isAdmin: true }, { note });
 });

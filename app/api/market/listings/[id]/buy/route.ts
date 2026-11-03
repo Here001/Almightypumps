@@ -6,8 +6,9 @@ import { buy } from "@/server/market";
 
 const schema = z.object({ quantity: z.coerce.number().int().positive().default(1) });
 
-export const POST = route(async (req: Request, { params }: { params: { id: string } }) => {
+export const POST = route(async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
+  const { id } = await params;
   const user = await requireUser();
   const { quantity } = await body(req, schema);
-  return buy(getDb(), user.id, params.id, quantity);
+  return buy(getDb(), user.id, id, quantity);
 });

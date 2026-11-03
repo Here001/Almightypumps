@@ -6,10 +6,11 @@ import { providerBalance, syncServices } from "@/server/smm";
 export const maxDuration = 60;
 
 /** Re-import a provider's services and prices, and report our balance there. */
-export const POST = route(async (_req: Request, { params }: { params: { id: string } }) => {
+export const POST = route(async (_req: Request, { params }: { params: Promise<{ id: string }> }) => {
+  const { id } = await params;
   await requireAdmin();
   const db = getDb();
-  const services = await syncServices(db, params.id);
-  const balance = await providerBalance(db, params.id);
+  const services = await syncServices(db, id);
+  const balance = await providerBalance(db, id);
   return { ...services, providerBalance: balance };
 });
