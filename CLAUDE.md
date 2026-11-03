@@ -56,7 +56,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 - Neon: project **almighty-pumps** (`jolly-dust-18900048`, AWS eu-central-1).
   - `main` branch: production, still empty. Run the migration on it only after approval.
   - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000 and 0001 applied. Provider "Owlet"
-    (`https://theowlet.com/api/v2`, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
+    (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).
   - Database name `almighty_pumps`. Use the pooled connection string (host contains `-pooler`).
