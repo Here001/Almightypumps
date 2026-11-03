@@ -2,6 +2,7 @@ import { getDb } from "@/server/db";
 import { requireUser } from "@/server/auth";
 import { body, route } from "@/server/http";
 import { applySchema, applyToSell, effectiveSellerStatus, mySellerProfile } from "@/server/sellers";
+import { rateLimit } from "@/server/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ export const GET = route(async () => {
 /** Apply (or re-apply after a rejection). An admin reviews it in /admin/sellers. */
 export const POST = route(async (req: Request) => {
   const user = await requireUser();
+  await rateLimit(getDb(), "sellerApply", user.id);
   const input = await body(req, applySchema);
   return applyToSell(getDb(), user.id, input);
 });

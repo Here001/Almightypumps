@@ -5,6 +5,7 @@ import { requireUser } from "@/server/auth";
 import { forbidden } from "@/server/errors";
 import { body, route } from "@/server/http";
 import { setListingStatus, updateListing } from "@/server/market";
+import { rateLimit } from "@/server/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,7 @@ const schema = z.discriminatedUnion("action", [
 export const POST = route(async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params;
   const user = await requireUser();
+  await rateLimit(getDb(), "listingWrite", user.id);
   if (user.sellerStatus !== "verified") throw forbidden("Only verified sellers can manage ads.");
   const input = await body(req, schema);
   const db = getDb();

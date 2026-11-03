@@ -6,6 +6,7 @@ import { apiKeys } from "@/server/db/schema";
 import { requireUser } from "@/server/auth";
 import { badRequest } from "@/server/errors";
 import { body, route } from "@/server/http";
+import { rateLimit } from "@/server/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,7 @@ const schema = z.object({ label: z.string().trim().min(1).max(40).default("Defau
 /** Create a reseller API key. The full key is returned once and never stored. */
 export const POST = route(async (req: Request) => {
   const user = await requireUser();
+  await rateLimit(getDb(), "apiKey", user.id);
   const { label } = await body(req, schema);
   const db = getDb();
   const active = await db.select({ id: apiKeys.id }).from(apiKeys).where(and(eq(apiKeys.userId, user.id), isNull(apiKeys.revokedAt)));

@@ -3,6 +3,7 @@ import { getDb } from "@/server/db";
 import { requireUser } from "@/server/auth";
 import { body, route } from "@/server/http";
 import { act } from "@/server/market";
+import { rateLimit } from "@/server/rateLimit";
 
 // System and admin-only actions are not accepted here.
 const schema = z.object({
@@ -14,6 +15,7 @@ const schema = z.object({
 export const POST = route(async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params;
   const user = await requireUser();
+  await rateLimit(getDb(), "tradeAction", user.id);
   const input = await body(req, schema);
   return act(getDb(), id, input.action, { userId: user.id }, { note: input.note, deliveryProof: input.deliveryProof });
 });

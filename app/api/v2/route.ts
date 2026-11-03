@@ -11,6 +11,7 @@ import { getDb } from "@/server/db";
 import { apiKeys, wallets } from "@/server/db/schema";
 import { toAppError } from "@/server/errors";
 import { listServices, myOrders, placeOrder } from "@/server/smm";
+import { rateLimit } from "@/server/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +40,7 @@ export async function POST(req: Request) {
   const db = getDb();
   const [k] = await db.select().from(apiKeys).where(and(eq(apiKeys.keyHash, hashApiKey(p.key)), isNull(apiKeys.revokedAt)));
   if (!k) return fail("Invalid API key", 401);
+  if (!(await rateLimit(db, "resellerApi", k.id, { silent: true }))) return fail("Too many requests. Slow down to 120 per minute.", 429);
 
   try {
     switch (p.action) {

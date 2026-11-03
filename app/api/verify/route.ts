@@ -3,6 +3,7 @@ import { getDb } from "@/server/db";
 import { requireUser } from "@/server/auth";
 import { body, route } from "@/server/http";
 import { myVerifications, startVerification } from "@/server/smsVerify";
+import { rateLimit } from "@/server/rateLimit";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -16,6 +17,7 @@ export const GET = route(async () => {
 /** Rent a number: { service, priceKobo } (the price the customer agreed to). */
 export const POST = route(async (req: Request) => {
   const user = await requireUser();
+  await rateLimit(getDb(), "verifyStart", user.id);
   const input = await body(req, z.object({ service: z.string().min(1).max(100), priceKobo: z.number().int().positive() }));
   return startVerification(getDb(), user.id, input.service, input.priceKobo);
 });

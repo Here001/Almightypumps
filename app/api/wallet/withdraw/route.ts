@@ -4,6 +4,7 @@ import { getDb } from "@/server/db";
 import { requireUser } from "@/server/auth";
 import { body, route } from "@/server/http";
 import { myWithdrawals, requestWithdrawal } from "@/server/payments";
+import { rateLimit } from "@/server/rateLimit";
 
 const schema = z.object({
   amount: z.union([z.string(), z.number()]),
@@ -14,6 +15,7 @@ const schema = z.object({
 
 export const POST = route(async (req: Request) => {
   const user = await requireUser();
+  await rateLimit(getDb(), "withdraw", user.id);
   const input = await body(req, schema);
   return requestWithdrawal(getDb(), user.id, { ...input, amount: nairaToKobo(input.amount) });
 });

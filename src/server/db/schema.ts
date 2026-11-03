@@ -367,3 +367,10 @@ export const smsVerifications = pgTable("sms_verifications", {
   createdAt: ts("created_at").notNull().defaultNow(),
   updatedAt: ts("updated_at").notNull().defaultNow(),
 });
+
+/** Rate-limit counters (drizzle/0016_rate_limits.sql); written with raw SQL in src/server/rateLimit.ts. */
+export const rateLimits = pgTable("rate_limits", {
+  key: text("key").notNull(),
+  windowStart: ts("window_start").notNull(),
+  count: integer("count").notNull().default(1),
+});

@@ -4,6 +4,7 @@ import { isBot, sectionFor } from "@/core/analytics";
 import { currentUser } from "@/server/auth";
 import { getDb } from "@/server/db";
 import { siteEvents } from "@/server/db/schema";
+import { clientIp, rateLimit } from "@/server/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ const COOKIE = "ap_vid";
 export async function POST(req: Request) {
   try {
     if (isBot(req.headers.get("user-agent"))) return new Response(null, { status: 204 });
+    if (!(await rateLimit(getDb(), "track", clientIp(req), { silent: true }))) return new Response(null, { status: 204 });
     const input = (await req.json().catch(() => ({}))) as { path?: unknown; hash?: unknown };
     const path = typeof input.path === "string" ? input.path.slice(0, 200) : "/";
     const hash = typeof input.hash === "string" ? input.hash.slice(0, 40) : "";

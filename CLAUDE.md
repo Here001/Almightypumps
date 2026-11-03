@@ -42,7 +42,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 ## Layout
 - `src/core/` pure business rules with no dependencies: money (integer kobo), ledger,
   escrow state machine, SMM pricing/parsing, listing policy, crypto helpers.
-  Tested by `tests/core.test.ts` (`npm test`, Node's built-in runner, 30 tests).
+  Tested by `tests/core.test.ts` (`npm test`, Node's built-in runner, 31 tests).
 - `src/server/` database access, wallet (row locks, holds, idempotent ledger),
   market, smm, payments (Flutterwave), auth, env, http helpers.
 - Customer dashboard (`app/dashboard` → `src/components/dashboard/`): tabs Services / Orders /
@@ -112,6 +112,13 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   account <3 days, account differs from seller profile). /admin/disputes = DISPUTED trades with complaint,
   seller proof, contacts, timeline/messages → Refund buyer / Pay seller (`act` RESOLVE_*). Wallet history
   lines without a memo get friendly names (`kindLabel` in app/dashboard/page.tsx).
+- Rate limiting (`src/server/rateLimit.ts`, migration 0016 `rate_limits`, maths in `src/core/rateLimit.ts`):
+  Postgres fixed-window counters (work across Vercel instances), keys HMAC-hashed with SESSION_SECRET (no
+  raw IPs/emails). Rules in `LIMITS` (login 30/15min per IP + 10/15min per email, signup 6/h per IP,
+  password change, top-up, withdraw, orders, buys, trade actions/messages, verification, seller apply/avatar,
+  listings, API keys, reseller /api/v2 120/min per key, /api/track silent drop). Over the limit = 429 with
+  Retry-After and "Please wait N minutes"; a failing counter allows the request. Counters >1 day old are
+  pruned by the sync-orders cron. IP = first x-forwarded-for (set by Vercel).
 - `app/api/**` route handlers; `app/page.tsx` 3D homepage; `app/signup`, `app/login`,
   `app/dashboard`; `app/admin` (Insights, Growth providers, Services, Pricing, Shop, Listings review; admins only).
 - Shop (`src/server/shop.ts`, /admin/shop, migration 0008): admin categories → products. Delivery
@@ -154,7 +161,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   `dev` (full app) are both pushed.
 - Neon: project **almighty-pumps** (`jolly-dust-18900048`, AWS eu-central-1).
   - `main` branch: production, still empty. Run the migration on it only after approval.
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0015 applied. Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0016 applied. Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).
@@ -207,7 +214,7 @@ moving to ESLint 9 / Next 16 is a later job.
    ~~seller verification queue~~ done; ~~disputes, withdrawals, platform wallet~~ done 2026-11-03.
 5. Marketplace pages: browse (Bybit P2P-style table, Buy/Sell toggle), listing detail,
    post an ad, trade room (timer, steps, chat, release/dispute), my trades.
-6. Rate limiting on auth, funding and order routes.
+6. ~~Rate limiting on auth, funding and order routes.~~ Done 2026-11-03.
 7. Mockup Studio, document generator, website templates.
 
 ## Going live checklist (owner approval required at each step)

@@ -367,3 +367,14 @@ test("verification code pricing and outcomes", async () => {
   assert.equal(v.extractCode("hello"), null);
   assert.equal(v.serviceLabel("google_voice"), "Google voice");
 });
+
+test("rate limit windows", async () => {
+  const r = await import("../src/core/rateLimit.ts");
+  assert.equal(r.windowStart(125_000, 60), 120_000);
+  assert.equal(r.retryAfterSec(125_000, 60), 55);
+  assert.equal(r.retryAfterSec(179_999, 60), 1);
+  assert.equal(r.waitText(45), "45 seconds");
+  assert.equal(r.waitText(61), "2 minutes");
+  assert.equal(r.waitText(15 * 60), "15 minutes");
+  assert.equal(r.waitText(3601), "2 hours");
+});

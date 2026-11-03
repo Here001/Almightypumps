@@ -12,7 +12,11 @@ export function route<A extends unknown[]>(fn: (...args: A) => Promise<unknown>)
       return NextResponse.json({ ok: true, data });
     } catch (e) {
       const err = toAppError(e);
-      return NextResponse.json({ ok: false, error: { code: err.code, message: err.message, details: err.details } }, { status: err.status });
+      const retry = err.status === 429 ? (err.details as { retryAfterSec?: number } | undefined)?.retryAfterSec : undefined;
+      return NextResponse.json(
+        { ok: false, error: { code: err.code, message: err.message, details: err.details } },
+        { status: err.status, headers: retry ? { "Retry-After": String(retry) } : undefined },
+      );
     }
   };
 }
