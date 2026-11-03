@@ -68,6 +68,13 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   ₦/$, change password + log out other devices (`users.session_version` in the JWT `v` claim,
   migration 0009), seller application, reseller API keys (create/revoke), admin link, log out.
   App colours use `rgb(var(--ov) / a)` overlays + tokens so both themes work; keep it that way.
+- Sellers (`src/server/sellers.ts`, migration 0010 `seller_profiles`): Settings → "Become a seller" form
+  (shop name, phone, what they sell, bank from `src/core/banks.ts`, 10-digit account, account name,
+  ID type+number). Status none → pending → verified/rejected (reason required; re-apply allowed).
+  /admin/sellers shows full ID/account (admins only; sellers see masked). Verified sellers get the
+  Seller panel in the P2P tab (`SellerPanel.tsx`): post/edit (policy re-check; flagged or previously
+  declined → review)/pause/resume/remove ads, orders to deliver (SHIP with proof, or CANCEL = refund),
+  sales history, earnings after the 3% fee. APIs: /api/seller/{apply,listings,listings/[id],orders}.
 - `app/api/**` route handlers; `app/page.tsx` 3D homepage; `app/signup`, `app/login`,
   `app/dashboard`; `app/admin` (Insights, Growth providers, Services, Pricing, Shop, Listings review; admins only).
 - Shop (`src/server/shop.ts`, /admin/shop, migration 0008): admin categories → products. Delivery
@@ -110,7 +117,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   `dev` (full app) are both pushed.
 - Neon: project **almighty-pumps** (`jolly-dust-18900048`, AWS eu-central-1).
   - `main` branch: production, still empty. Run the migration on it only after approval.
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0009 applied. Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0010 applied. Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).
@@ -158,7 +165,7 @@ moving to ESLint 9 / Next 16 is a later job.
    Owlet's API has NO recommended flag (only `mode`/`proof`/`targetable` on 179 in-house
    services); owner to choose: map those, ask Owlet, or star manually.
 4. Admin panel (`/admin`): ~~Insights~~, ~~providers (markup, sync, balance, pause)~~ done;
-   still to do: seller verification queue, disputes, withdrawals, platform wallet balance.
+   ~~seller verification queue~~ done; still to do: disputes, withdrawals, platform wallet balance.
 5. Marketplace pages: browse (Bybit P2P-style table, Buy/Sell toggle), listing detail,
    post an ad, trade room (timer, steps, chat, release/dispute), my trades.
 6. Rate limiting on auth, funding and order routes.

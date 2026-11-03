@@ -1,16 +1,17 @@
-import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/server/db";
-import { users } from "@/server/db/schema";
 import { requireAdmin } from "@/server/auth";
 import { body, route } from "@/server/http";
+import { decideSeller } from "@/server/sellers";
 
-const schema = z.object({ decision: z.enum(["verified", "rejected"]) });
+export const dynamic = "force-dynamic";
 
+const schema = z.object({ decision: z.enum(["verified", "rejected"]), note: z.string().max(500).optional() });
+
+/** Approve or reject a seller application (a reason is required to reject). */
 export const POST = route(async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params;
   await requireAdmin();
-  const { decision } = await body(req, schema);
-  const [u] = await getDb().update(users).set({ sellerStatus: decision }).where(eq(users.id, id)).returning({ id: users.id, sellerStatus: users.sellerStatus });
-  return u;
+  const { decision, note } = await body(req, schema);
+  return decideSeller(getDb(), id, decision, note);
 });

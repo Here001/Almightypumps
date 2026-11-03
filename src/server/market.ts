@@ -245,3 +245,68 @@ export async function myTrades(db: Db, userId: string) {
 export async function openDisputes(db: Db) {
   return db.select().from(trades).where(inArray(trades.status, ["DISPUTED"])).orderBy(trades.createdAt);
 }
+
+/* ---------------- seller panel ---------------- */
+
+/** A seller's own ads with sales counts. */
+export async function myListings(db: Db, sellerId: string) {
+  return db
+    .select({
+      id: listings.id, title: listings.title, description: listings.description, category: listings.category,
+      deliveryType: listings.deliveryType, price: listings.price, stock: listings.stock, minQty: listings.minQty,
+      maxQty: listings.maxQty, status: listings.status, reviewNote: listings.reviewNote, createdAt: listings.createdAt,
+      sold: sql<number>`(SELECT coalesce(sum(t.quantity), 0)::int FROM trades t WHERE t.listing_id = "listings"."id" AND t.status = 'COMPLETED')`,
+      openOrders: sql<number>`(SELECT count(*)::int FROM trades t WHERE t.listing_id = "listings"."id" AND t.status IN ('PAID', 'SHIPPED', 'DISPUTED'))`,
+    })
+    .from(listings)
+    .where(and(eq(listings.sellerId, sellerId), sql`${listings.status} <> 'removed'`))
+    .orderBy(desc(listings.createdAt));
+}
+
+/** Edit an ad. Policy is checked again; anything flagged (or previously declined) goes back to review. */
+export async function updateListing(db: Db, sellerId: string, listingId: string, input: ListingInput) {
+  const [l] = await db.select().from(listings).where(and(eq(listings.id, listingId), eq(listings.sellerId, sellerId)));
+  if (!l || l.status === "removed") throw notFound("Listing");
+  const check = checkListing(input);
+  if (!check.ok) throw badRequest("Please fix the listing and try again.", check.problems);
+  const needsReview = check.review.length > 0 || l.status === "pending" || l.status === "declined";
+  const [row] = await db
+    .update(listings)
+    .set({
+      title: input.title.trim(), description: input.description.trim(), category: input.category, deliveryType: input.deliveryType,
+      price: input.priceKobo, stock: input.stock, minQty: input.minQty, maxQty: input.maxQty,
+      status: needsReview ? "pending" : l.status,
+      reviewNote: needsReview ? (check.review.join(" ") || "Edited after review; checking again.") : null,
+    })
+    .where(eq(listings.id, l.id))
+    .returning();
+  return { ...row, message: needsReview ? "Saved. Your ad will go live again once our team has checked it." : "Saved." };
+}
+
+/** Pause, resume or remove an ad. Open orders on it carry on as normal. */
+export async function setListingStatus(db: Db, sellerId: string, listingId: string, action: "pause" | "resume" | "remove") {
+  const [l] = await db.select({ id: listings.id, status: listings.status }).from(listings).where(and(eq(listings.id, listingId), eq(listings.sellerId, sellerId)));
+  if (!l || l.status === "removed") throw notFound("Listing");
+  if (action === "pause" && l.status !== "active") throw badRequest("Only live ads can be paused.");
+  if (action === "resume" && l.status !== "paused") throw badRequest("Only paused ads can be resumed.");
+  const status = action === "pause" ? "paused" : action === "resume" ? "active" : "removed";
+  const [row] = await db.update(listings).set({ status }).where(eq(listings.id, l.id)).returning({ id: listings.id, status: listings.status });
+  return row;
+}
+
+/** Orders on a seller's ads, newest first, with what they'll receive after the escrow fee. */
+export async function sellerOrders(db: Db, sellerId: string) {
+  const rows = await db
+    .select({
+      id: trades.id, publicId: trades.publicId, status: trades.status, quantity: trades.quantity, amount: trades.amount,
+      shipBy: trades.shipBy, inspectionEndsAt: trades.inspectionEndsAt, deliveryProof: trades.deliveryProof, createdAt: trades.createdAt,
+      title: listings.title, deliveryType: listings.deliveryType, buyerName: users.name,
+    })
+    .from(trades)
+    .innerJoin(listings, eq(listings.id, trades.listingId))
+    .innerJoin(users, eq(users.id, trades.buyerId))
+    .where(eq(trades.sellerId, sellerId))
+    .orderBy(desc(trades.createdAt))
+    .limit(100);
+  return rows.map((r) => ({ ...r, youReceive: payoutSplit(r.amount, ESCROW_DEFAULTS.sellerFeeBps).seller }));
+}

@@ -1,0 +1,37 @@
+/** Common Nigerian banks and wallets for payouts (code = NIBSS/CBN bank code). Admins confirm on approval. */
+export const NG_BANKS: { name: string; code: string }[] = [
+  { name: "Access Bank", code: "044" },
+  { name: "Citibank Nigeria", code: "023" },
+  { name: "Ecobank Nigeria", code: "050" },
+  { name: "Fidelity Bank", code: "070" },
+  { name: "First Bank of Nigeria", code: "011" },
+  { name: "First City Monument Bank (FCMB)", code: "214" },
+  { name: "Globus Bank", code: "00103" },
+  { name: "Guaranty Trust Bank (GTBank)", code: "058" },
+  { name: "Heritage Bank", code: "030" },
+  { name: "Jaiz Bank", code: "301" },
+  { name: "Keystone Bank", code: "082" },
+  { name: "Kuda Microfinance Bank", code: "50211" },
+  { name: "Moniepoint Microfinance Bank", code: "50515" },
+  { name: "OPay", code: "999992" },
+  { name: "PalmPay", code: "999991" },
+  { name: "Polaris Bank", code: "076" },
+  { name: "Providus Bank", code: "101" },
+  { name: "Stanbic IBTC Bank", code: "221" },
+  { name: "Standard Chartered Bank", code: "068" },
+  { name: "Sterling Bank", code: "232" },
+  { name: "SunTrust Bank", code: "100" },
+  { name: "Titan Trust Bank", code: "102" },
+  { name: "Union Bank of Nigeria", code: "032" },
+  { name: "United Bank for Africa (UBA)", code: "033" },
+  { name: "Unity Bank", code: "215" },
+  { name: "Wema Bank", code: "035" },
+  { name: "Zenith Bank", code: "057" },
+];
+
+export const ID_TYPES = [
+  { id: "nin", label: "NIN (National Identity Number)", pattern: /^\d{11}$/, hint: "11 digits" },
+  { id: "drivers_license", label: "Driver's licence", pattern: /^[A-Z0-9]{8,15}$/i, hint: "8–15 letters or digits" },
+  { id: "passport", label: "International passport", pattern: /^[A-Z]\d{8}$/i, hint: "1 letter + 8 digits" },
+  { id: "voters_card", label: "Voter's card (PVC)", pattern: /^[A-Z0-9]{19}$|^[A-Z0-9]{9,10}$/i, hint: "VIN on your card" },
+] as const;

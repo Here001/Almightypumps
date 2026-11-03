@@ -8,6 +8,7 @@ import { CurrencyProvider, CurrencySwitch, useCurrency } from "./Currency";
 import { HUB_SERVICES } from "./services";
 import { ShopCategory } from "./Shop";
 import { Settings } from "./Settings";
+import { SellerPanel } from "./SellerPanel";
 import { SHOP_ICON_PATHS } from "../icons";
 
 type Order = { id: number; service: string; platform: string; link: string; quantity: number; amount: number; status: string; remains: number | null; when: string };
@@ -213,7 +214,7 @@ function Dashboard(props: Props) {
             </section>
           )}
 
-          {tab === "settings" && <Settings me={{ ...props.me, isAdmin: props.isAdmin }} />}
+          {tab === "settings" && <Settings me={{ ...props.me, isAdmin: props.isAdmin }} onOpenSellerPanel={() => go("trades")} />}
 
           {tab === "wallet" && (
             <>
@@ -243,9 +244,25 @@ function Dashboard(props: Props) {
             </>
           )}
 
+          {tab === "trades" && (props.me.sellerStatus === "verified" ? <SellerPanel /> : (
+            <section className="card glass">
+              <h2>Sell on Almighty Pumps</h2>
+              <p className="muted" style={{ fontSize: 14 }}>
+                {props.me.sellerStatus === "pending"
+                  ? "Your seller application is being reviewed. Once approved, your seller panel appears here."
+                  : "Post ads on the P2P marketplace. Buyers pay into escrow and you're paid when they confirm."}
+              </p>
+              {props.me.sellerStatus !== "pending" && (
+                <button type="button" className="btn btn-primary ap-mini" style={{ alignSelf: "flex-start" }} onClick={() => go("settings")}>
+                  {props.me.sellerStatus === "rejected" ? "See why and re-apply" : "Become a seller"}
+                </button>
+              )}
+            </section>
+          ))}
+
           {tab === "trades" && (
             <section className="card glass">
-              <h2>P2P trades</h2>
+              <h2>My trades</h2>
               {props.trades.length === 0 ? <div className="empty">No trades yet. When you buy from a verified seller, your money waits safely in escrow until you confirm the item.</div> : (
                 <ul className="ap-list">
                   {props.trades.map((t) => {

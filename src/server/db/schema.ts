@@ -298,3 +298,20 @@ export const shopOrders = pgTable("shop_orders", {
   createdAt: ts("created_at").notNull().defaultNow(),
   updatedAt: ts("updated_at").notNull().defaultNow(),
 });
+
+/** Seller applications (drizzle/0010_seller_profiles.sql). ID numbers: admins only. */
+export const sellerProfiles = pgTable("seller_profiles", {
+  userId: uuid("user_id").primaryKey().references(() => users.id),
+  businessName: text("business_name").notNull(),
+  contactPhone: text("contact_phone").notNull(),
+  bankName: text("bank_name").notNull(),
+  bankCode: text("bank_code").notNull(),
+  accountNumber: text("account_number").notNull(),
+  accountName: text("account_name").notNull(),
+  idType: text("id_type").$type<"nin" | "drivers_license" | "passport" | "voters_card">().notNull(),
+  idNumber: text("id_number").notNull(),
+  whatTheySell: text("what_they_sell").notNull().default(""),
+  reviewNote: text("review_note"),
+  submittedAt: ts("submitted_at").notNull().defaultNow(),
+  decidedAt: ts("decided_at"),
+});

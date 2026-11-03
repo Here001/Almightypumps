@@ -5,19 +5,20 @@ import { useEffect, useState } from "react";
 import { api } from "../api";
 import { useThemePref, type ThemePref } from "../Theme";
 import { useCurrency } from "./Currency";
+import { ID_TYPES, NG_BANKS } from "@/core/banks";
 
 type Me = { name: string; email: string; phone: string | null; sellerStatus: string; isAdmin: boolean };
 type Msg = { ok: boolean; text: string } | null;
 const Note = ({ msg }: { msg: Msg }) => (msg ? <div className={msg.ok ? "form-ok" : "form-error"} role={msg.ok ? "status" : "alert"}>{msg.text}</div> : null);
 
-export function Settings({ me }: { me: Me }) {
+export function Settings({ me, onOpenSellerPanel }: { me: Me; onOpenSellerPanel: () => void }) {
   const router = useRouter();
   return (
     <>
       <Profile me={me} />
       <Appearance />
       <Security />
-      <Seller status={me.sellerStatus} />
+      <Seller status={me.sellerStatus} onOpenPanel={onOpenSellerPanel} />
       <ApiKeys />
       <section className="card glass">
         <h2>Account</h2>
@@ -157,31 +158,111 @@ function Security() {
   );
 }
 
-function Seller({ status }: { status: string }) {
+type SellerProfile = {
+  businessName: string; contactPhone: string; bankName: string; bankCode: string; accountName: string;
+  accountNumberMasked: string; idType: string; idNumberMasked: string; whatTheySell: string; reviewNote: string | null;
+};
+
+function Seller({ status, onOpenPanel }: { status: string; onOpenPanel: () => void }) {
   const router = useRouter();
-  const [s, setS] = useState(status);
+  const [st, setSt] = useState(status);
+  const [profile, setProfile] = useState<SellerProfile | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [f, setF] = useState({ businessName: "", contactPhone: "", whatTheySell: "", bankCode: "", accountNumber: "", accountName: "", idType: "nin", idNumber: "" });
   const [busy, setBusy] = useState(false);
-  const label: Record<string, string> = {
-    none: "Sell on the P2P marketplace with escrow protection. Apply and our team will verify you.",
-    pending: "Your seller application is being reviewed. We'll verify your ID and bank details.",
-    verified: "You're a verified seller. You can post ads on the P2P marketplace.",
-    rejected: "Your seller application wasn't approved. Contact support for details.",
-  };
+  const [msg, setMsg] = useState<Msg>(null);
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setF((x) => ({ ...x, [k]: e.target.value }));
+
+  useEffect(() => {
+    api<{ sellerStatus: string; profile: SellerProfile | null }>("/api/seller/apply").then((r) => {
+      setSt(r.sellerStatus);
+      setProfile(r.profile);
+      if (r.profile) setF((x) => ({ ...x, businessName: r.profile!.businessName, contactPhone: r.profile!.contactPhone, whatTheySell: r.profile!.whatTheySell, bankCode: r.profile!.bankCode, accountName: r.profile!.accountName, idType: r.profile!.idType }));
+    }).catch(() => {});
+  }, []);
+
+  const idType = ID_TYPES.find((t) => t.id === f.idType) ?? ID_TYPES[0];
+  const showForm = st === "none" ? editing : st === "rejected" ? editing : false;
+
   return (
     <section className="card glass">
       <h2>Seller account</h2>
-      <p className="muted" style={{ fontSize: 14 }}>{label[s] ?? s}</p>
-      {s === "none" && (
-        <button type="button" className="btn btn-ghost" style={{ alignSelf: "flex-start" }} disabled={busy} onClick={async () => {
+      {st === "verified" && (
+        <>
+          <div className="form-ok" role="status">You&apos;re a verified seller{profile ? ` as “${profile.businessName}”` : ""}. Post and manage your ads in the P2P tab.</div>
+          <button type="button" className="btn btn-primary" style={{ alignSelf: "flex-start" }} onClick={onOpenPanel}>Open my seller panel</button>
+          {profile && <p className="muted" style={{ fontSize: 13 }}>Payouts go to {profile.bankName} {profile.accountNumberMasked} ({profile.accountName}). Contact support to change it.</p>}
+        </>
+      )}
+      {st === "pending" && (
+        <>
+          <div className="form-ok" role="status">Thanks! Your application is being reviewed. We check your ID and bank details, usually within 24 hours.</div>
+          {profile && <p className="muted" style={{ fontSize: 13 }}>{profile.businessName} · {profile.bankName} {profile.accountNumberMasked} · ID {profile.idNumberMasked}</p>}
+        </>
+      )}
+      {st === "rejected" && !editing && (
+        <>
+          <div className="form-error" role="alert">Your application wasn&apos;t approved{profile?.reviewNote ? `: ${profile.reviewNote}` : "."}</div>
+          <button type="button" className="btn btn-ghost" style={{ alignSelf: "flex-start" }} onClick={() => setEditing(true)}>Fix and re-apply</button>
+        </>
+      )}
+      {st === "none" && !editing && (
+        <>
+          <p className="muted" style={{ fontSize: 14 }}>Sell on the P2P marketplace. Buyers pay into escrow, you get paid when they confirm (3% fee). We verify every seller to keep buyers safe.</p>
+          <button type="button" className="btn btn-primary" style={{ alignSelf: "flex-start" }} onClick={() => setEditing(true)}>Become a seller</button>
+        </>
+      )}
+      {showForm && (
+        <form style={{ display: "flex", flexDirection: "column", gap: 12 }} onSubmit={async (e) => {
+          e.preventDefault();
           setBusy(true);
+          setMsg(null);
           try {
-            const r = await api<{ sellerStatus: string }>("/api/seller/apply", {});
-            setS(r.sellerStatus);
+            const r = await api<{ sellerStatus: string }>("/api/seller/apply", f);
+            setSt(r.sellerStatus);
+            setEditing(false);
+            const p = await api<{ profile: SellerProfile | null }>("/api/seller/apply");
+            setProfile(p.profile);
             router.refresh();
+          } catch (err) {
+            setMsg({ ok: false, text: (err as Error).message });
           } finally {
             setBusy(false);
           }
-        }}>{busy ? "Applying…" : "Apply to become a seller"}</button>
+        }}>
+          <h3 style={{ fontSize: 15 }}>About your shop</h3>
+          <div className="field"><label htmlFor="sa-biz">Shop or business name</label>
+            <input id="sa-biz" className="input" value={f.businessName} onChange={set("businessName")} required maxLength={80} /></div>
+          <div className="field"><label htmlFor="sa-phone">Phone buyers and our team can reach you on</label>
+            <input id="sa-phone" className="input" value={f.contactPhone} onChange={set("contactPhone")} inputMode="tel" placeholder="0803 123 4567" required /></div>
+          <div className="field"><label htmlFor="sa-what">What will you sell?</label>
+            <textarea id="sa-what" className="input" rows={2} value={f.whatTheySell} onChange={set("whatTheySell")} placeholder="e.g. Fairly used iPhones and accessories" required maxLength={500} /></div>
+
+          <h3 style={{ fontSize: 15 }}>Where we pay you</h3>
+          <div className="field"><label htmlFor="sa-bank">Bank</label>
+            <select id="sa-bank" className="select" value={f.bankCode} onChange={set("bankCode")} required>
+              <option value="">Choose your bank…</option>
+              {NG_BANKS.map((b) => <option key={b.code} value={b.code}>{b.name}</option>)}
+            </select></div>
+          <div className="field"><label htmlFor="sa-acct">Account number</label>
+            <input id="sa-acct" className="input" value={f.accountNumber} onChange={set("accountNumber")} inputMode="numeric" maxLength={10} placeholder={profile ? `Re-enter (was ${profile.accountNumberMasked})` : "10 digits"} required /></div>
+          <div className="field"><label htmlFor="sa-acctname">Account name</label>
+            <input id="sa-acctname" className="input" value={f.accountName} onChange={set("accountName")} placeholder="As shown by your bank" required /></div>
+
+          <h3 style={{ fontSize: 15 }}>Verify your identity</h3>
+          <div className="field"><label htmlFor="sa-idtype">ID type</label>
+            <select id="sa-idtype" className="select" value={f.idType} onChange={set("idType")}>
+              {ID_TYPES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+            </select></div>
+          <div className="field"><label htmlFor="sa-idnum">ID number <span className="muted">({idType.hint})</span></label>
+            <input id="sa-idnum" className="input" value={f.idNumber} onChange={set("idNumber")} autoComplete="off" required /></div>
+          <p className="muted" style={{ fontSize: 13 }}>Your ID number is only seen by our verification team and is used only to confirm who you are.</p>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="btn btn-primary" disabled={busy}>{busy ? "Sending…" : "Send application"}</button>
+            <button type="button" className="btn btn-ghost" onClick={() => setEditing(false)}>Cancel</button>
+          </div>
+          <Note msg={msg} />
+        </form>
       )}
     </section>
   );

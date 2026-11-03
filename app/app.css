@@ -193,3 +193,6 @@ button.btn-ghost { border: 1px solid rgb(var(--ov) / 0.200); }
 .ap-crumb { display: flex; align-items: center; gap: 8px; font-size: 15px; }
 .ap-subform { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 16px; border: 1px dashed rgb(var(--ov) / 0.200); }
 .ap-code { padding: 12px 14px; border-radius: 12px; background: var(--code-bg); border: 1px solid var(--line); font-family: var(--mono); font-size: 15px; overflow-wrap: anywhere; user-select: all; }
+.ap-facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 0; font-size: 14px; }
+.ap-facts dt { color: var(--muted); }
+.ap-facts dd { margin: 0; overflow-wrap: anywhere; }
