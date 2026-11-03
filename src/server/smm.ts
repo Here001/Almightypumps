@@ -15,7 +15,8 @@ import { linkHold, placeHold, platformWalletId, settleHold, walletIdForUser } fr
 type Provider = typeof smmProviders.$inferSelect;
 
 function providerKey(p: Provider): string {
-  const key = process.env[p.apiKeyEnv];
+  // Trim: keys pasted from a phone often carry a trailing space or newline.
+  const key = process.env[p.apiKeyEnv]?.trim();
   if (!key) throw new AppError(500, "PROVIDER_KEY_MISSING", `Set ${p.apiKeyEnv} in the environment for provider "${p.name}".`);
   return key;
 }
@@ -37,17 +38,31 @@ async function call(p: Provider, params: Record<string, string>): Promise<unknow
   }
 }
 
+/** For admin screens: show what the provider actually said instead of a generic error. */
+async function adminProviderCall<T>(p: Provider, fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (e) {
+    if (e instanceof AppError) throw e;
+    const msg = (e as Error).message || "Unknown error";
+    const hint = /api key|invalid key|unauthori[sz]ed/i.test(msg)
+      ? ` Check ${p.apiKeyEnv} in Vercel (copy the key again from ${p.name}, no spaces), then redeploy.`
+      : "";
+    throw new AppError(502, "PROVIDER_ERROR", `${p.name} said: "${msg}".${hint}`);
+  }
+}
+
 export async function providerBalance(db: Db, providerId: string) {
   const [p] = await db.select().from(smmProviders).where(eq(smmProviders.id, providerId));
   if (!p) throw notFound("Provider");
-  return parseBalance(await call(p, { action: "balance" }));
+  return adminProviderCall(p, async () => parseBalance(await call(p, { action: "balance" })));
 }
 
 /** Pull the provider's catalogue and upsert our priced copy of it. */
 export async function syncServices(db: Db, providerId: string) {
   const [p] = await db.select().from(smmProviders).where(eq(smmProviders.id, providerId));
   if (!p) throw notFound("Provider");
-  const list = parseServices(await call(p, { action: "services" }));
+  const list = await adminProviderCall(p, async () => parseServices(await call(p, { action: "services" })));
   let upserted = 0;
   for (const s of list) {
     const rateKobo = sellRatePer1000(s.rate, p.fxKoboPerUnit, p.markupBps);
