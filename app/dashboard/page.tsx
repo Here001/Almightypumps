@@ -47,6 +47,7 @@ export default async function DashboardPage() {
             <a href="#growth">Social Growth</a>
             <a href="#trades">P2P Trades</a>
             <a href="#wallet">Wallet</a>
+            {user.role === "admin" && <a href="/admin">Admin</a>}
           </nav>
           <div style={{ marginTop: "auto" }}><LogoutButton /></div>
         </aside>

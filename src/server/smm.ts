@@ -214,3 +214,26 @@ export async function myOrders(db: Db, userId: string, ids?: number[]) {
     .orderBy(desc(smmOrders.createdAt))
     .limit(100);
 }
+
+/** Change a provider's markup and/or pause it. Re-prices every service from that provider straight away. */
+export async function updateProvider(db: Db, providerId: string, input: { markupBps?: number; active?: boolean }) {
+  return db.transaction(async (tx) => {
+    const [p] = await tx.select().from(smmProviders).where(eq(smmProviders.id, providerId)).for("update");
+    if (!p) throw notFound("Provider");
+    const markupBps = input.markupBps ?? p.markupBps;
+    const [updated] = await tx
+      .update(smmProviders)
+      .set({ markupBps, active: input.active ?? p.active })
+      .where(eq(smmProviders.id, p.id))
+      .returning();
+    let repriced = 0;
+    if (markupBps !== p.markupBps) {
+      const services = await tx.select({ id: smmServices.id, providerRate: smmServices.providerRate }).from(smmServices).where(eq(smmServices.providerId, p.id));
+      for (const s of services) {
+        await tx.update(smmServices).set({ rateKobo: sellRatePer1000(s.providerRate, p.fxKoboPerUnit, markupBps), updatedAt: new Date() }).where(eq(smmServices.id, s.id));
+        repriced++;
+      }
+    }
+    return { provider: updated, repriced };
+  });
+}

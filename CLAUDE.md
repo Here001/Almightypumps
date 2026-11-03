@@ -37,13 +37,17 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 ## Layout
 - `src/core/` pure business rules with no dependencies: money (integer kobo), ledger,
   escrow state machine, SMM pricing/parsing, listing policy, crypto helpers.
-  Tested by `tests/core.test.ts` (`npm test`, Node's built-in runner, 21 tests).
+  Tested by `tests/core.test.ts` (`npm test`, Node's built-in runner, 22 tests).
 - `src/server/` database access, wallet (row locks, holds, idempotent ledger),
   market, smm, payments (Flutterwave), auth, env, http helpers.
 - `app/api/**` route handlers; `app/page.tsx` 3D homepage; `app/signup`, `app/login`,
-  `app/dashboard`.
+  `app/dashboard`; `app/admin` (Insights, Growth providers; admins only).
+- Insights: `src/components/Tracker.tsx` beacons each page and dashboard #section to
+  `/api/track` → `site_events` (anonymous cookie id, no IP/UA stored). Section names come
+  from `src/core/analytics.ts` (add new pages there). Queries in `src/server/insights.ts`.
 - `src/landing/` homepage markup + effects ported from the approved prototype.
-- `drizzle/0000_init.sql` schema (mirrors `src/server/db/schema.ts`; change both).
+- `drizzle/*.sql` migrations, applied in order by `scripts/migrate.mjs` (tracked in `_migrations`);
+  `src/server/db/schema.ts` mirrors them. New schema change = new numbered file + schema.ts.
 - `scripts/migrate.mjs`, `scripts/seed.mjs`.
 
 ## Infrastructure state (as of 2026-11-03)
@@ -51,7 +55,9 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   `dev` (full app) are both pushed.
 - Neon: project **almighty-pumps** (`jolly-dust-18900048`, AWS eu-central-1).
   - `main` branch: production, still empty. Run the migration on it only after approval.
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): schema 0000_init.sql applied.
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000 and 0001 applied. Provider "Owlet"
+    (`https://theowlet.com/api/v2`, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
+    adjusts it in /admin/providers). No human admin yet: promote the owner's account after signup.
   - Database name `almighty_pumps`. Use the pooled connection string (host contains `-pooler`).
   - The owner's other Neon projects (Living_Settlement, the-living-world-development)
     belong to a different project. Don't touch them.
@@ -91,15 +97,16 @@ moving to ESLint 9 / Next 16 is a later job.
    (generate fresh: `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`),
    `FLUTTERWAVE_SECRET_KEY` (owner pastes test key), `FLUTTERWAVE_WEBHOOK_HASH`, `SMM_PROVIDER_1_KEY` (owner pastes).
 3. Verify the preview: sign up, dashboard loads, wallet shows ₦0.00.
-4. Admin panel (`/admin`): seller verification queue, disputes, withdrawals,
-   providers with a "Sync services" button, platform wallet balance.
+4. Admin panel (`/admin`): ~~Insights~~, ~~providers (markup, sync, balance, pause)~~ done;
+   still to do: seller verification queue, disputes, withdrawals, platform wallet balance.
 5. Marketplace pages: browse (Bybit P2P-style table, Buy/Sell toggle), listing detail,
    post an ad, trade room (timer, steps, chat, release/dispute), my trades.
 6. Rate limiting on auth, funding and order routes.
 7. Mockup Studio, document generator, website templates.
 
 ## Going live checklist (owner approval required at each step)
-Run `drizzle/0000_init.sql` on Neon `main`; add Production env vars (live Flutterwave key,
+Run the `drizzle/*.sql` migrations on Neon `main`; add Production env vars (live Flutterwave key: the owner also ticked Production when adding the
+TEST key and SMM key, so replace FLUTTERWAVE_SECRET_KEY's Production value with the live key,
 new webhook hash); set the Flutterwave **Live** webhook to `https://<domain>/api/webhooks/flutterwave`
 (it currently points at an old WooCommerce site on almightypumps.com, which the owner
 confirmed is no longer in use, so replace it; use a new live secret hash); add the two production

@@ -2,7 +2,7 @@
  * Drizzle table definitions. These mirror drizzle/0000_init.sql exactly;
  * change both together (or regenerate with `npm run db:generate`).
  */
-import { pgTable, uuid, text, boolean, timestamp, bigint, integer, serial, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, boolean, timestamp, bigint, bigserial, integer, serial, jsonb } from "drizzle-orm/pg-core";
 
 const money = (name: string) => bigint(name, { mode: "number" });
 const ts = (name: string) => timestamp(name, { withTimezone: true, mode: "date" });
@@ -206,4 +206,14 @@ export const disputes = pgTable("disputes", {
   resolvedBy: uuid("resolved_by").references(() => users.id),
   createdAt: ts("created_at").notNull().defaultNow(),
   resolvedAt: ts("resolved_at"),
+});
+
+/** Anonymous page/section views (see drizzle/0001_site_events.sql). */
+export const siteEvents = pgTable("site_events", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  at: ts("at").notNull().defaultNow(),
+  visitor: text("visitor").notNull(),
+  userId: uuid("user_id").references(() => users.id),
+  section: text("section").notNull(),
+  path: text("path").notNull(),
 });

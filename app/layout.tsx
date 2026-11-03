@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./landing.css";
 import "./app.css";
+import { Tracker } from "@/components/Tracker";
 
 export const metadata: Metadata = {
   title: "Almighty Pumps",
@@ -21,7 +22,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Tracker />
+      </body>
     </html>
   );
 }

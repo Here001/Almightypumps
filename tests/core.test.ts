@@ -198,3 +198,21 @@ test("api keys and references", () => {
   assert.equal(hashApiKey(k.key), k.hash);
   assert.match(paymentReference("fund", new Date("2026-11-03T10:00:00Z")), /^AP-FUND-20261103-[A-Za-z0-9]{10}$/);
 });
+
+/* ---------------- analytics ---------------- */
+test("site sections", async () => {
+  const { sectionFor, isBot } = await import("../src/core/analytics.ts");
+  assert.equal(sectionFor("/"), "Home page");
+  assert.equal(sectionFor("/dashboard"), "Dashboard");
+  assert.equal(sectionFor("/dashboard/", "#growth"), "Social Growth");
+  assert.equal(sectionFor("/dashboard", "#trades"), "P2P Marketplace");
+  assert.equal(sectionFor("/dashboard", "#nope"), "Dashboard");
+  assert.equal(sectionFor("/market/abc?x=1"), "P2P Marketplace");
+  assert.equal(sectionFor("/marketing"), "Other");
+  assert.equal(sectionFor("/signup"), "Sign up");
+  assert.equal(sectionFor("/admin"), null);
+  assert.equal(sectionFor("/api/me"), null);
+  assert.equal(isBot("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)"), false);
+  assert.equal(isBot("Googlebot/2.1"), true);
+  assert.equal(isBot(null), true);
+});
