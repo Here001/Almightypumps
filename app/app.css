@@ -142,3 +142,5 @@ button.btn-ghost { border: 1px solid #FFFFFF33; }
   .ap-tabbar a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 4px; border-radius: 12px; text-decoration: none; color: var(--muted); font-size: 12px; min-height: 48px; justify-content: center; }
   .ap-tabbar a[aria-current="page"] { color: var(--accent); background: #FF6A2B14; }
 }
+.btn.ap-mini { min-height: 36px; padding: 6px 14px; font-size: 13px; }
+.ap-chips.ap-chips-wrap { flex-wrap: wrap; overflow: visible; }

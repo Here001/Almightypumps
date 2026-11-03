@@ -50,7 +50,10 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   social-media poll votes only (kind "Poll votes"); Claude declined to enable fake reviews,
   contest votes and add-to-carts (third-party deception, FCCPC/FTC risk, payment-provider risk).
 - `app/api/**` route handlers; `app/page.tsx` 3D homepage; `app/signup`, `app/login`,
-  `app/dashboard`; `app/admin` (Insights, Growth providers; admins only).
+  `app/dashboard`; `app/admin` (Insights, Growth providers, Services; admins only).
+- Service visibility: `smm_services.hidden_reason` null = on sale, `admin` (hidden in
+  /admin/services, survives syncs), `policy` (isRestricted; can't be unhidden), `provider`
+  (dropped upstream or 0-priced; returns on next sync if listed). `active` mirrors it.
 - Insights: `src/components/Tracker.tsx` beacons each page and dashboard #section to
   `/api/track` → `site_events` (anonymous cookie id, no IP/UA stored). Section names come
   from `src/core/analytics.ts` (add new pages there). Queries in `src/server/insights.ts`.
@@ -64,7 +67,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   `dev` (full app) are both pushed.
 - Neon: project **almighty-pumps** (`jolly-dust-18900048`, AWS eu-central-1).
   - `main` branch: production, still empty. Run the migration on it only after approval.
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000, 0001, 0002 applied. Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0003 applied. Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).
