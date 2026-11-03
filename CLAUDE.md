@@ -63,7 +63,12 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 - Cron: Hobby only allows daily crons, so `vercel.json` has no `crons` (deploys are refused
   otherwise). The jobs are `GET /api/cron/sync-orders` (every 5 min) and
   `GET /api/cron/escrow` (every 15 min), called with `Authorization: Bearer <CRON_SECRET>`.
-  Before launch: Vercel Pro (re-add `crons`) or cron-job.org (owner decides).
+  Owner chose **cron-job.org** (2026-11-03); do not re-add `crons` to `vercel.json`.
+  Preview jobs call `https://almightypumps-git-dev-otedola.vercel.app` and also send
+  `x-vercel-protection-bypass: <automation bypass secret>` (Vercel deployment protection;
+  secret is in Vercel > Settings > Deployment Protection, note "cron-job.org scheduler").
+  At launch, add two more jobs for the production domain with the production CRON_SECRET
+  (production domain is not behind Vercel login, so no bypass header).
 
 ## Build status
 First real build done 2026-11-03: `npm install`, `npm run typecheck`, `npm run lint`,
@@ -92,6 +97,6 @@ moving to ESLint 9 / Next 16 is a later job.
 
 ## Going live checklist (owner approval required at each step)
 Run `drizzle/0000_init.sql` on Neon `main`; add Production env vars (live Paystack key);
-set the Paystack webhook to `https://<domain>/api/webhooks/paystack`; decide on Vercel Pro
-or cron-job.org for the two cron jobs (see Cron above); merge `dev` into `main`.
+set the Paystack webhook to `https://<domain>/api/webhooks/paystack`; add the two production
+cron-job.org jobs (see Cron above); merge `dev` into `main`.
 Legal: escrow should run through a licensed partner in Nigeria before real money.
