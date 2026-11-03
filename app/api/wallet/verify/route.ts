@@ -9,7 +9,7 @@ import { confirmFunding } from "@/server/payments";
 
 const schema = z.object({ reference: z.string().regex(/^AP-FUND-/) });
 
-/** Called when Paystack redirects back, in case the webhook is slow. */
+/** Called when Flutterwave redirects back, in case the webhook is slow. */
 export const POST = route(async (req: Request) => {
   const user = await requireUser();
   const { reference } = await body(req, schema);

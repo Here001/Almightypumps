@@ -56,7 +56,7 @@ CREATE TABLE payments (
   reference text NOT NULL UNIQUE,
   amount bigint NOT NULL CHECK (amount > 0),
   status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'success', 'failed')),
-  provider text NOT NULL DEFAULT 'paystack',
+  provider text NOT NULL DEFAULT 'flutterwave',
   raw jsonb,
   created_at timestamptz NOT NULL DEFAULT now(),
   paid_at timestamptz

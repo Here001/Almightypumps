@@ -60,7 +60,7 @@ export const payments = pgTable("payments", {
   reference: text("reference").notNull().unique(),
   amount: money("amount").notNull(),
   status: text("status").$type<"pending" | "success" | "failed">().notNull().default("pending"),
-  provider: text("provider").notNull().default("paystack"),
+  provider: text("provider").notNull().default("flutterwave"),
   raw: jsonb("raw"),
   createdAt: ts("created_at").notNull().defaultNow(),
   paidAt: ts("paid_at"),

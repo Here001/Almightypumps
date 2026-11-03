@@ -7,7 +7,7 @@ import { startFunding } from "@/server/payments";
 
 const schema = z.object({ amount: z.union([z.string(), z.number()]) });
 
-/** Start a Paystack checkout. The client redirects to authorizationUrl. */
+/** Start a Flutterwave checkout. The client redirects to authorizationUrl. */
 export const POST = route(async (req: Request) => {
   const user = await requireUser();
   const { amount } = await body(req, schema);

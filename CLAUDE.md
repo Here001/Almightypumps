@@ -6,7 +6,7 @@
   an explicit "yes" in the conversation.
 - Day-to-day work goes on the `dev` branch. Vercel builds every `dev` push as a
   private preview. Send the owner the preview link and ask before promoting.
-- Never put secrets (database passwords, Paystack keys, provider API keys,
+- Never put secrets (database passwords, Flutterwave keys, provider API keys,
   SESSION_SECRET, CRON_SECRET) in code, commits or this file. They live in Vercel
   environment variables and the local `.env` (git-ignored).
 - The owner is building a business, not learning to code: explain results in plain
@@ -31,7 +31,7 @@ no counterfeit goods. `src/core/listingPolicy.ts` enforces this on listings.
 
 ## Stack
 Next.js 15.5 (App Router) + React 19 + TypeScript, PostgreSQL on Neon via drizzle-orm + pg,
-jose sessions, bcryptjs, zod 4, Paystack, three.js/gsap/lenis for the 3D homepage.
+jose sessions, bcryptjs, zod 4, Flutterwave (payments; switched from Paystack 2026-11-03), three.js/gsap/lenis for the 3D homepage.
 Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 
 ## Layout
@@ -39,7 +39,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   escrow state machine, SMM pricing/parsing, listing policy, crypto helpers.
   Tested by `tests/core.test.ts` (`npm test`, Node's built-in runner, 21 tests).
 - `src/server/` database access, wallet (row locks, holds, idempotent ledger),
-  market, smm, payments (Paystack), auth, env, http helpers.
+  market, smm, payments (Flutterwave), auth, env, http helpers.
 - `app/api/**` route handlers; `app/page.tsx` 3D homepage; `app/signup`, `app/login`,
   `app/dashboard`.
 - `src/landing/` homepage markup + effects ported from the approved prototype.
@@ -58,8 +58,8 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 - Vercel: team `otedola` (`team_F7GOonVg8RPk8y5ozzjWEsTN`), Hobby plan. Project
   `almightypumps` (`prj_Dn7OhM629JfEts2fr3LVipba0jvc`), linked to the GitHub repo,
   framework Next.js, Node 22, region fra1. Preview env vars set (DATABASE_URL to Neon `dev`,
-  DATABASE_SSL, SESSION_SECRET, CRON_SECRET); owner adds PAYSTACK_SECRET_KEY and
-  SMM_PROVIDER_1_KEY. Production env vars are added only when going live.
+  DATABASE_SSL, SESSION_SECRET, CRON_SECRET); FLUTTERWAVE_WEBHOOK_HASH; owner adds
+  FLUTTERWAVE_SECRET_KEY (test key) and SMM_PROVIDER_1_KEY. Production env vars are added only when going live.
 - Cron: Hobby only allows daily crons, so `vercel.json` has no `crons` (deploys are refused
   otherwise). The jobs are `GET /api/cron/sync-orders` (every 5 min) and
   `GET /api/cron/escrow` (every 15 min), called with `Authorization: Bearer <CRON_SECRET>`.
@@ -83,10 +83,10 @@ moving to ESLint 9 / Next 16 is a later job.
 
 ## Next tasks, in order
 1. ~~Install, type-check, build and fix. Commit to `dev`.~~ Done.
-2. ~~Create the Vercel project~~ Done; owner still to add Paystack test key and SMM key. Preview env vars:
+2. ~~Create the Vercel project~~ Done; owner still to add Flutterwave test key and SMM key. Preview env vars:
    `DATABASE_URL` (Neon dev pooled), `DATABASE_SSL=true`, `SESSION_SECRET`, `CRON_SECRET`
    (generate fresh: `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`),
-   `PAYSTACK_SECRET_KEY` (owner pastes test key), `SMM_PROVIDER_1_KEY` (owner pastes).
+   `FLUTTERWAVE_SECRET_KEY` (owner pastes test key), `FLUTTERWAVE_WEBHOOK_HASH`, `SMM_PROVIDER_1_KEY` (owner pastes).
 3. Verify the preview: sign up, dashboard loads, wallet shows ₦0.00.
 4. Admin panel (`/admin`): seller verification queue, disputes, withdrawals,
    providers with a "Sync services" button, platform wallet balance.
@@ -96,7 +96,7 @@ moving to ESLint 9 / Next 16 is a later job.
 7. Mockup Studio, document generator, website templates.
 
 ## Going live checklist (owner approval required at each step)
-Run `drizzle/0000_init.sql` on Neon `main`; add Production env vars (live Paystack key);
-set the Paystack webhook to `https://<domain>/api/webhooks/paystack`; add the two production
+Run `drizzle/0000_init.sql` on Neon `main`; add Production env vars (live Flutterwave key,
+new webhook hash); set the Flutterwave webhook to `https://<domain>/api/webhooks/flutterwave`; add the two production
 cron-job.org jobs (see Cron above); merge `dev` into `main`.
 Legal: escrow should run through a licensed partner in Nigeria before real money.

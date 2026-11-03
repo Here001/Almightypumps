@@ -1,7 +1,7 @@
 # Almighty Pumps
 
 Create, sell and grow from one Naira wallet. Phase 1 of the platform: accounts,
-wallet, Paystack funding, social-growth reselling, an escrow-protected P2P
+wallet, Flutterwave funding, social-growth reselling, an escrow-protected P2P
 marketplace, a reseller API, and the 3D homepage.
 
 ## What's in this phase
@@ -11,7 +11,7 @@ marketplace, a reseller API, and the 3D homepage.
 | 3D homepage (WebGL world, liquid glass, smooth scroll) | Built |
 | Sign up, log in, sessions | Built |
 | Wallet with ledger, holds and idempotent credits | Built |
-| Paystack top-ups (checkout, webhook, verify on return) | Built |
+| Flutterwave top-ups (checkout, webhook, verify on return) | Built |
 | Withdrawals (request + admin marks paid or rejects) | Built, payout is manual |
 | Social growth: provider sync, priced catalogue, orders, auto status sync | Built |
 | Pay-on-delivery for growth orders (hold, then capture or refund) | Built |
@@ -23,7 +23,7 @@ marketplace, a reseller API, and the 3D homepage.
 | Dashboard: balance, fund wallet, quick order, orders, trades, activity | Built |
 | Marketplace pages, trade room page, admin pages | Next phase (APIs are ready) |
 | Mockup studio, business documents, website templates | Next phase |
-| Automatic payouts (Paystack Transfers), seller KYC provider | Next phase |
+| Automatic payouts (Flutterwave Transfers), seller KYC provider | Next phase |
 
 ## Run it locally
 
@@ -60,14 +60,15 @@ node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
    Vercel's Hobby plan only runs crons once a day; use the Pro plan or an external
    scheduler (cron-job.org) calling those URLs with the same header.
 
-## Set up payments (Paystack)
+## Set up payments (Flutterwave)
 
-1. Paystack dashboard → Settings → API Keys & Webhooks.
-2. Put the secret key in `PAYSTACK_SECRET_KEY`.
-3. Set the webhook URL to `https://YOUR-DOMAIN/api/webhooks/paystack`.
+1. Flutterwave dashboard → Settings → API Keys. Put the secret key in `FLUTTERWAVE_SECRET_KEY`.
+2. Settings → Webhooks: set the URL to `https://YOUR-DOMAIN/api/webhooks/flutterwave`,
+   and put a long random value in "Secret hash" and in `FLUTTERWAVE_WEBHOOK_HASH`.
+3. Tick the charge/payment events.
 
 A top-up is only credited after the server re-verifies the transaction with
-Paystack, the amount matches, and the reference hasn't been used before.
+Flutterwave, the amount matches, and the reference hasn't been used before.
 
 ## Set up a social-growth provider
 
@@ -115,7 +116,7 @@ fees, timers or pricing in one place:
 | POST | `/api/auth/login` | `{email, password}` |
 | POST | `/api/auth/logout` | |
 | GET | `/api/me` | User, wallet and latest 30 movements |
-| POST | `/api/wallet/fund` | `{amount}` in naira → Paystack checkout URL |
+| POST | `/api/wallet/fund` | `{amount}` in naira → Flutterwave checkout URL |
 | POST | `/api/wallet/verify` | `{reference}` confirm after redirect |
 | POST | `/api/wallet/withdraw` | `{amount, bankCode, accountNumber, accountName}` |
 | GET | `/api/smm/services` | Priced catalogue |

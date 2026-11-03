@@ -18,7 +18,9 @@ const schema = z.object({
           ? `https://${process.env.VERCEL_URL}`
           : "http://localhost:3000",
     ),
-  PAYSTACK_SECRET_KEY: z.string().optional().default(""),
+  FLUTTERWAVE_SECRET_KEY: z.string().optional().default(""),
+  // The "secret hash" set in Flutterwave > Settings > Webhooks.
+  FLUTTERWAVE_WEBHOOK_HASH: z.string().optional().default(""),
   CRON_SECRET: z.string().min(16, "CRON_SECRET must be at least 16 characters"),
   MIN_FUNDING_KOBO: z.coerce.number().int().positive().default(100_000), // ₦1,000
   MIN_WITHDRAWAL_KOBO: z.coerce.number().int().positive().default(200_000), // ₦2,000

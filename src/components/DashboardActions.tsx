@@ -27,19 +27,25 @@ export function FundWallet() {
         <input id="fund-amount" className="input" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
       </div>
       {error && <div className="form-error" role="alert">{error}</div>}
-      <button className="btn btn-primary" disabled={busy}>{busy ? "Opening Paystack…" : "Fund wallet"}</button>
+      <button className="btn btn-primary" disabled={busy}>{busy ? "Opening secure checkout…" : "Fund wallet"}</button>
     </form>
   );
 }
 
-/** After Paystack redirects back with ?ref=..., confirm the payment once. */
+/** After Flutterwave redirects back with ?tx_ref=...&status=..., confirm the payment once. */
 export function PaymentReturn() {
   const params = useSearchParams();
   const router = useRouter();
-  const ref = params.get("ref");
+  const ref = params.get("tx_ref") ?? params.get("ref");
+  const cancelled = params.get("status") === "cancelled";
   const [msg, setMsg] = useState<string | null>(null);
   useEffect(() => {
     if (!ref) return;
+    if (cancelled) {
+      setMsg("Payment cancelled. Your wallet was not charged.");
+      router.replace("/dashboard");
+      return;
+    }
     api<{ credited: boolean; status: string }>("/api/wallet/verify", { reference: ref })
       .then((r) => {
         setMsg(r.status === "success" ? "Payment received. Your wallet has been topped up." : `Payment status: ${r.status}.`);
@@ -47,7 +53,7 @@ export function PaymentReturn() {
         router.refresh();
       })
       .catch((e) => setMsg((e as Error).message));
-  }, [ref, router]);
+  }, [ref, cancelled, router]);
   return msg ? <div className="form-ok" role="status">{msg}</div> : null;
 }
 

@@ -3,13 +3,29 @@
  */
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
-/** Paystack signs webhooks with HMAC-SHA512 of the raw body using your secret key. */
-export function verifyPaystackSignature(rawBody: string, signature: string | null, secret: string): boolean {
-  if (!signature || !secret) return false;
-  const expected = createHmac("sha512", secret).update(rawBody, "utf8").digest("hex");
-  const a = Buffer.from(expected, "utf8");
-  const b = Buffer.from(signature.trim(), "utf8");
+function safeEqual(x: string, y: string): boolean {
+  const a = Buffer.from(x, "utf8");
+  const b = Buffer.from(y, "utf8");
   return a.length === b.length && timingSafeEqual(a, b);
+}
+
+/**
+ * Flutterwave webhooks carry the "secret hash" set in the dashboard, either as the
+ * `verif-hash` header (plain value) or as `flutterwave-signature`
+ * (base64 HMAC-SHA256 of the raw body keyed with that hash). Accept either.
+ */
+export function verifyFlutterwaveWebhook(
+  rawBody: string,
+  headers: { verifHash: string | null; signature: string | null },
+  secretHash: string,
+): boolean {
+  if (!secretHash) return false;
+  if (headers.verifHash && safeEqual(headers.verifHash.trim(), secretHash)) return true;
+  if (headers.signature) {
+    const expected = createHmac("sha256", secretHash).update(rawBody, "utf8").digest("base64");
+    return safeEqual(headers.signature.trim(), expected);
+  }
+  return false;
 }
 
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";

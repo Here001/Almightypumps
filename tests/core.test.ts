@@ -10,7 +10,7 @@ import {
   parseMultiStatus, validateQuantity,
 } from "../src/core/smm.ts";
 import { checkListing } from "../src/core/listingPolicy.ts";
-import { verifyPaystackSignature, generateApiKey, hashApiKey, paymentReference } from "../src/core/crypto.ts";
+import { verifyFlutterwaveWebhook, generateApiKey, hashApiKey, paymentReference } from "../src/core/crypto.ts";
 
 /* ---------------- money ---------------- */
 test("nairaToKobo parses what people type", () => {
@@ -180,13 +180,16 @@ test("banned items are rejected with a reason", () => {
 });
 
 /* ---------------- crypto ---------------- */
-test("paystack signature verification", () => {
-  const body = JSON.stringify({ event: "charge.success", data: { reference: "AP-FUND-1" } });
-  const sig = createHmac("sha512", "sk_test_x").update(body).digest("hex");
-  assert.equal(verifyPaystackSignature(body, sig, "sk_test_x"), true);
-  assert.equal(verifyPaystackSignature(body + " ", sig, "sk_test_x"), false);
-  assert.equal(verifyPaystackSignature(body, null, "sk_test_x"), false);
-  assert.equal(verifyPaystackSignature(body, "short", "sk_test_x"), false);
+test("flutterwave webhook verification", () => {
+  const body = JSON.stringify({ event: "charge.completed", data: { tx_ref: "AP-FUND-1" } });
+  const hash = "my-secret-hash";
+  const sig = createHmac("sha256", hash).update(body).digest("base64");
+  assert.equal(verifyFlutterwaveWebhook(body, { verifHash: hash, signature: null }, hash), true);
+  assert.equal(verifyFlutterwaveWebhook(body, { verifHash: "wrong", signature: null }, hash), false);
+  assert.equal(verifyFlutterwaveWebhook(body, { verifHash: null, signature: sig }, hash), true);
+  assert.equal(verifyFlutterwaveWebhook(body + " ", { verifHash: null, signature: sig }, hash), false);
+  assert.equal(verifyFlutterwaveWebhook(body, { verifHash: null, signature: null }, hash), false);
+  assert.equal(verifyFlutterwaveWebhook(body, { verifHash: "", signature: null }, ""), false);
 });
 
 test("api keys and references", () => {
