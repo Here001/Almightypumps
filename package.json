@@ -1,0 +1,41 @@
+{
+  "name": "almighty-pumps",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --no-warnings --test tests/core.test.ts",
+    "db:migrate": "node --env-file=.env scripts/migrate.mjs",
+    "db:seed": "node --env-file=.env scripts/seed.mjs"
+  },
+  "dependencies": {
+    "next": "14.2.15",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "drizzle-orm": "0.33.0",
+    "pg": "8.13.0",
+    "zod": "3.23.8",
+    "bcryptjs": "2.4.3",
+    "jose": "5.9.6",
+    "three": "0.128.0",
+    "gsap": "3.12.5",
+    "lenis": "1.1.13"
+  },
+  "devDependencies": {
+    "typescript": "5.6.3",
+    "@types/node": "22.7.5",
+    "@types/react": "18.3.11",
+    "@types/react-dom": "18.3.1",
+    "@types/pg": "8.11.10",
+    "@types/bcryptjs": "2.4.6",
+    "eslint": "8.57.1",
+    "eslint-config-next": "14.2.15"
+  },
+  "engines": {
+    "node": ">=22.6"
+  }
+}
