@@ -24,6 +24,21 @@ export async function setMinOrderKobo(db: DbOrTx, kobo: Kobo) {
   return { minOrderKobo: kobo };
 }
 
+/** Kobo per US$1 for showing dollar prices (display only; we always charge Naira). 0 = dollars off. */
+export async function getUsdRateKobo(db: DbOrTx): Promise<number> {
+  const [r] = await db.select({ value: appSettings.value }).from(appSettings).where(eq(appSettings.key, "usd_rate_kobo"));
+  const n = Number(r?.value ?? 0);
+  return Number.isInteger(n) && n > 0 ? n : 0;
+}
+
+export async function setUsdRateKobo(db: DbOrTx, kobo: number) {
+  await db
+    .insert(appSettings)
+    .values({ key: "usd_rate_kobo", value: kobo })
+    .onConflictDoUpdate({ target: appSettings.key, set: { value: kobo, updatedAt: new Date() } });
+  return { usdRateKobo: kobo };
+}
+
 /* ---------------- markup rules ---------------- */
 
 export async function listRules(db: DbOrTx) {
@@ -68,7 +83,7 @@ export async function reprice(db: DbOrTx, where?: SQL): Promise<number> {
 
 /** For the admin page: which markup each platform/type currently gets, and where it comes from. */
 export async function pricingOverview(db: DbOrTx) {
-  const [rules, groups, providers, minOrderKobo] = await Promise.all([
+  const [rules, groups, providers, minOrderKobo, usdRateKobo] = await Promise.all([
     listRules(db),
     db
       .select({ platform: smmServices.platform, kind: smmServices.kind, count: sql<number>`count(*)::int` })
@@ -78,6 +93,7 @@ export async function pricingOverview(db: DbOrTx) {
       .orderBy(smmServices.platform, smmServices.kind),
     db.select({ name: smmProviders.name, markupBps: smmProviders.markupBps }).from(smmProviders),
     getMinOrderKobo(db),
+    getUsdRateKobo(db),
   ]);
-  return { rules, groups, providers, minOrderKobo };
+  return { rules, groups, providers, minOrderKobo, usdRateKobo };
 }

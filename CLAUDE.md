@@ -37,7 +37,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 ## Layout
 - `src/core/` pure business rules with no dependencies: money (integer kobo), ledger,
   escrow state machine, SMM pricing/parsing, listing policy, crypto helpers.
-  Tested by `tests/core.test.ts` (`npm test`, Node's built-in runner, 23 tests).
+  Tested by `tests/core.test.ts` (`npm test`, Node's built-in runner, 24 tests).
 - `src/server/` database access, wallet (row locks, holds, idempotent ledger),
   market, smm, payments (Flutterwave), auth, env, http helpers.
 - Customer dashboard (`app/dashboard` → `src/components/dashboard/`): tabs Boost / Orders /
@@ -57,6 +57,10 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   rule changes, provider markup changes and every sync. Minimum order amount lives in
   `app_settings.min_order_kobo` (0 = none), enforced in `placeOrder` (web + /api/v2) and
   shown in the order sheet.
+- Dollar display: `app_settings.usd_rate_kobo` (kobo per US$1, set in /admin/pricing; 0 = off).
+  Display only: wallet, top-ups and charges stay in Naira. Customer ₦/$ switch
+  (`src/components/dashboard/Currency.tsx`, remembered in localStorage); formatting in
+  `src/core/currency.ts`. Charged amounts always show Naira (`charge()`), with ≈$ alongside.
 - Service visibility: `smm_services.hidden_reason` null = on sale, `admin` (hidden in
   /admin/services, survives syncs), `policy` (isRestricted; can't be unhidden), `provider`
   (dropped upstream or 0-priced; returns on next sync if listed). `active` mirrors it.

@@ -260,3 +260,18 @@ test("catalog: platforms, kinds, policy, names", async () => {
   assert.equal(displayName("★ S12 TikTok Views"), "TikTok Views");
   assert.equal(displayName("⭐"), "⭐");
 });
+
+/* ---------------- currency ---------------- */
+test("display currency formatting", async () => {
+  const cur = await import("../src/core/currency.ts");
+  const rate = 160_000; // N1,600 per US$1
+  assert.equal(cur.formatNaira(150_000), "\u20a61,500.00");
+  assert.equal(cur.formatUsd(160_000, rate), "\u00241.00");
+  assert.equal(cur.formatUsd(240_000_000, rate), "\u00241,500.00");
+  assert.equal(cur.formatUsd(39, rate), "\u00240.00024");
+  assert.equal(cur.formatUsd(1_600, rate), "\u00240.01");
+  assert.equal(cur.formatUsd(0, rate), "\u00240.00");
+  assert.equal(cur.formatUsd(-160_000, rate), "-\u00241.00");
+  assert.equal(cur.formatMoney(150_000, "USD", 0), "\u20a61,500.00"); // no rate set: stay in Naira
+  assert.equal(cur.formatMoney(150_000, "NGN", rate), "\u20a61,500.00");
+});

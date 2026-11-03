@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
-import { naira } from "../api";
 import { FundWallet, LogoutButton, PaymentReturn } from "../DashboardActions";
 import { Boost, type CatalogPlatform } from "./Boost";
+import { CurrencyProvider, CurrencySwitch, useCurrency } from "./Currency";
 
 type Order = { id: number; service: string; platform: string; link: string; quantity: number; amount: number; status: string; remains: number | null; when: string };
 type Trade = { id: number; title: string; role: string; amount: number; status: string; when: string };
@@ -31,10 +31,17 @@ function Icon({ d }: { d: string }) {
   return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={d} /></svg>;
 }
 
-export function DashboardApp(props: {
-  greeting: string; isAdmin: boolean; wallet: { available: number; held: number }; minOrderKobo: number;
+type Props = {
+  greeting: string; isAdmin: boolean; wallet: { available: number; held: number }; minOrderKobo: number; usdRateKobo: number;
   catalog: CatalogPlatform[]; orders: Order[]; trades: Trade[]; history: Entry[];
-}) {
+};
+
+export function DashboardApp(props: Props) {
+  return <CurrencyProvider usdRateKobo={props.usdRateKobo}><Dashboard {...props} /></CurrencyProvider>;
+}
+
+function Dashboard(props: Props) {
+  const { money, currency, charge } = useCurrency();
   const [tab, setTab] = useState<Tab>("boost");
 
   // Tabs live in the URL hash so the back button and Insights tracking work.
@@ -80,11 +87,14 @@ export function DashboardApp(props: {
               <h1 className="ap-hello">{props.greeting}</h1>
               {delivering > 0 && <p className="muted" style={{ fontSize: 14 }}>{delivering} order{delivering === 1 ? "" : "s"} delivering now</p>}
             </div>
-            <button type="button" className="ap-balance glass" onClick={() => go("wallet")} aria-label={`Wallet balance ${naira(props.wallet.available)}. Add money`}>
+            <div className="ap-top-right">
+            <CurrencySwitch />
+            <button type="button" className="ap-balance glass" onClick={() => go("wallet")} aria-label={`Wallet balance ${money(props.wallet.available)}. Add money`}>
               <span className="ap-balance-label">Balance</span>
-              <span className="ap-balance-num">{naira(props.wallet.available)}</span>
+              <span className="ap-balance-num">{money(props.wallet.available)}</span>
               <span className="ap-balance-add">+ Add money</span>
             </button>
+            </div>
           </header>
 
           <Suspense fallback={null}><PaymentReturn /></Suspense>
@@ -108,7 +118,7 @@ export function DashboardApp(props: {
                           <div className="muted ap-row-sub ap-ellipsis">{o.link}</div>
                         </div>
                         <div className="ap-row-end">
-                          <strong>{naira(o.amount)}</strong>
+                          <strong>{money(o.amount)}</strong>
                           <span className={`status ${st.tone}`}>{st.label}</span>
                         </div>
                       </li>
@@ -123,8 +133,9 @@ export function DashboardApp(props: {
             <>
               <section className="card glass">
                 <h2>Wallet</h2>
-                <div className="big">{naira(props.wallet.available)}</div>
-                <p className="muted" style={{ fontSize: 14 }}>{naira(props.wallet.held)} held for orders, escrow and withdrawals</p>
+                <div className="big">{money(props.wallet.available)}</div>
+                {currency === "USD" && <p className="muted" style={{ fontSize: 13 }}>{charge(props.wallet.available)} · your wallet is in Naira; dollar amounts are approximate.</p>}
+                <p className="muted" style={{ fontSize: 14 }}>{money(props.wallet.held)} held for orders, escrow and withdrawals</p>
                 <FundWallet />
               </section>
               <section className="card glass">
@@ -135,8 +146,8 @@ export function DashboardApp(props: {
                       <li key={h.id} className="ap-row">
                         <div style={{ minWidth: 0 }}><div className="ap-row-title">{h.what}</div><div className="muted ap-row-sub">{h.when}</div></div>
                         <div className="ap-row-end">
-                          <strong style={{ color: h.change >= 0 ? "var(--ok)" : "var(--fg)" }}>{h.change >= 0 ? "+" : "−"}{naira(Math.abs(h.change))}</strong>
-                          <span className="muted ap-row-sub">Balance {naira(h.after)}</span>
+                          <strong style={{ color: h.change >= 0 ? "var(--ok)" : "var(--fg)" }}>{h.change >= 0 ? "+" : "−"}{money(Math.abs(h.change))}</strong>
+                          <span className="muted ap-row-sub">Balance {money(h.after)}</span>
                         </div>
                       </li>
                     ))}
@@ -156,7 +167,7 @@ export function DashboardApp(props: {
                     return (
                       <li key={t.id} className="ap-row">
                         <div style={{ minWidth: 0 }}><div className="ap-row-title">{t.title}</div><div className="muted ap-row-sub">#M-{t.id} · {t.role} · {t.when}</div></div>
-                        <div className="ap-row-end"><strong>{naira(t.amount)}</strong><span className={`status ${st.tone}`}>{st.label}</span></div>
+                        <div className="ap-row-end"><strong>{money(t.amount)}</strong><span className={`status ${st.tone}`}>{st.label}</span></div>
                       </li>
                     );
                   })}

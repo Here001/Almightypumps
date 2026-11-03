@@ -154,3 +154,8 @@ button.btn-ghost { border: 1px solid #FFFFFF33; }
 .ap-switch-text { min-width: 22px; }
 .ap-markup { display: flex; align-items: center; gap: 8px; flex: 0 1 300px; }
 .ap-markup .input { min-height: 40px; padding: 8px 12px; font-size: 14px; }
+
+.ap-top-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ap-cur { display: inline-flex; padding: 4px; gap: 2px; border-radius: 999px; border: 1px solid var(--line); background: #FFFFFF0A; }
+.ap-cur button { min-width: 44px; min-height: 40px; padding: 6px 12px; border: 0; border-radius: 999px; background: none; color: var(--muted); font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
+.ap-cur button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }

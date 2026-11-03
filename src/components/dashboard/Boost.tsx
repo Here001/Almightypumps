@@ -3,7 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { api, naira } from "../api";
+import { api } from "../api";
+import { useCurrency } from "./Currency";
 
 export type CatalogPlatform = { platform: string; count: number; kinds: { kind: string; count: number }[] };
 type Service = { id: number; name: string; platform: string; kind: string; rateKobo: number; min: number; max: number; refill: boolean };
@@ -23,6 +24,7 @@ function priceFor(rateKobo: number, qty: number) {
 export function Boost({ catalog, balance, minOrderKobo, onAddMoney, onViewOrders }: {
   catalog: CatalogPlatform[]; balance: number; minOrderKobo: number; onAddMoney: () => void; onViewOrders: () => void;
 }) {
+  const { money } = useCurrency();
   const [platform, setPlatform] = useState<string | null>(null);
   const [kind, setKind] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -155,7 +157,7 @@ export function Boost({ catalog, balance, minOrderKobo, onAddMoney, onViewOrders
                       <span className="muted">{s.min.toLocaleString("en-NG")}–{s.max.toLocaleString("en-NG")}</span>
                     </span>
                   </span>
-                  <span className="ap-service-price">{naira(s.rateKobo)}<small>per 1k</small></span>
+                  <span className="ap-service-price">{money(s.rateKobo)}<small>per 1k</small></span>
                 </button>
               </li>
             ))}
@@ -181,6 +183,7 @@ function OrderSheet({ service, balance, minOrderKobo, onClose, onAddMoney, onVie
   service: Service; balance: number; minOrderKobo: number; onClose: () => void; onAddMoney: () => void; onViewOrders: () => void;
 }) {
   const router = useRouter();
+  const { money, charge, currency } = useCurrency();
   const [link, setLink] = useState("");
   // Smallest quantity that reaches the minimum order amount (if any).
   const minQtyForAmount = minOrderKobo > 0 ? Math.ceil((minOrderKobo * 1000) / service.rateKobo) : 0;
@@ -237,7 +240,7 @@ function OrderSheet({ service, balance, minOrderKobo, onClose, onAddMoney, onVie
 
         {done !== null ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <div className="form-ok" role="status">Order #{done} placed. {naira(total)} is held and only charged as it delivers. If it doesn&apos;t deliver, you get it back.</div>
+            <div className="form-ok" role="status">Order #{done} placed. {charge(total)} is held and only charged as it delivers. If it doesn&apos;t deliver, you get it back.</div>
             <button type="button" className="btn btn-primary" onClick={onViewOrders}>Track my order</button>
             <button type="button" className="btn btn-ghost" onClick={onClose}>Boost something else</button>
           </div>
@@ -258,24 +261,24 @@ function OrderSheet({ service, balance, minOrderKobo, onClose, onAddMoney, onVie
             </div>
             <div className="ap-total">
               <span>Total</span>
-              <strong>{naira(total)}</strong>
+              <strong>{money(total)}</strong>
             </div>
             {service.refill && <p className="muted" style={{ fontSize: 13 }}>Includes a refill guarantee if numbers drop.</p>}
             {error && <div className="form-error" role="alert">{error}</div>}
             {cantReachMin ? (
-              <div className="form-error" role="alert">Even the largest order of this service is below our {naira(minOrderKobo)} minimum. Please pick another service.</div>
+              <div className="form-error" role="alert">Even the largest order of this service is below our {charge(minOrderKobo)} minimum. Please pick another service.</div>
             ) : belowMin ? (
               <>
-                <div className="form-error" role="alert">The minimum order is {naira(minOrderKobo)}. Order at least {minQtyForAmount.toLocaleString("en-NG")}.</div>
+                <div className="form-error" role="alert">The minimum order is {charge(minOrderKobo)}. Order at least {minQtyForAmount.toLocaleString("en-NG")}.</div>
                 <button type="button" className="btn btn-primary" onClick={() => setQty(String(Math.max(service.min, minQtyForAmount)))}>Use {Math.max(service.min, minQtyForAmount).toLocaleString("en-NG")}</button>
               </>
             ) : short > 0 ? (
               <>
-                <div className="form-error" role="alert">Your balance is {naira(balance)}. Add {naira(short)} more to place this order.</div>
+                <div className="form-error" role="alert">Your balance is {charge(balance)}. Add {charge(short)} more to place this order.</div>
                 <button type="button" className="btn btn-primary" onClick={onAddMoney}>Add money</button>
               </>
             ) : (
-              <button className="btn btn-primary" disabled={busy || !validQty || !link.trim()}>{busy ? "Placing order…" : `Pay ${naira(total)} and start`}</button>
+              <button className="btn btn-primary" disabled={busy || !validQty || !link.trim()}>{busy ? "Placing order…" : `Pay ${charge(total)} and start`}</button>
             )}
           </form>
         )}

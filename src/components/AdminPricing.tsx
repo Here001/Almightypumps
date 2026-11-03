@@ -5,7 +5,7 @@ import { api, naira } from "./api";
 
 type Rule = { platform: string; kind: string | null; markupBps: number };
 type Group = { platform: string; kind: string; count: number };
-type Overview = { rules: Rule[]; groups: Group[]; providers: { name: string; markupBps: number }[]; minOrderKobo: number };
+type Overview = { rules: Rule[]; groups: Group[]; providers: { name: string; markupBps: number }[]; minOrderKobo: number; usdRateKobo: number };
 
 const pct = (bps: number) => `${(bps / 100).toLocaleString("en-NG", { maximumFractionDigits: 2 })}%`;
 
@@ -40,6 +40,7 @@ export function AdminPricing() {
   return (
     <>
       <MinOrder minOrderKobo={data.minOrderKobo} onSaved={refresh} />
+      <DollarRate usdRateKobo={data.usdRateKobo} onSaved={refresh} />
 
       <section className="card glass">
         <h2>Markup by platform and type</h2>
@@ -174,6 +175,47 @@ function MinOrder({ minOrderKobo, onSaved }: { minOrderKobo: number; onSaved: ()
         </div>
         <button className="btn btn-primary" disabled={busy || Number(value) * 100 === minOrderKobo}>{busy ? "Saving…" : "Save minimum"}</button>
       </form>
+      {msg && <div className={msg.ok ? "form-ok" : "form-error"} role={msg.ok ? "status" : "alert"}>{msg.text}</div>}
+    </section>
+  );
+}
+
+function DollarRate({ usdRateKobo, onSaved }: { usdRateKobo: number; onSaved: () => void }) {
+  const [value, setValue] = useState(usdRateKobo ? String(usdRateKobo / 100) : "");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const n = Number(value || 0);
+  return (
+    <section className="card glass">
+      <h2>Dollar prices</h2>
+      <p className="muted" style={{ fontSize: 14 }}>
+        Customers can switch prices between Naira and Dollars. Set how many Naira make one dollar. Dollar prices are for display:
+        customers are always charged in Naira. Leave empty or 0 to turn dollars off.
+      </p>
+      <form
+        style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}
+        onSubmit={async (e) => {
+          e.preventDefault();
+          setBusy(true);
+          setMsg(null);
+          try {
+            const r = await api<{ usdRateKobo: number }>("/api/admin/pricing", { type: "usd", nairaPerDollar: value || 0 });
+            setMsg({ ok: true, text: r.usdRateKobo ? `Saved: ${naira(r.usdRateKobo)} = US$1. Customers now see the Naira / Dollar switch.` : "Dollar prices turned off." });
+            onSaved();
+          } catch (err) {
+            setMsg({ ok: false, text: (err as Error).message });
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        <div className="field" style={{ width: 200 }}>
+          <label htmlFor="usd-rate">Naira per US$1</label>
+          <input id="usd-rate" className="input" inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} placeholder="e.g. 1600" />
+        </div>
+        <button className="btn btn-primary" disabled={busy || Math.round(n * 100) === usdRateKobo}>{busy ? "Saving…" : "Save rate"}</button>
+      </form>
+      {n > 0 && <p className="muted" style={{ fontSize: 13 }}>Example: a {naira(500_000)} order shows as about US${(5000 / n).toFixed(2)}.</p>}
       {msg && <div className={msg.ok ? "form-ok" : "form-error"} role={msg.ok ? "status" : "alert"}>{msg.text}</div>}
     </section>
   );
