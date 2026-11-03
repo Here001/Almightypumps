@@ -22,7 +22,9 @@ function providerKey(p: Provider): string {
 }
 
 async function call(p: Provider, params: Record<string, string>): Promise<unknown> {
-  const body = new URLSearchParams({ key: providerKey(p), ...params });
+  const key = providerKey(p);
+  // Standard panels read "key"; some custom-built panels read "api_key". Sending both is harmless.
+  const body = new URLSearchParams({ key, api_key: key, ...params });
   const res = await fetch(p.apiUrl, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
@@ -45,6 +47,9 @@ async function adminProviderCall<T>(p: Provider, fn: () => Promise<T>): Promise<
   } catch (e) {
     if (e instanceof AppError) throw e;
     const msg = (e as Error).message || "Unknown error";
+    // Diagnostics only: never log the key itself.
+    const raw = process.env[p.apiKeyEnv] ?? "";
+    console.error(`[provider] ${p.name} ${p.apiUrl}: ${msg} (key length ${raw.trim().length}, had outer spaces: ${raw !== raw.trim()}, inner spaces: ${/\s/.test(raw.trim())})`);
     const hint = /api key|invalid key|unauthori[sz]ed/i.test(msg)
       ? ` Check ${p.apiKeyEnv} in Vercel (copy the key again from ${p.name}, no spaces), then redeploy.`
       : "";
