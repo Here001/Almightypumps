@@ -96,7 +96,11 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 - Insights: `src/components/Tracker.tsx` beacons each page and dashboard #section to
   `/api/track` → `site_events` (anonymous cookie id, no IP/UA stored). Section names come
   from `src/core/analytics.ts` (add new pages there). Queries in `src/server/insights.ts`.
-- `src/landing/` homepage markup + effects ported from the approved prototype.
+- `src/landing/` homepage markup + effects ported from the approved prototype. Performance (2026-11-03):
+  text renders over a static `.scene-fallback` gradient; three.js is imported only after `load` +
+  idle; scene built in stages (nebula+orb → shards/gates/dust/grid → bloom), each its own task;
+  adaptive quality drops bloom → resolution → 30fps if frames > 34ms; weak devices / data saver /
+  reduced motion keep the gradient. `performance.mark('ap:*')` timings. Fonts load non-blocking.
 - `drizzle/*.sql` migrations, applied in order by `scripts/migrate.mjs` (tracked in `_migrations`);
   `src/server/db/schema.ts` mirrors them. New schema change = new numbered file + schema.ts.
 - `scripts/migrate.mjs`, `scripts/seed.mjs`.

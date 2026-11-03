@@ -26,7 +26,8 @@ a { color: inherit; }
 h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -0.02em; }
 p { margin: 0; }
 
-#scene { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; display: block; }
+#scene { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; display: block; opacity: 0; transition: opacity .9s ease; }
+#scene.on { opacity: 1; }
 .scene-fallback { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(60% 50% at 70% 30%, #FF6A2B55, transparent 70%), radial-gradient(50% 40% at 20% 70%, #8B5CF644, transparent 70%), radial-gradient(40% 40% at 60% 90%, #5EE7FF33, transparent 70%), var(--bg); }
 main, header, footer { position: relative; z-index: 1; }
 

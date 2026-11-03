@@ -2,20 +2,16 @@
 /* 3D homepage effects, ported from the approved prototype.
    Libraries come from npm instead of CDNs and are exposed under the global
    names the original code expects. initLanding() returns a cleanup function. */
-import * as THREE_NS from "three";
-import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
-import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
-import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 
 export function initLanding() {
-  window.THREE = Object.assign({}, THREE_NS, { EffectComposer, RenderPass, UnrealBloomPass });
   window.gsap = gsap;
   window.ScrollTrigger = ScrollTrigger;
   window.Lenis = Lenis;
   var alive = true;
+  var renderer = null;
   function cleanup() {
     alive = false;
     try { if (typeof mm !== "undefined" && mm) mm.revert(); } catch (e) {}
@@ -89,12 +85,17 @@ export function initLanding() {
     '}'
   ].join('\n');
 
+  function startWorld() {
+  var mark = function (n) { try { performance.mark('ap:' + n); } catch (e) {} };
+  mark('world-start');
   try {
     if (!window.THREE) throw new Error('no three');
-    var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: 'high-performance' });
     var lite = window.innerWidth < 860 || window.matchMedia('(pointer: coarse)').matches;
-    var DPR = lite ? 1 : Math.min(window.devicePixelRatio || 1, 1.6);
-    var CPR = lite ? 0.8 : Math.min(DPR, 1.25);
+    // Bloom post-processing renders into its own buffers, so canvas MSAA would be wasted work.
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: false, powerPreference: 'high-performance' });
+    var DPR = lite ? 1 : Math.min(window.devicePixelRatio || 1, 1.25);
+    var CPR = lite ? 0.7 : Math.min(DPR, 1.0);
+    var OCT = lite ? 3 : 4; // nebula noise octaves (was 5): the biggest per-pixel cost
     renderer.setPixelRatio(DPR);
     renderer.autoClear = false;
 
@@ -109,7 +110,7 @@ export function initLanding() {
         'precision highp float;',
         'uniform float uTime; uniform float uScroll; uniform vec2 uRes; uniform vec2 uMouse; varying vec2 vUv;',
         NOISE,
-        'float fbm(vec3 p){ float f=0.0; float a=0.5; for(int i=0;i<5;i++){ f+=a*snoise(p); p*=2.02; a*=0.5; } return f; }',
+        'float fbm(vec3 p){ float f=0.0; float a=0.5; for(int i=0;i<' + OCT + ';i++){ f+=a*snoise(p); p*=2.02; a*=0.5; } return f; }',
         'void main(){',
         '  vec2 uv = (gl_FragCoord.xy - 0.5*uRes) / uRes.y;',
         '  uv += uMouse * 0.04;',
@@ -179,15 +180,15 @@ export function initLanding() {
     // Hero orb: liquid glass blob with orbit rings
     var hero = new THREE.Group();
     var orbMat = glassMat(0xFF6A2B, true);
-    var orb = new THREE.Mesh(new THREE.IcosahedronGeometry(1.9, lite ? 28 : 64), orbMat);
+    var orb = new THREE.Mesh(new THREE.IcosahedronGeometry(1.9, lite ? 18 : 36), orbMat);
     hero.add(orb);
-    var core = new THREE.Mesh(new THREE.SphereGeometry(0.75, 48, 48), new THREE.MeshBasicMaterial({ color: 0xFF8A4C }));
+    var core = new THREE.Mesh(new THREE.SphereGeometry(0.75, 32, 24), new THREE.MeshBasicMaterial({ color: 0xFF8A4C }));
     hero.add(core);
     var halo = new THREE.Mesh(new THREE.SphereGeometry(1.0, 32, 32), new THREE.MeshBasicMaterial({ color: 0xFF6A2B, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false }));
     hero.add(halo);
-    var ringA = new THREE.Mesh(new THREE.TorusGeometry(3.0, 0.012, 12, 240), new THREE.MeshBasicMaterial({ color: 0x5EE7FF }));
+    var ringA = new THREE.Mesh(new THREE.TorusGeometry(3.0, 0.012, 8, 160), new THREE.MeshBasicMaterial({ color: 0x5EE7FF }));
     ringA.rotation.x = Math.PI / 2.3; hero.add(ringA);
-    var ringB = new THREE.Mesh(new THREE.TorusGeometry(3.6, 0.008, 12, 240), new THREE.MeshBasicMaterial({ color: 0xFF6A2B }));
+    var ringB = new THREE.Mesh(new THREE.TorusGeometry(3.6, 0.008, 8, 160), new THREE.MeshBasicMaterial({ color: 0xFF6A2B }));
     ringB.rotation.y = Math.PI / 3; ringB.rotation.x = 0.4; hero.add(ringB);
     // Orbiting satellites
     var sats = [];
@@ -198,12 +199,14 @@ export function initLanding() {
     });
     scene.add(hero);
 
+    // Built in a second stage (after the first frame) so the page stays responsive.
+    var shards = [], gates = [], shardMats = [], dustA = null, dustB = null, dustC = null, grid = null;
+    function addExtras() {
     // Glass shards scattered along the flight path
-    var shards = [];
     var shardTints = [0xFF6A2B, 0x5EE7FF, 0x8B5CF6, 0xFBBF24, 0x34D399];
-    var geos = [new THREE.OctahedronGeometry(0.9, 0), new THREE.TorusGeometry(0.8, 0.28, 24, 64), new THREE.IcosahedronGeometry(0.9, 1), new THREE.TorusKnotGeometry(0.6, 0.2, 120, 16), new THREE.BoxGeometry(1.2, 1.2, 1.2)];
-    var shardCount = lite ? 24 : 46, shardStep = 165 / shardCount;
-    var shardMats = shardTints.map(function (c) { return glassMat(c, false); });
+    var geos = [new THREE.OctahedronGeometry(0.9, 0), new THREE.TorusGeometry(0.8, 0.28, 16, 40), new THREE.IcosahedronGeometry(0.9, 1), new THREE.TorusKnotGeometry(0.6, 0.2, 80, 10), new THREE.BoxGeometry(1.2, 1.2, 1.2)];
+    var shardCount = lite ? 16 : 34, shardStep = 165 / shardCount;
+    shardMats = shardTints.map(function (c) { return glassMat(c, false); });
     for (var s = 0; s < shardCount; s++) {
       var m = new THREE.Mesh(geos[s % geos.length], shardMats[s % shardMats.length]);
       var side = s % 2 ? 1 : -1;
@@ -214,10 +217,9 @@ export function initLanding() {
     }
 
     // Light gates the camera flies through
-    var gates = [];
     for (var g = 0; g < 7; g++) {
       var col = [0x5EE7FF, 0xFF6A2B, 0x8B5CF6][g % 3];
-      var gate = new THREE.Mesh(new THREE.TorusGeometry(6 + (g % 2) * 1.5, 0.03, 12, 300), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.9 }));
+      var gate = new THREE.Mesh(new THREE.TorusGeometry(6 + (g % 2) * 1.5, 0.03, 6, 160), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.9 }));
       gate.position.set(0, 0, -18 - g * 24);
       scene.add(gate); gates.push(gate);
     }
@@ -234,23 +236,28 @@ export function initLanding() {
       var pts = new THREE.Points(geo, new THREE.PointsMaterial({ size: size, color: color, transparent: true, opacity: opacity, depthWrite: false, blending: THREE.AdditiveBlending }));
       scene.add(pts); return pts;
     }
-    var dustA = dust(lite ? 1800 : 4200, 60, 200, 0.05, 0xECEEF4, 0.75);
-    var dustB = dust(lite ? 400 : 900, 40, 200, 0.12, 0xFF8A4C, 0.6);
-    var dustC = dust(lite ? 300 : 700, 40, 200, 0.1, 0x5EE7FF, 0.55);
+    dustA = dust(lite ? 1100 : 3000, 60, 200, 0.05, 0xECEEF4, 0.75);
+    dustB = dust(lite ? 260 : 650, 40, 200, 0.12, 0xFF8A4C, 0.6);
+    dustC = dust(lite ? 200 : 500, 40, 200, 0.1, 0x5EE7FF, 0.55);
 
     // Ground grid for horizon depth
-    var grid = new THREE.GridHelper(400, 200, 0x5EE7FF, 0x152036);
+    grid = new THREE.GridHelper(400, 200, 0x5EE7FF, 0x152036);
     grid.position.y = -7; grid.material.transparent = true; grid.material.opacity = 0.22;
     scene.add(grid);
 
+    }
+
     // Post-processing: bloom
-    var composer = null, bloom = null;
-    if (THREE.EffectComposer && THREE.UnrealBloomPass) {
+    // Third stage: added once the scene is up; skipped if the device turned out to be slow.
+    var composer = null, bloom = null, noBloom = false;
+    function addBloom() {
+    if (!noBloom && THREE.EffectComposer && THREE.UnrealBloomPass) {
       composer = new THREE.EffectComposer(renderer);
       var bgPass = new THREE.RenderPass(bgScene, bgCam);
       var mainPass = new THREE.RenderPass(scene, camera); mainPass.clear = false;
       bloom = new THREE.UnrealBloomPass(new THREE.Vector2(256, 256), 0.95, 0.65, 0.18);
       composer.addPass(bgPass); composer.addPass(mainPass); composer.addPass(bloom);
+    }
     }
 
     function resize() {
@@ -267,9 +274,23 @@ export function initLanding() {
     resize();
     window.addEventListener('resize', resize);
 
+    mark('world-built');
     var clock = new THREE.Clock();
     var camZ = 9, smoothP = 0, smx = 0, smy = 0, prevT = 0;
+    // Adaptive quality: watch real frame times; if the device struggles, drop bloom and
+    // resolution, then halve the frame rate. Keeps scrolling smooth on weaker phones.
+    var perf = { n: 0, sum: 0, level: 0, skip: false, odd: false };
+    function degrade() {
+      perf.level++;
+      if (perf.level === 1) { composer = null; noBloom = true; DPR = Math.min(DPR, 1); renderer.setPixelRatio(DPR); resize(); }
+      else if (perf.level === 2) { DPR = 0.75; renderer.setPixelRatio(DPR); resize(); }
+      else perf.skip = true;
+    }
+    var shown = false;
     function frame() {
+      if (!alive) return;
+      if (!reduce) requestAnimationFrame(frame);
+      if (perf.skip && (perf.odd = !perf.odd)) return;
       var t = clock.getElapsedTime();
       var dt = Math.min(0.05, t - prevT); prevT = t;
       var k1 = 1 - Math.pow(0.0009, dt);   // frame-rate independent easing
@@ -300,19 +321,58 @@ export function initLanding() {
       }
       for (var sm = 0; sm < shardMats.length; sm++) shardMats[sm].uniforms.uTime.value = t;
       for (var k = 0; k < gates.length; k++) { gates[k].rotation.z = t * (k % 2 ? 0.1 : -0.1); }
-      dustB.rotation.z = t * 0.01; dustC.rotation.z = -t * 0.012;
-      grid.position.z = camZ - (camZ % 2);
+      if (dustB) { dustB.rotation.z = t * 0.01; dustC.rotation.z = -t * 0.012; }
+      if (grid) grid.position.z = camZ - (camZ % 2);
 
       if (composer) composer.render(); else { renderer.clear(); renderer.render(bgScene, bgCam); renderer.render(scene, camera); }
-      if (!reduce && alive) requestAnimationFrame(frame);
+      if (!shown) { shown = true; canvas.classList.add('on'); mark('first-frame'); }
+      // Frames 20-80 after start (shaders compiled by then) decide the quality level.
+      perf.n++;
+      if (perf.n > 20 && perf.level < 3) {
+        perf.sum += dt;
+        if (perf.n % 60 === 20) { if (perf.sum / 60 > 0.034) degrade(); perf.sum = 0; }
+      }
     }
-    frame();
+    requestAnimationFrame(frame); // first draw in its own task, after the build above
     world = { render: frame };
+    // Stages 2 and 3 when the browser is idle; frame timing restarts so their one-off
+    // shader compiles don't count against the device.
+    var later = window.requestIdleCallback || function (cb) { return setTimeout(cb, 120); };
+    later(function () {
+      if (!alive) return;
+      addExtras(); perf.n = 0; perf.sum = 0; mark('extras');
+      later(function () { if (!alive) return; addBloom(); resize(); perf.n = 0; perf.sum = 0; mark('bloom'); }, { timeout: 1500 });
+    }, { timeout: 1200 });
   } catch (err) {
+    // No WebGL: the static gradient behind the canvas stays as the background.
     canvas.remove();
-    var fb = document.createElement('div');
-    fb.className = 'scene-fallback'; fb.setAttribute('aria-hidden', 'true');
-    document.body.insertBefore(fb, document.body.firstChild);
+  }
+  }
+
+  /* Start the 3D world after the page is ready, so text and buttons appear and respond first.
+     Very weak devices, data saver and "reduce motion" keep the gradient background instead. */
+  var nav = navigator, conn = nav.connection || {};
+  var weak = conn.saveData || /(^|-)2g$/.test(conn.effectiveType || '') || (nav.deviceMemory && nav.deviceMemory <= 2) || (nav.hardwareConcurrency && nav.hardwareConcurrency <= 2);
+  if (reduce || weak) {
+    canvas.remove();
+  } else {
+    var idle = window.requestIdleCallback || function (cb) { return setTimeout(cb, 200); };
+    var go = function () {
+      idle(function () {
+        Promise.all([
+          import("three"),
+          import("three/examples/jsm/postprocessing/EffectComposer.js"),
+          import("three/examples/jsm/postprocessing/RenderPass.js"),
+          import("three/examples/jsm/postprocessing/UnrealBloomPass.js"),
+        ]).then(function (m) {
+          if (!alive) return;
+          try { performance.mark('ap:three-loaded'); } catch (e) {}
+          window.THREE = Object.assign({}, m[0], { EffectComposer: m[1].EffectComposer, RenderPass: m[2].RenderPass, UnrealBloomPass: m[3].UnrealBloomPass });
+          setTimeout(function () { if (alive) startWorld(); }, 0); // build in a separate task from unpacking three.js
+        }).catch(function () { canvas.remove(); });
+      }, { timeout: 2500 });
+    };
+    if (document.readyState === 'complete') go(); else window.addEventListener('load', go, { once: true });
   }
 
   /* ---------- Progress bar + active section links ---------- */
