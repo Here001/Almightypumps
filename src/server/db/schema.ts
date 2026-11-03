@@ -222,3 +222,18 @@ export const siteEvents = pgTable("site_events", {
   section: text("section").notNull(),
   path: text("path").notNull(),
 });
+
+/** Markup overrides (see drizzle/0004_pricing_rules.sql). kind null = whole platform. */
+export const smmPricingRules = pgTable("smm_pricing_rules", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  platform: text("platform").notNull(),
+  kind: text("kind"),
+  markupBps: integer("markup_bps").notNull(),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+});
+
+export const appSettings = pgTable("app_settings", {
+  key: text("key").primaryKey(),
+  value: jsonb("value").notNull(),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+});

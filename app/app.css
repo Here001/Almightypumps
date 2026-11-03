@@ -152,3 +152,5 @@ button.btn-ghost { border: 1px solid #FFFFFF33; }
 .ap-switch[aria-checked="true"] .ap-switch-dot { transform: translateX(18px); }
 .ap-switch[disabled] { opacity: .6; cursor: progress; }
 .ap-switch-text { min-width: 22px; }
+.ap-markup { display: flex; align-items: center; gap: 8px; flex: 0 1 300px; }
+.ap-markup .input { min-height: 40px; padding: 8px 12px; font-size: 14px; }

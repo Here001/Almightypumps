@@ -32,7 +32,7 @@ function Icon({ d }: { d: string }) {
 }
 
 export function DashboardApp(props: {
-  greeting: string; isAdmin: boolean; wallet: { available: number; held: number };
+  greeting: string; isAdmin: boolean; wallet: { available: number; held: number }; minOrderKobo: number;
   catalog: CatalogPlatform[]; orders: Order[]; trades: Trade[]; history: Entry[];
 }) {
   const [tab, setTab] = useState<Tab>("boost");
@@ -89,7 +89,7 @@ export function DashboardApp(props: {
 
           <Suspense fallback={null}><PaymentReturn /></Suspense>
 
-          {tab === "boost" && <Boost catalog={props.catalog} balance={props.wallet.available} onAddMoney={() => go("wallet")} onViewOrders={() => go("orders")} />}
+          {tab === "boost" && <Boost catalog={props.catalog} balance={props.wallet.available} minOrderKobo={props.minOrderKobo} onAddMoney={() => go("wallet")} onViewOrders={() => go("orders")} />}
 
           {tab === "orders" && (
             <section className="card glass">

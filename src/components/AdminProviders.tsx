@@ -17,7 +17,7 @@ export function ProviderCard({ p }: { p: P }) {
   const [balance, setBalance] = useState<string | null>(null);
 
   const pct = Number(markup);
-  const example = Number.isFinite(pct) && pct >= 0 ? Math.ceil(1000 * (1 + pct / 100)) : null;
+  const example = Number.isFinite(pct) && pct >= 0 ? Math.ceil((1000 * (10_000 + Math.round(pct * 100))) / 10_000) : null;
 
   async function run(label: string, fn: () => Promise<string>) {
     setBusy(label);

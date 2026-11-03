@@ -20,8 +20,8 @@ function priceFor(rateKobo: number, qty: number) {
   return Math.max(1, Math.ceil((rateKobo * qty) / 1000));
 }
 
-export function Boost({ catalog, balance, onAddMoney, onViewOrders }: {
-  catalog: CatalogPlatform[]; balance: number; onAddMoney: () => void; onViewOrders: () => void;
+export function Boost({ catalog, balance, minOrderKobo, onAddMoney, onViewOrders }: {
+  catalog: CatalogPlatform[]; balance: number; minOrderKobo: number; onAddMoney: () => void; onViewOrders: () => void;
 }) {
   const [platform, setPlatform] = useState<string | null>(null);
   const [kind, setKind] = useState<string | null>(null);
@@ -169,7 +169,7 @@ export function Boost({ catalog, balance, onAddMoney, onViewOrders }: {
 
       {picked && (
         <OrderSheet
-          service={picked} balance={balance} onClose={() => setPicked(null)}
+          service={picked} balance={balance} minOrderKobo={minOrderKobo} onClose={() => setPicked(null)}
           onAddMoney={() => { setPicked(null); onAddMoney(); }} onViewOrders={() => { setPicked(null); onViewOrders(); }}
         />
       )}
@@ -177,12 +177,15 @@ export function Boost({ catalog, balance, onAddMoney, onViewOrders }: {
   );
 }
 
-function OrderSheet({ service, balance, onClose, onAddMoney, onViewOrders }: {
-  service: Service; balance: number; onClose: () => void; onAddMoney: () => void; onViewOrders: () => void;
+function OrderSheet({ service, balance, minOrderKobo, onClose, onAddMoney, onViewOrders }: {
+  service: Service; balance: number; minOrderKobo: number; onClose: () => void; onAddMoney: () => void; onViewOrders: () => void;
 }) {
   const router = useRouter();
   const [link, setLink] = useState("");
-  const [qty, setQty] = useState(String(Math.max(service.min, Math.min(1000, service.max))));
+  // Smallest quantity that reaches the minimum order amount (if any).
+  const minQtyForAmount = minOrderKobo > 0 ? Math.ceil((minOrderKobo * 1000) / service.rateKobo) : 0;
+  const startQty = Math.min(service.max, Math.max(service.min, minQtyForAmount, Math.min(1000, service.max)));
+  const [qty, setQty] = useState(String(startQty));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<number | null>(null);
@@ -200,7 +203,10 @@ function OrderSheet({ service, balance, onClose, onAddMoney, onViewOrders }: {
   const validQty = Number.isInteger(n) && n >= service.min && n <= service.max;
   const total = Number.isInteger(n) && n > 0 ? priceFor(service.rateKobo, n) : 0;
   const short = total > balance ? total - balance : 0;
-  const picks = [service.min, 1000, 5000, 10000, 50000].filter((v, i, a) => v >= service.min && v <= service.max && a.indexOf(v) === i).slice(0, 4);
+  const floor = Math.max(service.min, minQtyForAmount);
+  const picks = [floor, 1000, 5000, 10000, 50000].filter((v, i, a) => v >= floor && v <= service.max && a.indexOf(v) === i).slice(0, 4);
+  const belowMin = minOrderKobo > 0 && total > 0 && total < minOrderKobo;
+  const cantReachMin = minOrderKobo > 0 && minQtyForAmount > service.max;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -256,7 +262,14 @@ function OrderSheet({ service, balance, onClose, onAddMoney, onViewOrders }: {
             </div>
             {service.refill && <p className="muted" style={{ fontSize: 13 }}>Includes a refill guarantee if numbers drop.</p>}
             {error && <div className="form-error" role="alert">{error}</div>}
-            {short > 0 ? (
+            {cantReachMin ? (
+              <div className="form-error" role="alert">Even the largest order of this service is below our {naira(minOrderKobo)} minimum. Please pick another service.</div>
+            ) : belowMin ? (
+              <>
+                <div className="form-error" role="alert">The minimum order is {naira(minOrderKobo)}. Order at least {minQtyForAmount.toLocaleString("en-NG")}.</div>
+                <button type="button" className="btn btn-primary" onClick={() => setQty(String(Math.max(service.min, minQtyForAmount)))}>Use {Math.max(service.min, minQtyForAmount).toLocaleString("en-NG")}</button>
+              </>
+            ) : short > 0 ? (
               <>
                 <div className="form-error" role="alert">Your balance is {naira(balance)}. Add {naira(short)} more to place this order.</div>
                 <button type="button" className="btn btn-primary" onClick={onAddMoney}>Add money</button>

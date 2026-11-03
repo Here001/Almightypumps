@@ -9,6 +9,7 @@ import {
 } from "@/core/smm";
 import { displayName, isRestricted, kindFor, platformFor, POPULAR_PLATFORMS } from "@/core/catalog";
 import type { Db } from "./db";
+import { getMinOrderKobo, reprice } from "./pricing";
 import { smmOrders, smmProviders, smmServices } from "./db/schema";
 import { AppError, badRequest, notFound } from "./errors";
 import { linkHold, placeHold, platformWalletId, settleHold, walletIdForUser } from "./wallet";
@@ -119,6 +120,9 @@ export async function syncServices(db: Db, providerId: string) {
         },
       });
   }
+
+  // Apply platform/type markup rules on top of the provider default.
+  if (values.length) await reprice(db, eq(smmServices.providerId, p.id));
 
   // Services the provider no longer lists (or now prices at 0): take them off sale.
   const keep = [...rows.keys()];
@@ -234,6 +238,11 @@ export async function placeOrder(
   const qtyErr = validateQuantity(input.quantity, svc.minQty, svc.maxQty);
   if (qtyErr) throw badRequest(qtyErr);
   const cost = orderCost(svc.rateKobo, input.quantity);
+  const minOrder = await getMinOrderKobo(db);
+  if (cost < minOrder) {
+    const needQty = Math.min(svc.maxQty, Math.ceil((minOrder * 1000) / svc.rateKobo));
+    throw badRequest(`The minimum order is ₦${(minOrder / 100).toLocaleString("en-NG")}. Order at least ${needQty.toLocaleString("en-NG")} for this service.`);
+  }
 
   const order = await db.transaction(async (tx) => {
     const walletId = await walletIdForUser(tx, userId);
@@ -353,19 +362,8 @@ export async function updateProvider(db: Db, providerId: string, input: { markup
       .set({ markupBps, active: input.active ?? p.active })
       .where(eq(smmProviders.id, p.id))
       .returning();
-    let repriced = 0;
-    if (markupBps !== p.markupBps) {
-      // Same maths as sellRatePer1000 (rate x fx x (1 + markup), rounded up), done in one statement.
-      const res = await tx
-        .update(smmServices)
-        .set({
-          rateKobo: sql`greatest(1, ceil(${smmServices.providerRate}::numeric * ${p.fxKoboPerUnit} * ${10_000 + markupBps} / 10000))::bigint`,
-          updatedAt: new Date(),
-        })
-        .where(eq(smmServices.providerId, p.id))
-        .returning({ id: smmServices.id });
-      repriced = res.length;
-    }
+    // Platform/type rules still win over this default; reprice() applies whichever is most specific.
+    const repriced = markupBps !== p.markupBps ? await reprice(tx, eq(smmServices.providerId, p.id)) : 0;
     return { provider: updated, repriced };
   });
 }

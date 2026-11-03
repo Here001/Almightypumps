@@ -50,7 +50,13 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   social-media poll votes only (kind "Poll votes"); Claude declined to enable fake reviews,
   contest votes and add-to-carts (third-party deception, FCCPC/FTC risk, payment-provider risk).
 - `app/api/**` route handlers; `app/page.tsx` 3D homepage; `app/signup`, `app/login`,
-  `app/dashboard`; `app/admin` (Insights, Growth providers, Services; admins only).
+  `app/dashboard`; `app/admin` (Insights, Growth providers, Services, Pricing; admins only).
+- Pricing (`src/server/pricing.ts`, /admin/pricing): markup = most specific of
+  `smm_pricing_rules` platform+kind → platform (kind NULL) → provider `markup_bps`.
+  `reprice()` recomputes `rate_kobo` in SQL (same maths as `sellRatePer1000`); called after
+  rule changes, provider markup changes and every sync. Minimum order amount lives in
+  `app_settings.min_order_kobo` (0 = none), enforced in `placeOrder` (web + /api/v2) and
+  shown in the order sheet.
 - Service visibility: `smm_services.hidden_reason` null = on sale, `admin` (hidden in
   /admin/services, survives syncs), `policy` (isRestricted; can't be unhidden), `provider`
   (dropped upstream or 0-priced; returns on next sync if listed). `active` mirrors it.
@@ -67,7 +73,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   `dev` (full app) are both pushed.
 - Neon: project **almighty-pumps** (`jolly-dust-18900048`, AWS eu-central-1).
   - `main` branch: production, still empty. Run the migration on it only after approval.
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0003 applied. Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0004 applied. Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).
