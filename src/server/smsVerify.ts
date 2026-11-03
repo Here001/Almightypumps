@@ -105,7 +105,8 @@ export async function listSmsServices(db: Db, q?: string) {
     name: r.name,
     label: r.label || serviceLabel(r.name),
     popular: rank(r.name) < 999,
-    priceKobo: r.costUsdMilli && r.pricedAt && Date.now() - r.pricedAt.getTime() < 6 * 3600_000 ? sellPriceKobo(r.costUsdMilli, rate, cfg.markupBps) : null,
+    fixed: Boolean(r.fixedPriceKobo),
+    priceKobo: r.fixedPriceKobo ? r.fixedPriceKobo : r.costUsdMilli && r.pricedAt && Date.now() - r.pricedAt.getTime() < 6 * 3600_000 ? sellPriceKobo(r.costUsdMilli, rate, cfg.markupBps) : null,
   }));
 }
 
@@ -122,8 +123,9 @@ export async function quoteSmsService(db: Db, name: string) {
     await db.update(smsServices).set({ costUsdMilli: costMilli, pricedAt: new Date() }).where(eq(smsServices.name, name));
   }
   const rate = await getUsdRateKobo(db);
-  if (!rate) throw new AppError(503, "NO_RATE", "Prices are being updated. Please try again in a few minutes.");
-  return { name, label: s.label || serviceLabel(name), priceKobo: sellPriceKobo(costMilli, rate, cfg.markupBps), costMilli };
+  if (!rate && !s.fixedPriceKobo) throw new AppError(503, "NO_RATE", "Prices are being updated. Please try again in a few minutes.");
+  const priceKobo = s.fixedPriceKobo || sellPriceKobo(costMilli, rate, cfg.markupBps);
+  return { name, label: s.label || serviceLabel(name), priceKobo, costMilli, fixed: Boolean(s.fixedPriceKobo) };
 }
 
 /** Rent a number. `expectedKobo` is the price the customer saw; if it moved, they confirm again. */
@@ -271,13 +273,19 @@ export async function verifyAdminOverview(db: Db) {
     id: smsVerifications.id, service: smsVerifications.serviceName, status: smsVerifications.status, priceKobo: smsVerifications.priceKobo,
     costMilli: smsVerifications.costUsdMilli, createdAt: smsVerifications.createdAt, email: users.email,
   }).from(smsVerifications).innerJoin(users, eq(users.id, smsVerifications.userId)).orderBy(desc(smsVerifications.createdAt)).limit(25);
-  const services = await db.select({ name: smsServices.name, providerLabel: smsServices.label, hidden: smsServices.hidden, costMilli: smsServices.costUsdMilli })
+  const services = await db.select({ name: smsServices.name, providerLabel: smsServices.label, hidden: smsServices.hidden, costMilli: smsServices.costUsdMilli, fixedPriceKobo: smsServices.fixedPriceKobo })
     .from(smsServices).orderBy(asc(smsServices.name));
   return {
     config: cfg, configured, balance, usdRateKobo: rate,
     stats: { ...stats, revenueKobo: Number(stats.revenueKobo), costKobo: Math.round((Number(stats.costMilli) * rate) / 1000) },
     recent,
-    services: services.map(({ providerLabel, ...s }) => ({ ...s, label: providerLabel || serviceLabel(s.name), priceKobo: s.costMilli ? sellPriceKobo(s.costMilli, rate, cfg.markupBps) : null })),
+    services: services.map(({ providerLabel, ...s }) => ({
+      ...s,
+      label: providerLabel || serviceLabel(s.name),
+      costKobo: s.costMilli && rate ? Math.round((s.costMilli * rate) / 1000) : null,
+      markupPriceKobo: s.costMilli ? sellPriceKobo(s.costMilli, rate, cfg.markupBps) : null,
+      priceKobo: s.fixedPriceKobo ?? (s.costMilli ? sellPriceKobo(s.costMilli, rate, cfg.markupBps) : null),
+    })),
   };
 }
 
@@ -285,4 +293,16 @@ export async function setSmsServiceHidden(db: Db, names: string[], hidden: boole
   if (!names.length) return { updated: 0 };
   const r = await db.update(smsServices).set({ hidden }).where(inArray(smsServices.name, names)).returning({ name: smsServices.name });
   return { updated: r.length };
+}
+
+/** Fixed Naira price for one app (null = back to the markup). Also fetches its cost so the admin sees the margin. */
+export async function setSmsFixedPrice(db: Db, name: string, kobo: number | null) {
+  const [s] = await db.select({ name: smsServices.name }).from(smsServices).where(eq(smsServices.name, name));
+  if (!s) throw notFound("App");
+  if (kobo !== null && (!Number.isInteger(kobo) || kobo < 100 || kobo > 100_000_000)) throw badRequest("Enter a price between ₦1 and ₦1,000,000.");
+  await db.update(smsServices).set({ fixedPriceKobo: kobo }).where(eq(smsServices.name, name));
+  const q = await quoteSmsService(db, name).catch(() => null);
+  const rate = await getUsdRateKobo(db);
+  const costKobo = q && rate ? Math.round((q.costMilli * rate) / 1000) : null;
+  return { name, fixedPriceKobo: kobo, costKobo, belowCost: kobo !== null && costKobo !== null && kobo < costKobo };
 }

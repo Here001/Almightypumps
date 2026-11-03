@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, naira } from "./api";
 
+const naira_ = naira;
+
 type Overview = {
   config: { markupBps: number; enabled: boolean; syncedAt: string | null };
   configured: boolean;
@@ -10,7 +12,7 @@ type Overview = {
   usdRateKobo: number;
   stats: { completed: number; refunded: number; pending: number; revenueKobo: number; costKobo: number };
   recent: { id: string; service: string; status: string; priceKobo: number; costMilli: number; createdAt: string; email: string }[];
-  services: { name: string; label: string; hidden: boolean; costMilli: number | null; priceKobo: number | null }[];
+  services: { name: string; label: string; hidden: boolean; costMilli: number | null; costKobo: number | null; markupPriceKobo: number | null; fixedPriceKobo: number | null; priceKobo: number | null }[];
 };
 type Msg = { ok: boolean; text: string } | null;
 
@@ -22,6 +24,9 @@ export function AdminVerify() {
   const [busy, setBusy] = useState(false);
   const [q, setQ] = useState("");
   const [onlyHidden, setOnlyHidden] = useState(false);
+  const [onlyFixed, setOnlyFixed] = useState(false);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [priceInput, setPriceInput] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -50,8 +55,27 @@ export function AdminVerify() {
 
   const services = useMemo(() => {
     const s = q.trim().toLowerCase();
-    return (data?.services ?? []).filter((x) => (!onlyHidden || x.hidden) && (!s || x.name.toLowerCase().includes(s)));
-  }, [data, q, onlyHidden]);
+    return (data?.services ?? []).filter((x) => (!onlyHidden || x.hidden) && (!onlyFixed || x.fixedPriceKobo) && (!s || x.name.toLowerCase().includes(s) || x.label.toLowerCase().includes(s)));
+  }, [data, q, onlyHidden, onlyFixed]);
+
+  async function savePrice(name: string, label: string, naira: number | null) {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const r = await api<{ belowCost: boolean; costKobo: number | null }>("/api/admin/verify", { action: "price", name, naira });
+      setMsg(naira === null
+        ? { ok: true, text: `${label} is back on the ${markup}% markup.` }
+        : r.belowCost
+          ? { ok: false, text: `Saved, but ₦${naira.toLocaleString("en-NG")} is BELOW your cost (${r.costKobo ? naira_(r.costKobo) : "?"}). You lose money on every ${label} code.` }
+          : { ok: true, text: `${label} now sells for ₦${naira.toLocaleString("en-NG")}${r.costKobo ? ` (your cost ≈ ${naira_(r.costKobo)})` : ""}.` });
+      setEditing(null);
+      await load();
+    } catch (e) {
+      setMsg({ ok: false, text: (e as Error).message });
+    } finally {
+      setBusy(false);
+    }
+  }
 
   if (error) return <div className="form-error" role="alert">{error}</div>;
   if (!data) return <p className="muted" role="status">Loading…</p>;
@@ -99,20 +123,43 @@ export function AdminVerify() {
           <button type="button" className="btn btn-ghost ap-mini" disabled={busy || !data.configured} onClick={() => void act({ action: "sync" }, "App list refreshed from TextVerified.")}>Refresh list</button>
         </div>
         <p className="muted" style={{ fontSize: 13 }}>
-          The list refreshes itself daily{data.config.syncedAt ? ` (last: ${new Date(data.config.syncedAt).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" })})` : ""}. Prices show once someone has looked an app up.
+          Tap <strong>Set price</strong> to give an app its own fixed Naira price instead of the markup. The list refreshes itself daily{data.config.syncedAt ? ` (last: ${new Date(data.config.syncedAt).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" })})` : ""}. Prices show once someone has looked an app up.
         </p>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           <input className="input" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search apps" aria-label="Search apps" style={{ flex: "1 1 200px" }} />
           <label className="ap-toggle"><input type="checkbox" checked={onlyHidden} onChange={(e) => setOnlyHidden(e.target.checked)} /><span>Hidden only</span></label>
+          <label className="ap-toggle"><input type="checkbox" checked={onlyFixed} onChange={(e) => setOnlyFixed(e.target.checked)} /><span>Fixed prices only</span></label>
         </div>
         <ul className="vc-admin-list">
           {services.slice(0, 200).map((s) => (
-            <li key={s.name}>
-              <span style={{ minWidth: 0, overflowWrap: "anywhere" }}><strong>{s.label}</strong>{s.hidden && <span className="ap-tag" style={{ marginLeft: 6 }}>Hidden</span>}</span>
-              <span className="muted" style={{ fontSize: 13 }}>{s.costMilli ? `$${(s.costMilli / 1000).toFixed(2)} → ${s.priceKobo ? naira(s.priceKobo) : "–"}` : "not priced yet"}</span>
-              <button type="button" className="btn btn-ghost ap-mini" disabled={busy} onClick={() => void act({ action: "hide", names: [s.name], hidden: !s.hidden }, s.hidden ? `${s.label} is back on sale.` : `${s.label} hidden from customers.`)}>
-                {s.hidden ? "Show" : "Hide"}
-              </button>
+            <li key={s.name} style={{ flexDirection: "column", alignItems: "stretch" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>
+                  <strong>{s.label}</strong>
+                  {s.fixedPriceKobo && <span className="ap-tag ok" style={{ marginLeft: 6 }}>Fixed {naira(s.fixedPriceKobo)}</span>}
+                  {s.hidden && <span className="ap-tag" style={{ marginLeft: 6 }}>Hidden</span>}
+                </span>
+                <span style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  <button type="button" className="btn btn-ghost ap-mini" disabled={busy} onClick={() => { setEditing(editing === s.name ? null : s.name); setPriceInput(s.fixedPriceKobo ? String(s.fixedPriceKobo / 100) : ""); }}>
+                    {s.fixedPriceKobo ? "Change price" : "Set price"}
+                  </button>
+                  <button type="button" className="btn btn-ghost ap-mini" disabled={busy} onClick={() => void act({ action: "hide", names: [s.name], hidden: !s.hidden }, s.hidden ? `${s.label} is back on sale.` : `${s.label} hidden from customers.`)}>
+                    {s.hidden ? "Show" : "Hide"}
+                  </button>
+                </span>
+              </div>
+              <span className="muted" style={{ fontSize: 13 }}>
+                {s.costMilli ? <>Cost ${(s.costMilli / 1000).toFixed(2)}{s.costKobo ? ` ≈ ${naira(s.costKobo)}` : ""} · with markup {s.markupPriceKobo ? naira(s.markupPriceKobo) : "–"}{s.fixedPriceKobo ? <> · <strong>customers pay {naira(s.fixedPriceKobo)}</strong></> : ""}</> : s.fixedPriceKobo ? `Customers pay ${naira(s.fixedPriceKobo)} (cost not checked yet)` : "Not priced yet: open it once to fetch its cost"}
+              </span>
+              {editing === s.name && (
+                <form className="vc-price-form" onSubmit={(e) => { e.preventDefault(); const n = Number(priceInput.replace(/[₦,\s]/g, "")); if (!(n > 0)) { setMsg({ ok: false, text: "Enter a price in Naira, e.g. 2500." }); return; } void savePrice(s.name, s.label, n); }}>
+                  <label htmlFor={`fp-${s.name}`} className="muted" style={{ fontSize: 13 }}>Fixed price (₦)</label>
+                  <input id={`fp-${s.name}`} className="input" inputMode="decimal" value={priceInput} onChange={(e) => setPriceInput(e.target.value)} placeholder="e.g. 2500" autoFocus style={{ maxWidth: 160 }} />
+                  <button className="btn btn-primary ap-mini" disabled={busy}>Save</button>
+                  {s.fixedPriceKobo && <button type="button" className="btn btn-ghost ap-mini" disabled={busy} onClick={() => void savePrice(s.name, s.label, null)}>Use markup instead</button>}
+                  <button type="button" className="btn btn-ghost ap-mini" onClick={() => setEditing(null)}>Cancel</button>
+                </form>
+              )}
             </li>
           ))}
         </ul>

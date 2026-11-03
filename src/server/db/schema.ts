@@ -344,6 +344,7 @@ export const smsServices = pgTable("sms_services", {
   name: text("name").primaryKey(),
   label: text("label"),
   hidden: boolean("hidden").notNull().default(false),
+  fixedPriceKobo: bigint("fixed_price_kobo", { mode: "number" }),
   costUsdMilli: integer("cost_usd_milli"),
   pricedAt: ts("priced_at"),
   seenAt: ts("seen_at").notNull().defaultNow(),

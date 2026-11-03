@@ -243,3 +243,4 @@ img.mk-avatar { object-fit: cover; background: var(--surface-2); }
 .vc-history, .vc-admin-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .vc-history li { display: flex; flex-direction: column; gap: 6px; padding: 12px 0; border-top: 1px solid rgb(var(--ov) / .08); }
 .vc-admin-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 10px 0; border-top: 1px solid rgb(var(--ov) / .08); }
+.vc-price-form { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-top: 4px; }
