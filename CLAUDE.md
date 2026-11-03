@@ -173,7 +173,7 @@ moving to ESLint 9 / Next 16 is a later job.
    (₦1,000 credited once, 2026-11-03), cron-job.org sync job running. Webhook delivery not yet
    confirmed: look for `[webhook] flutterwave` in runtime logs (Hobby keeps 1 hour).
    Owlet's API has NO recommended flag (only `mode`/`proof`/`targetable` on 179 in-house
-   services); owner to choose: map those, ask Owlet, or star manually.
+   services); owner chose (2026-11-03) to star manually in /admin/services.
 4. Admin panel (`/admin`): ~~Insights~~, ~~providers (markup, sync, balance, pause)~~ done;
    ~~seller verification queue~~ done; still to do: disputes, withdrawals, platform wallet balance.
 5. Marketplace pages: browse (Bybit P2P-style table, Buy/Sell toggle), listing detail,
