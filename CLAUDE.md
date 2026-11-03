@@ -55,9 +55,15 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   - Database name `almighty_pumps`. Use the pooled connection string (host contains `-pooler`).
   - The owner's other Neon projects (Living_Settlement, the-living-world-development)
     belong to a different project. Don't touch them.
-- Vercel: team `team_F7GOonVg8RPk8y5ozzjWEsTN`. Project `almighty-pumps` not created yet.
-  Plan: link to the GitHub repo, framework Next.js, region fra1, Preview env vars pointing
-  at the Neon `dev` branch, Production env vars added only when going live.
+- Vercel: team `otedola` (`team_F7GOonVg8RPk8y5ozzjWEsTN`), Hobby plan. Project
+  `almightypumps` (`prj_Dn7OhM629JfEts2fr3LVipba0jvc`), linked to the GitHub repo,
+  framework Next.js, Node 22, region fra1. Preview env vars set (DATABASE_URL to Neon `dev`,
+  DATABASE_SSL, SESSION_SECRET, CRON_SECRET); owner adds PAYSTACK_SECRET_KEY and
+  SMM_PROVIDER_1_KEY. Production env vars are added only when going live.
+- Cron: Hobby only allows daily crons, so `vercel.json` has no `crons` (deploys are refused
+  otherwise). The jobs are `GET /api/cron/sync-orders` (every 5 min) and
+  `GET /api/cron/escrow` (every 15 min), called with `Authorization: Bearer <CRON_SECRET>`.
+  Before launch: Vercel Pro (re-add `crons`) or cron-job.org (owner decides).
 
 ## Build status
 First real build done 2026-11-03: `npm install`, `npm run typecheck`, `npm run lint`,
@@ -72,7 +78,7 @@ moving to ESLint 9 / Next 16 is a later job.
 
 ## Next tasks, in order
 1. ~~Install, type-check, build and fix. Commit to `dev`.~~ Done.
-2. Create the Vercel project with preview env vars:
+2. ~~Create the Vercel project~~ Done; owner still to add Paystack test key and SMM key. Preview env vars:
    `DATABASE_URL` (Neon dev pooled), `DATABASE_SSL=true`, `SESSION_SECRET`, `CRON_SECRET`
    (generate fresh: `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`),
    `PAYSTACK_SECRET_KEY` (owner pastes test key), `SMM_PROVIDER_1_KEY` (owner pastes).
@@ -87,5 +93,5 @@ moving to ESLint 9 / Next 16 is a later job.
 ## Going live checklist (owner approval required at each step)
 Run `drizzle/0000_init.sql` on Neon `main`; add Production env vars (live Paystack key);
 set the Paystack webhook to `https://<domain>/api/webhooks/paystack`; decide on Vercel Pro
-or cron-job.org for the two cron jobs in `vercel.json`; merge `dev` into `main`.
+or cron-job.org for the two cron jobs (see Cron above); merge `dev` into `main`.
 Legal: escrow should run through a licensed partner in Nigeria before real money.
