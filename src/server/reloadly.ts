@@ -59,12 +59,16 @@ async function tokenFor(product: Product, mode: Mode): Promise<string> {
   const res = await fetch(authUrl(), {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({ client_id: e.RELOADLY_CLIENT_ID, client_secret: e.RELOADLY_CLIENT_SECRET, grant_type: "client_credentials", audience: realBase(product, mode) }),
+    body: JSON.stringify({ client_id: e.RELOADLY_CLIENT_ID.trim(), client_secret: e.RELOADLY_CLIENT_SECRET.trim(), grant_type: "client_credentials", audience: realBase(product, mode) }),
     cache: "no-store",
     signal: AbortSignal.timeout(15_000),
   });
   const text = await res.text();
-  if (!res.ok) throw providerError(res.status, text);
+  if (!res.ok) {
+    const e2 = env();
+    console.error(`[reloadly] ${mode} login refused (client id ${e2.RELOADLY_CLIENT_ID.trim().length} chars, starts ${e2.RELOADLY_CLIENT_ID.trim().slice(0, 4)}…; secret ${e2.RELOADLY_CLIENT_SECRET.trim().length} chars)`);
+    throw providerError(res.status, text);
+  }
   const j = JSON.parse(text) as { access_token: string; expires_in?: number };
   tokens.set(key, { token: j.access_token, expiresAt: Date.now() + (j.expires_in ?? 3600) * 1000 });
   return j.access_token;
