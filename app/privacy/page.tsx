@@ -5,7 +5,8 @@ import { getDb } from "@/server/db";
 import { formatLegalDate, getLegal } from "@/server/legal";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy · Almighty Pumps",
+  title: { absolute: "Privacy Policy · Almighty Pumps" },
+  alternates: { canonical: "/privacy" },
   description: "How Almighty Pumps collects, uses, shares and protects your personal data.",
 };
 // Text is edited in Admin → Legal pages, so read it on every visit.

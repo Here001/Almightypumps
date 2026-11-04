@@ -3,12 +3,28 @@ import "./landing.css";
 import "./app.css";
 import { Tracker } from "@/components/Tracker";
 import { THEME_BOOT_SCRIPT, ThemeSync } from "@/components/Theme";
+import { SITE_NAME, SITE_URL, isIndexable } from "@/core/site";
 
 const FONTS = "https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap";
 
+const TITLE = "Almighty Pumps: Social Media Growth, US Numbers, eSIMs & Gift Cards in Nigeria";
+const DESCRIPTION = "Buy Instagram, TikTok and YouTube followers, likes and views, get US numbers for verification codes, US and travel eSIMs, gift cards, airtime and data. One Naira wallet, pay-on-delivery.";
+
 export const metadata: Metadata = {
-  title: "Almighty Pumps",
-  description: "Grow your social accounts, get SMS verification codes and US eSIMs, and buy or sell safely with escrow. One Naira wallet.",
+  metadataBase: new URL(SITE_URL),
+  title: { default: TITLE, template: `%s · ${SITE_NAME}` },
+  description: DESCRIPTION,
+  applicationName: SITE_NAME,
+  keywords: ["SMM panel Nigeria", "buy Instagram followers Nigeria", "buy TikTok followers Nigeria", "US number for WhatsApp verification", "virtual number Nigeria", "US eSIM Nigeria", "travel eSIM", "buy gift cards with Naira", "sell gift cards Nigeria", "MTN airtime", "escrow marketplace Nigeria"],
+  openGraph: { type: "website", siteName: SITE_NAME, title: TITLE, description: DESCRIPTION, url: "/", locale: "en_NG" },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
+  // Previews (test site) are never indexed; the live site is.
+  robots: isIndexable() ? { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 } } : { index: false, follow: false },
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
+    other: process.env.BING_SITE_VERIFICATION ? { "msvalidate.01": process.env.BING_SITE_VERIFICATION } : undefined,
+  },
+  formatDetection: { telephone: false },
 };
 
 // Fit the screen on load; pinch-zoom stays available (blocking it hurts partially-sighted customers).

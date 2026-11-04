@@ -5,7 +5,8 @@ import { getDb } from "@/server/db";
 import { formatLegalDate, getLegal } from "@/server/legal";
 
 export const metadata: Metadata = {
-  title: "Terms of Service · Almighty Pumps",
+  title: { absolute: "Terms of Service · Almighty Pumps" },
+  alternates: { canonical: "/terms" },
   description: "The rules for using Almighty Pumps: accounts, wallet, services, the P2P marketplace, refunds and more.",
 };
 // Text is edited in Admin → Legal pages, so read it on every visit.

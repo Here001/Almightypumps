@@ -251,6 +251,15 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   `user-select: none` + no tap highlight/callout with text re-enabled for inputs, codes (.ap-code = select all),
   addresses/facts, legal text, admin lists and `.selectable` (add that class to anything customers must copy);
   all inputs 16px on ≤900px screens (iOS focus-zoom). Viewport: width=device-width, initialScale 1, minimumScale 1.
+- SEO / AI search (2026-11-04): `src/core/site.ts` (SITE_URL https://almightypumps.com always; `isIndexable()` = VERCEL_ENV
+  production, so previews are noindex + robots Disallow /). Root metadata (metadataBase, title template "%s · Almighty Pumps",
+  keywords, OG/Twitter, en_NG, GOOGLE_SITE_VERIFICATION / BING_SITE_VERIFICATION env → verification meta). Page titles that
+  already end in "· Almighty Pumps" use `title.absolute`; canonical set per page (homepage in app/page.tsx). noindex:
+  /dashboard, /admin, /login (follow), /forgot-password. Public service pages: `src/content/seoPages.ts` (13 pages, honest copy,
+  NO invented reviews/ratings/prices) → /services and /services/[slug] (static, `PublicShell.tsx`, JSON-LD Service + FAQPage +
+  BreadcrumbList; index = ItemList). Homepage JSON-LD Organization + WebSite + OfferCatalog; homepage footer links to service
+  pages. app/robots.ts (AI crawlers explicitly allowed on public pages), app/sitemap.ts, /llms.txt (app/llms.txt/route.ts),
+  app/opengraph-image.tsx (1200×630), app/icon.svg, app/apple-icon.tsx. Add new public pages to SEO_PAGES (sitemap/llms follow).
 - Insights: `src/components/Tracker.tsx` beacons each page and dashboard #section to
   `/api/track` → `site_events` (anonymous cookie id, no IP/UA stored). Section names come
   from `src/core/analytics.ts` (add new pages there). Queries in `src/server/insights.ts`.

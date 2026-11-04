@@ -11,7 +11,7 @@ import { hubCategories, myShopOrders } from "@/server/shop";
 import { effectiveSellerStatus } from "@/server/sellers";
 import { DashboardApp } from "@/components/dashboard/DashboardApp";
 
-export const metadata: Metadata = { title: "Dashboard · Almighty Pumps" };
+export const metadata: Metadata = { title: { absolute: "Dashboard · Almighty Pumps" }, robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 function greeting() {

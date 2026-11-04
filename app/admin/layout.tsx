@@ -4,7 +4,7 @@ import { adminOrRedirect } from "@/server/adminPage";
 import { adminCounts } from "@/server/adminHome";
 import { AdminShell } from "@/components/AdminNav";
 
-export const metadata: Metadata = { title: "Admin · Almighty Pumps", robots: { index: false } };
+export const metadata: Metadata = { title: { absolute: "Admin · Almighty Pumps" }, robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
