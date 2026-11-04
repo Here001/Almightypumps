@@ -364,3 +364,22 @@ img.mk-avatar { object-fit: cover; background: var(--surface-2); }
 .sd-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .sd-thumb > button { position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; border-radius: 999px; border: 0; background: rgb(0 0 0 / .65); color: #fff; font-size: 16px; line-height: 1; cursor: pointer; }
 .sd-zoom { max-width: min(92vw, 900px); max-height: 88vh; margin: auto; border-radius: 12px; display: block; }
+
+/* ---------- Phone comfort (2026-11-04): no double-tap zoom, no accidental selection, always fits the screen ---------- */
+/* Taps are just taps: removes the double-tap-to-zoom delay/zoom; pinch-zoom still works (accessibility). */
+html, body { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+/* Nothing may push the page wider than the screen. */
+html, body { max-width: 100%; overflow-x: clip; }
+img, svg, video, canvas, iframe { max-width: 100%; }
+/* Double-tapping buttons, tiles, chips, menus and cards doesn't highlight text or open the copy menu… */
+body { -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+/* …but anything people need to copy or type stays selectable. */
+input, textarea, select, [contenteditable], code, pre, .ap-code, .vc-code span, .vc-number span, .legal-doc, .ap-facts dd,
+.ap-row-sub, .vc-history, .vc-admin-list, .adm-main .muted, .selectable {
+  -webkit-user-select: text; user-select: text; -webkit-touch-callout: default;
+}
+.ap-code { -webkit-user-select: all; user-select: all; }
+/* iPhone zooms into any text box smaller than 16px and leaves the page zoomed: keep them at 16px on phones. */
+@media (max-width: 900px) {
+  input, select, textarea, .input, .select, .mk-search, .ap-markup .input { font-size: 16px !important; }
+}

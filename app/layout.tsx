@@ -11,7 +11,8 @@ export const metadata: Metadata = {
   description: "Grow your social accounts, get SMS verification codes and US eSIMs, and buy or sell safely with escrow. One Naira wallet.",
 };
 
-export const viewport: Viewport = { themeColor: "#04050A", width: "device-width", initialScale: 1, viewportFit: "cover" };
+// Fit the screen on load; pinch-zoom stays available (blocking it hurts partially-sighted customers).
+export const viewport: Viewport = { themeColor: "#04050A", width: "device-width", initialScale: 1, minimumScale: 1, viewportFit: "cover" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

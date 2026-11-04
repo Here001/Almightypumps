@@ -246,6 +246,11 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 - Service visibility: `smm_services.hidden_reason` null = on sale, `admin` (hidden in
   /admin/services, survives syncs), `policy` (isRestricted; can't be unhidden), `provider`
   (dropped upstream or 0-priced; returns on next sync if listed). `active` mirrors it.
+- Phone comfort (2026-11-04, owner's request; end of app/app.css): `touch-action: manipulation` (no double-tap zoom,
+  pinch still works on purpose: no maximum-scale/user-scalable=no), `overflow-x: clip` on html/body, body
+  `user-select: none` + no tap highlight/callout with text re-enabled for inputs, codes (.ap-code = select all),
+  addresses/facts, legal text, admin lists and `.selectable` (add that class to anything customers must copy);
+  all inputs 16px on ≤900px screens (iOS focus-zoom). Viewport: width=device-width, initialScale 1, minimumScale 1.
 - Insights: `src/components/Tracker.tsx` beacons each page and dashboard #section to
   `/api/track` → `site_events` (anonymous cookie id, no IP/UA stored). Section names come
   from `src/core/analytics.ts` (add new pages there). Queries in `src/server/insights.ts`.
