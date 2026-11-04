@@ -119,6 +119,13 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   listings, API keys, reseller /api/v2 120/min per key, /api/track silent drop). Over the limit = 429 with
   Retry-After and "Please wait N minutes"; a failing counter allows the request. Counters >1 day old are
   pruned by the sync-orders cron. IP = first x-forwarded-for (set by Vercel).
+- Providers from the admin (migration 0017, /admin/providers `AddProvider` + card "Edit"): paste any standard
+  SMM panel (API v2) URL + key → "Test connection" (balance + service count) → save. Keys are stored
+  AES-256-GCM encrypted in `smm_providers.api_key_enc` (`src/server/secretBox.ts`, key derived from
+  SESSION_SECRET: changing SESSION_SECRET means re-pasting provider keys), shown only as ••••last4;
+  `api_key_env` still works for env-held keys (Owlet). Non-NGN panels: ₦ per unit, or blank = follow the site
+  dollar rate (`fx_auto`, refreshed on each sync). New key/URL is tested before saving; http allowed only for
+  localhost (tests). Migration 0017 applied to dev only; production needs the owner's yes.
 - `app/api/**` route handlers; `app/page.tsx` 3D homepage; `app/signup`, `app/login`,
   `app/dashboard`; `app/admin` (Insights, Growth providers, Services, Pricing, Shop, Listings review; admins only).
 - Shop (`src/server/shop.ts`, /admin/shop, migration 0008): admin categories → products. Delivery
@@ -166,7 +173,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
     usd auto, Instagram Likes/Live viewers 100% rules. NOT copied: dev's P2P category renamed "Accounts"
     (account sales are blocked); live keeps "Digital products". Re-star 3 TikTok follower services
     (Owlet ids 8277, 24221, 8619) after the first live sync. No users yet (owner signs up, then promote to admin).
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0016 applied. Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0017 applied. Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

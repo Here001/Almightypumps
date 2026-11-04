@@ -9,7 +9,8 @@ import {
 } from "@/core/smm";
 import { displayName, isRestricted, kindFor, platformFor, POPULAR_PLATFORMS } from "@/core/catalog";
 import type { Db } from "./db";
-import { getMinOrderKobo, reprice } from "./pricing";
+import { getMinOrderKobo, getUsdRateKobo, reprice } from "./pricing";
+import { keyHint, open, seal } from "./secretBox";
 import { smmOrders, smmProviders, smmServices } from "./db/schema";
 import { AppError, badRequest, notFound } from "./errors";
 import { linkHold, placeHold, platformWalletId, settleHold, walletIdForUser } from "./wallet";
@@ -17,17 +18,24 @@ import { linkHold, placeHold, platformWalletId, settleHold, walletIdForUser } fr
 type Provider = typeof smmProviders.$inferSelect;
 
 function providerKey(p: Provider): string {
+  if (p.apiKeyEnc) {
+    try {
+      return open(p.apiKeyEnc).trim();
+    } catch {
+      throw new AppError(500, "PROVIDER_KEY_UNREADABLE", `The saved API key for "${p.name}" can't be read any more. Paste it again in Admin → Growth providers.`);
+    }
+  }
   // Trim: keys pasted from a phone often carry a trailing space or newline.
-  const key = process.env[p.apiKeyEnv]?.trim();
-  if (!key) throw new AppError(500, "PROVIDER_KEY_MISSING", `Set ${p.apiKeyEnv} in the environment for provider "${p.name}".`);
+  const key = p.apiKeyEnv ? process.env[p.apiKeyEnv]?.trim() : "";
+  if (!key) throw new AppError(500, "PROVIDER_KEY_MISSING", `No API key for "${p.name}". Add it in Admin → Growth providers.`);
   return key;
 }
 
-async function call(p: Provider, params: Record<string, string>): Promise<unknown> {
-  const key = providerKey(p);
+/** One request to a standard SMM panel (API v2). */
+async function panelCall(apiUrl: string, key: string, params: Record<string, string>, name = "Provider"): Promise<unknown> {
   // Standard panels read "key"; some custom-built panels read "api_key". Sending both is harmless.
   const body = new URLSearchParams({ key, api_key: key, ...params });
-  const res = await fetch(p.apiUrl, {
+  const res = await fetch(apiUrl, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
     body,
@@ -38,8 +46,12 @@ async function call(p: Provider, params: Record<string, string>): Promise<unknow
   try {
     return JSON.parse(text);
   } catch {
-    throw new Error(`Provider "${p.name}" returned a non-JSON response (HTTP ${res.status}).`);
+    throw new Error(`${name} returned a non-JSON response (HTTP ${res.status}). Check the API URL: it usually ends in /api/v2.`);
   }
+}
+
+async function call(p: Provider, params: Record<string, string>): Promise<unknown> {
+  return panelCall(p.apiUrl, providerKey(p), params, `Provider "${p.name}"`);
 }
 
 /** For admin screens: show what the provider actually said instead of a generic error. */
@@ -50,10 +62,10 @@ async function adminProviderCall<T>(p: Provider, fn: () => Promise<T>): Promise<
     if (e instanceof AppError) throw e;
     const msg = (e as Error).message || "Unknown error";
     // Diagnostics only: never log the key itself.
-    const raw = process.env[p.apiKeyEnv] ?? "";
+    const raw = p.apiKeyEnc ? "(stored)" : (p.apiKeyEnv ? process.env[p.apiKeyEnv] ?? "" : "");
     console.error(`[provider] ${p.name} ${p.apiUrl}: ${msg} (key length ${raw.trim().length}, had outer spaces: ${raw !== raw.trim()}, inner spaces: ${/\s/.test(raw.trim())})`);
     const hint = /api key|invalid key|unauthori[sz]ed/i.test(msg)
-      ? ` Check ${p.apiKeyEnv} in Vercel (copy the key again from ${p.name}, no spaces), then redeploy.`
+      ? ` Copy the API key again from ${p.name} and paste it in "Change API key" (no spaces).`
       : "";
     throw new AppError(502, "PROVIDER_ERROR", `${p.name} said: "${msg}".${hint}`);
   }
@@ -83,6 +95,15 @@ export async function syncServices(db: Db, providerId: string) {
     }
     return parseServices(raw);
   });
+
+  // Non-Naira panels on "auto rate": refresh the exchange rate from the site's dollar rate before pricing.
+  if (p.fxAuto && p.currency !== "NGN") {
+    const rate = await getUsdRateKobo(db);
+    if (rate > 0 && rate !== p.fxKoboPerUnit) {
+      await db.update(smmProviders).set({ fxKoboPerUnit: rate }).where(eq(smmProviders.id, p.id));
+      p.fxKoboPerUnit = rate;
+    }
+  }
 
   const rows = new Map<string, typeof smmServices.$inferInsert>();
   let skipped = 0;
@@ -493,4 +514,61 @@ export async function setServiceFeatured(db: Db, publicId: number, featured: boo
     .returning({ id: smmServices.publicId, featured: smmServices.featured });
   if (!u) throw notFound("Service");
   return u;
+}
+
+
+/* ---------- Adding and editing providers from the admin page ---------- */
+
+const clean = (k: string) => k.replace(/\s+/g, "");
+
+/** Try a panel's API (balance + service count) before saving it. */
+export async function testPanel(apiUrl: string, key: string) {
+  try {
+    const bal = parseBalance(await panelCall(apiUrl, clean(key), { action: "balance" }));
+    const services = parseServices(await panelCall(apiUrl, clean(key), { action: "services" }));
+    return { ok: true as const, balance: bal.balance, currency: bal.currency, services: services.length };
+  } catch (e) {
+    const msg = (e as Error).message || "No response";
+    throw new AppError(400, "PROVIDER_TEST_FAILED", `Couldn't connect: ${msg}`);
+  }
+}
+
+export async function addProvider(db: Db, input: { name: string; apiUrl: string; apiKey: string; currency: string; fxKoboPerUnit?: number; markupBps: number }) {
+  const t = await testPanel(input.apiUrl, input.apiKey);
+  const currency = (t.currency || input.currency || "NGN").toUpperCase().slice(0, 3);
+  const fxAuto = currency !== "NGN" && !input.fxKoboPerUnit;
+  const fx = currency === "NGN" ? 100 : input.fxKoboPerUnit || (await getUsdRateKobo(db));
+  if (!fx) throw badRequest("Set the exchange rate (₦ per 1 " + currency + ") first.");
+  const [p] = await db.insert(smmProviders).values({
+    name: input.name.trim(), apiUrl: input.apiUrl.trim(), apiKeyEnv: "", apiKeyEnc: seal(clean(input.apiKey)), apiKeyHint: keyHint(clean(input.apiKey)),
+    currency, fxKoboPerUnit: fx, fxAuto, markupBps: input.markupBps,
+  }).returning({ id: smmProviders.id, name: smmProviders.name });
+  return { ...p, test: t };
+}
+
+export async function editProvider(db: Db, id: string, input: { name?: string; apiUrl?: string; apiKey?: string; fxKoboPerUnit?: number | null }) {
+  const [p] = await db.select().from(smmProviders).where(eq(smmProviders.id, id));
+  if (!p) throw notFound("Provider");
+  const apiUrl = input.apiUrl?.trim() || p.apiUrl;
+  const set: Partial<typeof smmProviders.$inferInsert> = {};
+  if (input.name?.trim()) set.name = input.name.trim();
+  if (input.apiUrl?.trim()) set.apiUrl = apiUrl;
+  let test: Awaited<ReturnType<typeof testPanel>> | null = null;
+  if (input.apiKey?.trim()) {
+    test = await testPanel(apiUrl, input.apiKey);
+    set.apiKeyEnc = seal(clean(input.apiKey));
+    set.apiKeyHint = keyHint(clean(input.apiKey));
+  } else if (input.apiUrl?.trim() && input.apiUrl.trim() !== p.apiUrl) {
+    test = await testPanel(apiUrl, providerKey(p));
+  }
+  if (input.fxKoboPerUnit !== undefined && p.currency !== "NGN") {
+    set.fxAuto = input.fxKoboPerUnit === null;
+    set.fxKoboPerUnit = input.fxKoboPerUnit ?? ((await getUsdRateKobo(db)) || p.fxKoboPerUnit);
+  }
+  if (Object.keys(set).length) await db.update(smmProviders).set(set).where(eq(smmProviders.id, id));
+  // reprice() reads the provider's exchange rate from the database, so new prices apply at once.
+  const repriced = set.fxKoboPerUnit !== undefined && set.fxKoboPerUnit !== p.fxKoboPerUnit
+    ? await reprice(db, eq(smmServices.providerId, id))
+    : 0;
+  return { ok: true, test, repriced };
 }

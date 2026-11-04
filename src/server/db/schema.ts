@@ -87,8 +87,13 @@ export const smmProviders = pgTable("smm_providers", {
   name: text("name").notNull(),
   apiUrl: text("api_url").notNull(),
   apiKeyEnv: text("api_key_env").notNull(),
+  /** Encrypted API key (src/server/secretBox.ts); used instead of apiKeyEnv when set. */
+  apiKeyEnc: text("api_key_enc"),
+  /** Last 4 characters of the key, to show the admin which key is saved. */
+  apiKeyHint: text("api_key_hint"),
   currency: text("currency").notNull().default("NGN"),
   fxKoboPerUnit: integer("fx_kobo_per_unit").notNull().default(100),
+  fxAuto: boolean("fx_auto").notNull().default(false),
   markupBps: integer("markup_bps").notNull().default(3000),
   active: boolean("active").notNull().default(true),
   createdAt: ts("created_at").notNull().defaultNow(),
