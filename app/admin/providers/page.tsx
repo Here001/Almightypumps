@@ -2,7 +2,7 @@ import { count, eq, max, sql } from "drizzle-orm";
 import { getDb } from "@/server/db";
 import { smmProviders, smmServices } from "@/server/db/schema";
 import { adminOrRedirect } from "@/server/adminPage";
-import { AddProvider, ProviderCard } from "@/components/AdminProviders";
+import { AddProvider, Connections, ProviderCard } from "@/components/AdminProviders";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +15,10 @@ export default async function ProvidersPage() {
       markupBps: smmProviders.markupBps, active: smmProviders.active, apiKeyEnv: smmProviders.apiKeyEnv,
       apiKeyHint: smmProviders.apiKeyHint, hasStoredKey: sql<boolean>`${smmProviders.apiKeyEnc} is not null`,
       fxKoboPerUnit: smmProviders.fxKoboPerUnit, fxAuto: smmProviders.fxAuto,
+      onSale: sql<number>`count(${smmServices.id}) filter (where ${smmServices.active})::int`,
+      shared: sql<number>`count(${smmServices.id}) filter (where ${smmServices.active} and exists (
+        select 1 from smm_services o join smm_providers op on op.id = o.provider_id
+        where o.match_key = "smm_services"."match_key" and o.provider_id <> "smm_providers"."id" and o.active and op.active))::int`,
       services: count(smmServices.id), lastSync: max(smmServices.updatedAt),
     })
     .from(smmProviders)
@@ -28,6 +32,7 @@ export default async function ProvidersPage() {
         <h1 style={{ fontSize: 28 }}>Growth providers</h1>
         <p className="muted">The panels you buy followers, likes and views from. Your markup is added on top of their price. Any panel using the standard “API v2” works.</p>
       </div>
+      {providers.length > 0 && <Connections list={providers.map((p) => ({ id: p.id, name: p.name, active: p.active, services: p.services, onSale: p.onSale, shared: p.shared }))} />}
       <AddProvider />
       {providers.length === 0 ? <div className="empty">No providers yet.</div> : providers.map((p) => (
         <ProviderCard

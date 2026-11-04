@@ -125,7 +125,14 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   SESSION_SECRET: changing SESSION_SECRET means re-pasting provider keys), shown only as ••••last4;
   `api_key_env` still works for env-held keys (Owlet). Non-NGN panels: ₦ per unit, or blank = follow the site
   dollar rate (`fx_auto`, refreshed on each sync). New key/URL is tested before saving; http allowed only for
-  localhost (tests). Migration 0017 applied to dev only; production needs the owner's yes.
+  localhost (tests). "Connections" list at the top of /admin/providers: On/Off switch per API (= `active`;
+  Disconnect/Connect also on each card) and Remove (DELETE /api/admin/providers/[id]; refused if any of its
+  services has orders, then disconnect instead).
+- Same service from several providers (migration 0018): generated `smm_services.match_key` =
+  platform|kind|lowercased alphanumeric name. `browseServices` shows one row per match_key (cheapest connected copy,
+  recommended if any copy is), `serviceCatalog` counts distinct keys, and `placeOrder` routes to the cheapest
+  connected copy priced ≤ what the customer was shown (else "price just changed"). Reseller /api/v2 `services`
+  still lists every copy. Migrations 0017–0018 applied to dev only; production needs the owner's yes.
 - `app/api/**` route handlers; `app/page.tsx` 3D homepage; `app/signup`, `app/login`,
   `app/dashboard`; `app/admin` (Insights, Growth providers, Services, Pricing, Shop, Listings review; admins only).
 - Shop (`src/server/shop.ts`, /admin/shop, migration 0008): admin categories → products. Delivery
@@ -173,7 +180,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
     usd auto, Instagram Likes/Live viewers 100% rules. NOT copied: dev's P2P category renamed "Accounts"
     (account sales are blocked); live keeps "Digital products". Re-star 3 TikTok follower services
     (Owlet ids 8277, 24221, 8619) after the first live sync. No users yet (owner signs up, then promote to admin).
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0017 applied. Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0018 applied. Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { getDb } from "@/server/db";
 import { requireAdmin } from "@/server/auth";
 import { body, route } from "@/server/http";
-import { editProvider, updateProvider } from "@/server/smm";
+import { editProvider, removeProvider, updateProvider } from "@/server/smm";
 
 export const dynamic = "force-dynamic";
 
@@ -33,4 +33,11 @@ export const POST = route(async (req: Request, { params }: { params: Promise<{ i
     markupBps: input.markupPercent === undefined ? undefined : Math.round(input.markupPercent * 100),
     active: input.active,
   });
+});
+
+/** Delete a provider that was never used (otherwise disconnect it). */
+export const DELETE = route(async (_req: Request, { params }: { params: Promise<{ id: string }> }) => {
+  const { id } = await params;
+  await requireAdmin();
+  return removeProvider(getDb(), id);
 });

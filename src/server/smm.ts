@@ -186,7 +186,7 @@ export type CatalogPlatform = { platform: string; count: number; kinds: { kind: 
 /** Platforms (popular ones first) with their service kinds and counts. Small: sent with the dashboard. */
 export async function serviceCatalog(db: Db): Promise<CatalogPlatform[]> {
   const rows = await db
-    .select({ platform: smmServices.platform, kind: smmServices.kind, count: sql<number>`count(*)::int` })
+    .select({ platform: smmServices.platform, kind: smmServices.kind, count: sql<number>`count(distinct ${smmServices.matchKey})::int` })
     .from(smmServices)
     .innerJoin(smmProviders, eq(smmProviders.id, smmServices.providerId))
     .where(onSale())
@@ -224,18 +224,36 @@ export async function browseServices(db: Db, input: BrowseInput) {
     filters.push(sql`(${smmServices.name} ILIKE ${like} OR ${smmServices.platform} ILIKE ${like} OR ${smmServices.kind} ILIKE ${like})`);
   }
   if (!input.platform && words.length === 0) return { services: [], hasMore: false };
-  const rows = await db
+  // One row per product: when several connected providers sell the same service (same match_key),
+  // show the cheapest copy. A product counts as recommended if any copy is starred/recommended.
+  const ranked = db
     .select({
-      id: smmServices.publicId, name: sql<string>`coalesce(nullif(${smmServices.displayName}, ''), ${smmServices.name})`,
-      platform: smmServices.platform, kind: smmServices.kind, rateKobo: smmServices.rateKobo,
-      min: smmServices.minQty, max: smmServices.maxQty, refill: smmServices.refill, cancel: smmServices.cancel,
-      recommended: sql<boolean>`(${smmServices.featured} OR ${smmServices.providerRecommended})`,
+      id: sql<number>`${smmServices.publicId}`.as("id"),
+      name: sql<string>`coalesce(nullif(${smmServices.displayName}, ''), ${smmServices.name})`.as("name"),
+      platform: sql<string>`${smmServices.platform}`.as("platform"),
+      kind: sql<string>`${smmServices.kind}`.as("kind"),
+      rateKobo: sql<number>`${smmServices.rateKobo}`.as("rate_kobo"),
+      min: sql<number>`${smmServices.minQty}`.as("min"),
+      max: sql<number>`${smmServices.maxQty}`.as("max"),
+      refill: sql<boolean>`${smmServices.refill}`.as("refill"),
+      cancel: sql<boolean>`${smmServices.cancel}`.as("cancel"),
+      recommended: sql<boolean>`bool_or(${smmServices.featured} OR ${smmServices.providerRecommended}) over (partition by ${smmServices.matchKey})`.as("recommended"),
+      sources: sql<number>`(count(*) over (partition by ${smmServices.matchKey}))::int`.as("sources"),
+      rn: sql<number>`row_number() over (partition by ${smmServices.matchKey} order by ${smmServices.rateKobo}, ${smmServices.publicId})`.as("rn"),
     })
     .from(smmServices)
     .innerJoin(smmProviders, eq(smmProviders.id, smmServices.providerId))
     .where(and(...filters))
+    .as("ranked");
+  const rows = await db
+    .select({
+      id: ranked.id, name: ranked.name, platform: ranked.platform, kind: ranked.kind, rateKobo: ranked.rateKobo,
+      min: ranked.min, max: ranked.max, refill: ranked.refill, cancel: ranked.cancel, recommended: ranked.recommended,
+    })
+    .from(ranked)
+    .where(sql`${ranked.rn} = 1`)
     // Recommended (by the provider or starred by an admin) first, then cheapest.
-    .orderBy(sql`(${smmServices.featured} OR ${smmServices.providerRecommended}) DESC`, smmServices.rateKobo, smmServices.publicId)
+    .orderBy(sql`${ranked.recommended} DESC`, ranked.rateKobo, ranked.id)
     .limit(limit + 1)
     .offset(offset);
   return { services: rows.slice(0, limit), hasMore: rows.length > limit };
@@ -260,10 +278,26 @@ export async function placeOrder(
   userId: string,
   input: { servicePublicId: number; link: string; quantity: number; apiKeyId?: string },
 ) {
-  const [svc] = await db.select().from(smmServices).where(eq(smmServices.publicId, input.servicePublicId));
-  if (!svc || !svc.active) throw notFound("Service");
-  const [p] = await db.select().from(smmProviders).where(eq(smmProviders.id, svc.providerId));
-  if (!p || !p.active) throw notFound("Service");
+  const [chosen] = await db.select().from(smmServices).where(eq(smmServices.publicId, input.servicePublicId));
+  if (!chosen) throw notFound("Service");
+  // Route to the cheapest connected provider selling this same product (the customer's pick if it's still
+  // on sale and cheapest). Never charge more than the price the customer was shown.
+  const [best] = await db
+    .select({ svc: smmServices, p: smmProviders })
+    .from(smmServices)
+    .innerJoin(smmProviders, eq(smmProviders.id, smmServices.providerId))
+    .where(and(onSale(), eq(smmServices.matchKey, chosen.matchKey ?? ""), sql`${smmServices.rateKobo} <= ${chosen.rateKobo}`))
+    .orderBy(smmServices.rateKobo, sql`(${smmServices.id} = ${chosen.id}) DESC`)
+    .limit(1);
+  if (!best) {
+    const pricier = await db.select({ id: smmServices.id }).from(smmServices)
+      .innerJoin(smmProviders, eq(smmProviders.id, smmServices.providerId))
+      .where(and(onSale(), eq(smmServices.matchKey, chosen.matchKey ?? ""))).limit(1);
+    if (pricier?.length) throw badRequest("This service's price just changed. Close and reopen it to see the new price.");
+    throw notFound("Service");
+  }
+  const svc = best.svc;
+  const p = best.p;
 
   const link = input.link.trim();
   if (!validLink(link)) throw badRequest("Paste a valid link or username for this service.");
@@ -571,4 +605,18 @@ export async function editProvider(db: Db, id: string, input: { name?: string; a
     ? await reprice(db, eq(smmServices.providerId, id))
     : 0;
   return { ok: true, test, repriced };
+}
+
+/** Remove a provider for good. Only possible when none of its services were ever ordered (order history stays intact). */
+export async function removeProvider(db: Db, id: string) {
+  const [p] = await db.select({ id: smmProviders.id, name: smmProviders.name }).from(smmProviders).where(eq(smmProviders.id, id));
+  if (!p) throw notFound("Provider");
+  const [used] = await db.select({ n: sql<number>`count(*)::int` }).from(smmOrders)
+    .innerJoin(smmServices, eq(smmServices.id, smmOrders.serviceId)).where(eq(smmServices.providerId, id));
+  if (used.n > 0) throw badRequest(`${p.name} has ${used.n} order${used.n === 1 ? "" : "s"} in your history, so it can't be deleted. Disconnect it instead: its services stop selling straight away.`);
+  await db.transaction(async (tx) => {
+    await tx.delete(smmServices).where(eq(smmServices.providerId, id));
+    await tx.delete(smmProviders).where(eq(smmProviders.id, id));
+  });
+  return { removed: p.name };
 }

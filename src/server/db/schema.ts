@@ -3,6 +3,7 @@
  * change both together (or regenerate with `npm run db:generate`).
  */
 import { pgTable, uuid, text, boolean, timestamp, bigint, bigserial, integer, serial, jsonb, customType } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 const money = (name: string) => bigint(name, { mode: "number" });
 const ts = (name: string) => timestamp(name, { withTimezone: true, mode: "date" });
@@ -123,6 +124,8 @@ export const smmServices = pgTable("smm_services", {
   featured: boolean("featured").notNull().default(false),
   providerExtra: jsonb("provider_extra"),
   updatedAt: ts("updated_at").notNull().defaultNow(),
+  /** Generated in SQL (drizzle/0018): platform|kind|normalised name. Same key = same product. */
+  matchKey: text("match_key").generatedAlwaysAs(sql`platform || '|' || kind`),
 });
 
 export const apiKeys = pgTable("api_keys", {

@@ -13,6 +13,59 @@ type TestResult = { balance: string; currency: string; services: number };
 
 const CURRENCIES = ["NGN", "USD", "EUR", "GBP", "INR"];
 
+type Conn = { id: string; name: string; active: boolean; services: number; onSale: number; shared: number };
+
+/** One place to see every API and connect / disconnect / remove it. */
+export function Connections({ list }: { list: Conn[] }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState<string | null>(null);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  async function run(id: string, fn: () => Promise<string>) {
+    setBusy(id);
+    setMsg(null);
+    try { setMsg({ ok: true, text: await fn() }); router.refresh(); }
+    catch (e) { setMsg({ ok: false, text: (e as Error).message }); }
+    finally { setBusy(null); }
+  }
+  return (
+    <section className="card glass">
+      <h2 style={{ fontSize: 18 }}>Connections</h2>
+      <p className="muted" style={{ fontSize: 13 }}>Disconnect an API to stop selling its services. Services that another connected API also sells keep selling through that one automatically.</p>
+      <ul className="vc-admin-list">
+        {list.map((c) => (
+          <li key={c.id}>
+            <span style={{ minWidth: 0 }}>
+              <strong>{c.name}</strong> <span className={`ap-tag${c.active ? " ok" : ""}`}>{c.active ? "Connected" : "Disconnected"}</span>
+              <br /><span className="muted" style={{ fontSize: 13 }}>
+                {c.services.toLocaleString("en-NG")} services{c.active ? ` · ${c.onSale.toLocaleString("en-NG")} on sale` : ""}{c.shared ? ` · ${c.shared.toLocaleString("en-NG")} also sold by another API` : ""}
+              </span>
+            </span>
+            <span style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              <label className="ap-toggle" style={{ margin: 0 }}>
+                <input type="checkbox" role="switch" checked={c.active} disabled={busy !== null} aria-label={`${c.name} connected`}
+                  onChange={() => void run(c.id, async () => {
+                    if (c.active && !window.confirm(`Disconnect ${c.name}? Its services stop selling now${c.shared ? `; ${c.shared.toLocaleString("en-NG")} shared ones switch to your other API` : ""}. Orders already placed carry on.`)) throw new Error("Nothing changed.");
+                    await api(`/api/admin/providers/${c.id}`, { active: !c.active });
+                    return c.active ? `${c.name} disconnected.` : `${c.name} connected: its services are on sale again.`;
+                  })} />
+                <span>{c.active ? "On" : "Off"}</span>
+              </label>
+              <button type="button" className="btn btn-ghost ap-mini" disabled={busy !== null} onClick={() => void run(c.id, async () => {
+                if (!window.confirm(`Remove ${c.name} completely? This deletes its ${c.services.toLocaleString("en-NG")} services from your site.`)) throw new Error("Nothing changed.");
+                const res = await fetch(`/api/admin/providers/${c.id}`, { method: "DELETE" });
+                const j = (await res.json().catch(() => null)) as { ok: boolean; error?: { message: string } } | null;
+                if (!j?.ok) throw new Error(j?.error?.message ?? "Couldn't remove it.");
+                return `${c.name} removed.`;
+              })}>Remove</button>
+            </span>
+          </li>
+        ))}
+      </ul>
+      {msg && msg.text !== "Nothing changed." && <div className={msg.ok ? "form-ok" : "form-error"} role={msg.ok ? "status" : "alert"}>{msg.text}</div>}
+    </section>
+  );
+}
+
 /** "Add provider": paste a panel's API URL and key, test it, save it. The key is stored encrypted. */
 export function AddProvider() {
   const router = useRouter();
@@ -173,8 +226,8 @@ export function ProviderCard({ p }: { p: P }) {
         })}>{busy === "balance" ? "Checking…" : "Check balance"}</button>
         <button className="btn btn-ghost" disabled={busy !== null} onClick={() => run("active", async () => {
           await api(`/api/admin/providers/${p.id}`, { active: !p.active });
-          return p.active ? "Paused: customers can't order these services." : "Resumed: services are on sale again.";
-        })}>{busy === "active" ? "Saving…" : p.active ? "Pause provider" : "Resume provider"}</button>
+          return p.active ? "Disconnected: its services stop selling (shared ones switch to your other API)." : "Connected: its services are on sale again.";
+        })}>{busy === "active" ? "Saving…" : p.active ? "Disconnect" : "Connect"}</button>
         <button type="button" className="btn btn-ghost" disabled={busy !== null} onClick={() => { setEditing((v) => !v); setMsg(null); }}>{editing ? "Close edit" : "Edit"}</button>
       </div>
       {editing && (
