@@ -60,7 +60,7 @@ export default async function DashboardPage() {
 function kindLabel(kind: string) {
   const [verb, what] = kind.split(":");
   const thing: Record<string, string> = {
-    smm_order: "Boost order", escrow: "P2P purchase", withdrawal: "Withdrawal", shop_order: "Shop order", sms_verify: "Verification code", esim_order: "eSIM order",
+    smm_order: "Boost order", escrow: "P2P purchase", withdrawal: "Withdrawal", shop_order: "Shop order", sms_verify: "Verification code", esim_order: "eSIM order", gift_card: "Gift card", airtime: "Airtime/data", travel_esim: "Travel eSIM",
   };
   const t = thing[what ?? ""] ?? what ?? "";
   if (kind === "deposit") return "Wallet top-up";

@@ -8,6 +8,8 @@ const DASHBOARD_ANCHORS: Record<string, string> = {
   growth: "Social Growth",
   verify: "Verification codes",
   esim: "eSIMs",
+  giftcards: "Gift cards",
+  airtime: "Airtime & data",
   orders: "My orders",
   trades: "P2P Marketplace",
   wallet: "Wallet",

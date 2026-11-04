@@ -42,7 +42,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 ## Layout
 - `src/core/` pure business rules with no dependencies: money (integer kobo), ledger,
   escrow state machine, SMM pricing/parsing, listing policy, crypto helpers.
-  Tested by `tests/core.test.ts` (`npm test`, Node's built-in runner, 33 tests).
+  Tested by `tests/core.test.ts` (`npm test`, Node's built-in runner, 37 tests).
 - `src/server/` database access, wallet (row locks, holds, idempotent ledger),
   market, smm, payments (Flutterwave), auth, env, http helpers.
 - Customer dashboard (`app/dashboard` → `src/components/dashboard/`): tabs Services / Orders /
@@ -208,8 +208,23 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 - `drizzle/*.sql` migrations, applied in order by `scripts/migrate.mjs` (tracked in `_migrations`);
   `src/server/db/schema.ts` mirrors them. New schema change = new numbered file + schema.ts.
 - `scripts/migrate.mjs`, `scripts/seed.mjs`.
-- Next integrations: Reloadly (gift cards, maybe airtime/data) and eSIM Access (travel data eSIMs). Owner has accounts
-  (2026-11-04). API notes in `docs/integrations-reloadly-esimaccess.md` (docs sites are blocked from the sandbox).
+- Instant API products (2026-11-04, migration 0020, pay-on-delivery: hold → provider → capture `revenue:<kind>` / release):
+  - Reloadly client `src/server/reloadly.ts` (OAuth per audience; RELOADLY_ENV sandbox|live, default live on production and
+    sandbox elsewhere, auto-falls back to the other mode if the keys are refused; RELOADLY_MOCK_URL for local tests).
+    Gift cards `src/server/giftCards.ts` + `GiftCards.tsx` (#giftcards, "Gift Cards & Subscriptions" tile now live): catalogue
+    in `gift_products` synced daily for app_settings `gift_cards.countries` (default US, GB, CA, NG), markup default 15%,
+    codes stored encrypted (secretBox) in `gift_orders.codes_enc`. Airtime/data `src/server/airtime.ts` + `Airtime.tsx`
+    (#airtime, Nigeria only, MTN/Airtel/Glo/9mobile; operators cached 6h in app_settings `airtime_operators`; markups
+    default 0% = face value, Reloadly discount is the profit) in `topup_orders`.
+  - eSIM Access client `src/server/esimaccess.ts` (HMAC-SHA256 RT-Signature; ESIMACCESS_BASE_URL for mocks). Travel eSIMs
+    `src/server/travelEsim.ts` + `TravelEsim.tsx`: eSIMs tab now has two chips, "Travel data · instant" (default) and
+    "US phone line" (the manual `Esim.tsx`). Packages in `travel_packages` synced daily, markup default 150%, live price
+    re-checked before each order; QR generated from the LPA; usage check.
+  - Pricing maths in `src/core/instant.ts` (tested). Admin: /admin/instant (`AdminInstant.tsx`, /api/admin/instant) with tabs
+    for markups, pause, provider balance, catalogue sync, star/hide, recent orders, "Check / refund" for stuck ones.
+    The sync-orders cron sweeps pending orders of all three. CSP img-src allows https://*.reloadly.com (gift card logos).
+  - API notes: `docs/integrations-reloadly-esimaccess.md` (docs sites are blocked from the sandbox; field names verified
+    only against public client code; check runtime logs `[giftcards]`, `[airtime]`, `[esimaccess]`, `[reloadly]`).
 
 ## Infrastructure state (as of 2026-11-03)
 - GitHub: `Here001/Almightypumps` (private). `main` = LIVE (fast-forwarded to dev 55d73ca, then 130dee2 provider tools, cdd5cf6 eSIMs,
@@ -221,7 +236,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
     usd auto, Instagram Likes/Live viewers 100% rules. NOT copied: dev's P2P category renamed "Accounts"
     (account sales are blocked); live keeps "Digital products". Re-star 3 TikTok follower services
     (Owlet ids 8277, 24221, 8619) after the first live sync. No users yet (owner signs up, then promote to admin).
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0019 applied (main too). Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0020 applied (main: 0000–0019). Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

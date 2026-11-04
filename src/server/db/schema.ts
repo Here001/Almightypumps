@@ -36,7 +36,7 @@ export const holds = pgTable("holds", {
   amount: money("amount").notNull(),
   settled: money("settled").notNull().default(0),
   status: text("status").$type<"active" | "captured" | "released" | "partial">().notNull().default("active"),
-  purpose: text("purpose").$type<"smm_order" | "escrow" | "withdrawal" | "shop_order" | "sms_verify" | "esim_order">().notNull(),
+  purpose: text("purpose").$type<"smm_order" | "escrow" | "withdrawal" | "shop_order" | "sms_verify" | "esim_order" | "gift_card" | "airtime" | "travel_esim">().notNull(),
   refId: uuid("ref_id"),
   createdAt: ts("created_at").notNull().defaultNow(),
   closedAt: ts("closed_at"),
@@ -426,6 +426,95 @@ export const esimOrders = pgTable("esim_orders", {
   qrType: text("qr_type"),
   customerNote: text("customer_note"),
   adminNote: text("admin_note"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+});
+
+/* ---------- Reloadly gift cards + airtime/data, eSIM Access travel eSIMs (migration 0020) ---------- */
+
+export const giftProducts = pgTable("gift_products", {
+  productId: integer("product_id").primaryKey(),
+  country: text("country").notNull(),
+  name: text("name").notNull(),
+  brand: text("brand").notNull(),
+  data: jsonb("data").notNull(),
+  hidden: boolean("hidden").notNull().default(false),
+  featured: boolean("featured").notNull().default(false),
+  seenAt: ts("seen_at").notNull().defaultNow(),
+});
+
+type OrderStatus = "pending" | "delivered" | "refunded" | "failed";
+
+export const giftOrders = pgTable("gift_orders", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  publicId: serial("public_id").unique(),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  productId: integer("product_id").notNull(),
+  productName: text("product_name").notNull(),
+  country: text("country").notNull(),
+  faceValue: text("face_value").notNull(),
+  faceCurrency: text("face_currency").notNull(),
+  priceKobo: money("price_kobo").notNull(),
+  cost: text("cost"),
+  costCurrency: text("cost_currency"),
+  holdId: uuid("hold_id").notNull().references(() => holds.id),
+  status: text("status").$type<OrderStatus>().notNull().default("pending"),
+  providerTx: text("provider_tx"),
+  codesEnc: text("codes_enc"),
+  error: text("error"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+});
+
+export const topupOrders = pgTable("topup_orders", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  publicId: serial("public_id").unique(),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  kind: text("kind").$type<"airtime" | "data">().notNull(),
+  network: text("network").notNull(),
+  operatorId: integer("operator_id").notNull(),
+  phone: text("phone").notNull(),
+  description: text("description").notNull(),
+  sendAmount: text("send_amount").notNull(),
+  sendCurrency: text("send_currency").notNull(),
+  priceKobo: money("price_kobo").notNull(),
+  holdId: uuid("hold_id").notNull().references(() => holds.id),
+  status: text("status").$type<OrderStatus>().notNull().default("pending"),
+  providerTx: text("provider_tx"),
+  error: text("error"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+});
+
+export const travelPackages = pgTable("travel_packages", {
+  code: text("code").primaryKey(),
+  slug: text("slug"),
+  name: text("name").notNull(),
+  priceE4: integer("price_e4").notNull(),
+  volumeBytes: bigint("volume_bytes", { mode: "number" }).notNull(),
+  duration: integer("duration").notNull(),
+  durationUnit: text("duration_unit").notNull().default("DAY"),
+  locations: text("locations").array().notNull().default(sql`'{}'`),
+  description: text("description").notNull().default(""),
+  hidden: boolean("hidden").notNull().default(false),
+  seenAt: ts("seen_at").notNull().defaultNow(),
+});
+
+export const travelEsimOrders = pgTable("travel_esim_orders", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  publicId: serial("public_id").unique(),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  packageCode: text("package_code").notNull(),
+  packageName: text("package_name").notNull(),
+  priceKobo: money("price_kobo").notNull(),
+  costE4: integer("cost_e4").notNull(),
+  holdId: uuid("hold_id").notNull().references(() => holds.id),
+  status: text("status").$type<OrderStatus>().notNull().default("pending"),
+  providerOrderNo: text("provider_order_no"),
+  esimTranNo: text("esim_tran_no"),
+  iccid: text("iccid"),
+  lpa: text("lpa"),
+  error: text("error"),
   createdAt: ts("created_at").notNull().defaultNow(),
   updatedAt: ts("updated_at").notNull().defaultNow(),
 });

@@ -5,7 +5,7 @@ const CSP = [
   "frame-src https://challenges.cloudflare.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:",
-  "img-src 'self' data: blob:",
+  "img-src 'self' data: blob: https://*.reloadly.com",
   "connect-src 'self' https://challenges.cloudflare.com",
   "worker-src 'self' blob:",
   "object-src 'none'",

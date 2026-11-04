@@ -411,3 +411,62 @@ test("legal page text format is safe", async () => {
   assert.equal(m.safeHref("https://www.cloudflare.com/turnstile-privacy-policy/"), "https://www.cloudflare.com/turnstile-privacy-policy/");
   assert.deepEqual(m.parseInline("<script>x</script>"), [{ t: "text", v: "<script>x</script>" }]);
 });
+
+/* ---------------- instant products (Reloadly, eSIM Access) ---------------- */
+import { costToKobo, withMarkup, parseGiftProduct, giftCost, ngPhone, guessNetwork, networkOf, dataSize, durationLabel, e4ToKobo } from "../src/core/instant.ts";
+
+test("instant pricing: cost to kobo and markup rounding", () => {
+  assert.equal(costToKobo(1000, "NGN", 160_000), 100_000);
+  assert.equal(costToKobo(10, "USD", 160_000), 1_600_000);
+  assert.equal(costToKobo(10, "EUR", 160_000), null);
+  assert.equal(costToKobo(10, "USD", 0), null);
+  assert.equal(withMarkup(100_000, 0, 100), 100_000);          // airtime at face value
+  assert.equal(withMarkup(1_600_000, 1500, 1000), 1_840_000);  // +15%, ₦10 steps
+  assert.equal(withMarkup(123_456, 0, 1000), 124_000);         // always rounds up
+  assert.equal(e4ToKobo(9000, 160_000), 144_000);              // $0.90
+});
+
+test("instant: gift card parsing and cost", () => {
+  const fixed = parseGiftProduct({
+    productId: 5, productName: "Amazon US", denominationType: "FIXED", recipientCurrencyCode: "USD", senderCurrencyCode: "NGN",
+    fixedRecipientDenominations: [25, 10], fixedSenderDenominations: [40000, 16000], fixedRecipientToSenderDenominationsMap: { "10.0": 16100, "25.0": 40250 },
+    senderFee: 100, senderFeePercentage: 0, country: { isoName: "US" }, brand: { brandName: "Amazon" }, logoUrls: ["https://cdn.reloadly.com/a.png", "javascript:x"],
+  });
+  assert.ok(fixed);
+  assert.deepEqual(fixed!.data.fixed, [{ value: 10, cost: 16100 }, { value: 25, cost: 40250 }]);
+  assert.equal(fixed!.data.logo, "https://cdn.reloadly.com/a.png");
+  assert.equal(giftCost(fixed!.data, 10), 16200);
+  assert.equal(giftCost(fixed!.data, 15), null);
+  const range = parseGiftProduct({
+    productId: 6, productName: "Steam", denominationType: "RANGE", recipientCurrencyCode: "USD", senderCurrencyCode: "USD",
+    minRecipientDenomination: 5, maxRecipientDenomination: 100, minSenderDenomination: 5.1, maxSenderDenomination: 102, country: { isoName: "US" }, brand: { brandName: "Steam" },
+  });
+  assert.equal(range!.data.type, "RANGE");
+  assert.equal(giftCost(range!.data, 50), 51.51);   // 50 × 1.02 × 1.01 rounded up to cents
+  assert.equal(giftCost(range!.data, 200), null);
+  assert.equal(parseGiftProduct({ productId: "x" }), null);
+});
+
+test("instant: Nigerian numbers and networks", () => {
+  assert.equal(ngPhone("0803 123 4567"), "08031234567");
+  assert.equal(ngPhone("+234 803 123 4567"), "08031234567");
+  assert.equal(ngPhone("8031234567"), "08031234567");
+  assert.equal(ngPhone("0603 123 4567"), null);
+  assert.equal(ngPhone("0803123456"), null);
+  assert.equal(guessNetwork("08031234567"), "MTN");
+  assert.equal(guessNetwork("08021234567"), "Airtel");
+  assert.equal(guessNetwork("08051234567"), "Glo");
+  assert.equal(guessNetwork("09091234567"), "9mobile");
+  assert.equal(networkOf("MTN Nigeria Data"), "MTN");
+  assert.equal(networkOf("9Mobile (Etisalat) Nigeria"), "9mobile");
+  assert.equal(networkOf("Glo Nigeria Bundles"), "Glo");
+  assert.equal(networkOf("Safaricom Kenya"), null);
+});
+
+test("instant: travel eSIM labels", () => {
+  assert.equal(dataSize(1024 ** 3), "1GB");
+  assert.equal(dataSize(3 * 1024 ** 3 / 2), "1.5GB");
+  assert.equal(dataSize(500 * 1024 ** 2), "500MB");
+  assert.equal(durationLabel(1, "DAY"), "1 day");
+  assert.equal(durationLabel(30, "DAY"), "30 days");
+});

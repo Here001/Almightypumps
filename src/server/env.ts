@@ -25,6 +25,17 @@ const schema = z.object({
   TEXTVERIFIED_API_KEY: z.string().optional().default(""),
   TEXTVERIFIED_API_USERNAME: z.string().optional().default(""),
   TEXTVERIFIED_BASE_URL: z.string().url().optional().default("https://www.textverified.com"),
+  // Reloadly (gift cards, airtime/data). RELOADLY_ENV = "sandbox" | "live"; empty = live on production, sandbox
+  // elsewhere, and the other one is tried automatically if the keys don't work there.
+  RELOADLY_CLIENT_ID: z.string().optional().default(""),
+  RELOADLY_CLIENT_SECRET: z.string().optional().default(""),
+  RELOADLY_ENV: z.enum(["", "sandbox", "live"]).optional().default(""),
+  // Local tests only: send every Reloadly call (auth, gift cards, top-ups) to one mock server.
+  RELOADLY_MOCK_URL: z.string().optional().default(""),
+  // eSIM Access (travel data eSIMs).
+  ESIMACCESS_ACCESS_CODE: z.string().optional().default(""),
+  ESIMACCESS_SECRET_KEY: z.string().optional().default(""),
+  ESIMACCESS_BASE_URL: z.string().url().optional().default("https://api.esimaccess.com"),
   // Cloudflare Turnstile ("I'm not a robot") for log in / sign up. Off until both are set.
   TURNSTILE_SITE_KEY: z.string().optional().default(""),
   TURNSTILE_SECRET_KEY: z.string().optional().default(""),
