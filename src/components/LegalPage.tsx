@@ -16,7 +16,7 @@ export function LegalPage({ title, updated, children }: { title: string; updated
         <nav className="legal-nav" aria-label="Legal">
           <Link href="/privacy">Privacy Policy</Link>
           <Link href="/terms">Terms of Service</Link>
-          <a href="mailto:hello@almightypumps.com">hello@almightypumps.com</a>
+          <a href="mailto:support@almightypumps.com">support@almightypumps.com</a>
           <Link href="/">Home</Link>
         </nav>
       </article>

@@ -17,7 +17,7 @@ export default function TermsPage() {
       <h2>1. Your account</h2>
       <ul>
         <li>You must be 18 or older and give true details.</li>
-        <li>Keep your password private. You are responsible for what happens on your account. Tell us straight away at <a href="mailto:hello@almightypumps.com">hello@almightypumps.com</a> if you think someone else has used it.</li>
+        <li>Keep your password private. You are responsible for what happens on your account. Tell us straight away at <a href="mailto:support@almightypumps.com">support@almightypumps.com</a> if you think someone else has used it.</li>
         <li>One person, one account, unless we agree otherwise.</li>
       </ul>
 
@@ -87,7 +87,7 @@ export default function TermsPage() {
       <p>We may update these terms or our prices. Changes apply from the date shown at the top; orders you already placed keep the price you paid.</p>
 
       <h2>10. Law and complaints</h2>
-      <p>These terms are governed by the laws of the Federal Republic of Nigeria, and the courts of Lagos State have jurisdiction. If something goes wrong, email <a href="mailto:hello@almightypumps.com">hello@almightypumps.com</a> first and we will try to fix it quickly.</p>
+      <p>These terms are governed by the laws of the Federal Republic of Nigeria, and the courts of Lagos State have jurisdiction. If something goes wrong, email <a href="mailto:support@almightypumps.com">support@almightypumps.com</a> first and we will try to fix it quickly.</p>
     </LegalPage>
   );
 }

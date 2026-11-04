@@ -12,11 +12,11 @@ export default function PrivacyPage() {
       <p>
         This policy explains what personal data Almighty Pumps (“we”, “us”) collects when you use almightypumps.com, why we
         collect it, who we share it with and the choices you have. We follow the Nigeria Data Protection Act 2023 (NDPA).
-        If anything here is unclear, email <a href="mailto:hello@almightypumps.com">hello@almightypumps.com</a>.
+        If anything here is unclear, email <a href="mailto:support@almightypumps.com">support@almightypumps.com</a>.
       </p>
 
       <h2>1. Who we are</h2>
-      <p>Almighty Pumps is an online platform based in Lagos, Nigeria. We are the data controller for the personal data described here. Contact: <a href="mailto:hello@almightypumps.com">hello@almightypumps.com</a>.</p>
+      <p>Almighty Pumps is an online platform based in Lagos, Nigeria. We are the data controller for the personal data described here. Contact: <a href="mailto:support@almightypumps.com">support@almightypumps.com</a>.</p>
 
       <h2>2. What we collect</h2>
       <ul>
@@ -75,7 +75,7 @@ export default function PrivacyPage() {
       <p>Encrypted connections (https) everywhere, hashed passwords, encrypted storage for sensitive details such as eSIM transfer information and provider keys, limits on login attempts, a bot check, and admin-only access to ID and bank details. No system is perfectly secure; if a breach affects you, we will tell you and the regulator as the law requires.</p>
 
       <h2>8. Your rights</h2>
-      <p>Under the NDPA you can ask us to: see a copy of your data; correct it; delete it (where we don&apos;t need to keep it by law); restrict or object to how we use it; receive it in a portable format; and withdraw consent you gave us. Email <a href="mailto:hello@almightypumps.com">hello@almightypumps.com</a> from your account email and we will reply within 30 days. If you&apos;re unhappy with our answer you can complain to the Nigeria Data Protection Commission (NDPC).</p>
+      <p>Under the NDPA you can ask us to: see a copy of your data; correct it; delete it (where we don&apos;t need to keep it by law); restrict or object to how we use it; receive it in a portable format; and withdraw consent you gave us. Email <a href="mailto:support@almightypumps.com">support@almightypumps.com</a> from your account email and we will reply within 30 days. If you&apos;re unhappy with our answer you can complain to the Nigeria Data Protection Commission (NDPC).</p>
 
       <h2>9. Age</h2>
       <p>Almighty Pumps is for people aged 18 and over. We do not knowingly collect data from children.</p>

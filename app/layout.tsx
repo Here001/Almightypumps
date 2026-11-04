@@ -8,7 +8,7 @@ const FONTS = "https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;8
 
 export const metadata: Metadata = {
   title: "Almighty Pumps",
-  description: "Mockups, invoices and websites without code. Escrow-protected buying and selling. Social growth in minutes. One Naira wallet.",
+  description: "Grow your social accounts, get SMS verification codes and US eSIMs, and buy or sell safely with escrow. One Naira wallet.",
 };
 
 export const viewport: Viewport = { themeColor: "#04050A", width: "device-width", initialScale: 1, viewportFit: "cover" };

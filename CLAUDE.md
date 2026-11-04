@@ -162,6 +162,8 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   the Turnstile Privacy Addendum link required for Invisible mode, Vercel, Neon EU, Zoho), cookies ap_session/ap_vid,
   escrow 72h/48h/3%, ₦1,000 top-up / ₦2,000 withdrawal minimums, prohibited items. Linked from the homepage footer and
   the sign-up form. Owner told to have a lawyer review. Keep them in sync when features/processors change.
+  PUBLIC CONTACT EMAIL = support@almightypumps.com (owner's rule, 2026-11-04): use it everywhere customers see
+  (legal pages, footer Support link); hello@ is only for supplier sign-ups.
 - `app/api/**` route handlers; `app/page.tsx` 3D homepage; `app/signup`, `app/login`,
   `app/dashboard`; `app/admin` (Insights, Growth providers, Services, Pricing, Shop, Listings review; admins only).
 - Shop (`src/server/shop.ts`, /admin/shop, migration 0008): admin categories → products. Delivery
@@ -190,7 +192,10 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 - Insights: `src/components/Tracker.tsx` beacons each page and dashboard #section to
   `/api/track` → `site_events` (anonymous cookie id, no IP/UA stored). Section names come
   from `src/core/analytics.ts` (add new pages there). Queries in `src/server/insights.ts`.
-- `src/landing/` homepage markup + effects ported from the approved prototype. Performance (2026-11-03):
+- `src/landing/` homepage markup + effects ported from the approved prototype. Copy rewritten 2026-11-04 for the
+  real services (Boost Account, Verification codes, US eSIMs, P2P escrow, Reseller API; hero "Boost. Verify. Trade.";
+  pricing = free account / pay per order / 3% seller fee; ticker = real highlights, no fake activity). Don't advertise
+  unbuilt products (Mockup Studio, documents, templates) there until they exist. Performance (2026-11-03):
   text renders over a static `.scene-fallback` gradient; three.js is imported only after `load` +
   idle; scene built in stages (nebula+orb → shards/gates/dust/grid → bloom), each its own task;
   adaptive quality drops bloom → resolution → 30fps if frames > 34ms; weak devices / data saver /
