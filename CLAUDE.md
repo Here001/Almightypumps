@@ -260,6 +260,9 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   BreadcrumbList; index = ItemList). Homepage JSON-LD Organization + WebSite + OfferCatalog; homepage footer links to service
   pages. app/robots.ts (AI crawlers explicitly allowed on public pages), app/sitemap.ts, /llms.txt (app/llms.txt/route.ts),
   app/opengraph-image.tsx (1200×630), app/icon.svg, app/apple-icon.tsx. Add new public pages to SEO_PAGES (sitemap/llms follow).
+  Google Search Console = DOMAIN property, verified by DNS TXT google-site-verification=… (Vercel DNS, 2026-11-04); sitemap
+  submitted as the full URL https://almightypumps.com/sitemap.xml (a bare "sitemap.xml" is refused for domain properties).
+  Bing Webmaster Tools imported from Search Console (2026-11-04). Google Business Profile not set up yet (optional).
 - BRAND LOGO (2026-11-04, owner's design canvas https://claude.ai/artifact/WjwNiNkuWuiqEZMLrFvBPK): "AP" monogram (A = triangle
   20,175 120,20 120,175; P bowl path; orange chevron polyline 52,162 82,124 112,162 in #FF5A1F; glyph #F4F2EE on dark /
   #0E1116 on light) + wordmark "ALMIGHTY PUMPS" in Space Grotesk 700 (font added to the layout's Google Fonts link).
