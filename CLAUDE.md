@@ -179,7 +179,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   go-live step). Email: owner chose Zoho Mail (hello@, support@); Zoho (US datacenter, accounts.zoho.com)
   records added in Vercel DNS 2026-11-04: verification TXT, MX mx/mx2/mx3.zoho.com (10/20/50), SPF
   `v=spf1 include:zohomail.com ~all`. Verified in Zoho Mail Admin (old org "VirtualOffice" from ~2021);
-  hello@almightypumps.com created 2026-11-04. DKIM still to add (owner sends Zoho's DKIM selector + key). Owner wants P2P ON at launch (told about the licensed-escrow-partner risk). Flutterwave Test webhook points at the dev preview (with the Vercel
+  hello@almightypumps.com created 2026-11-04. DKIM TXT `zmail._domainkey` (1024-bit) added 2026-11-04. Owner wants P2P ON at launch (told about the licensed-escrow-partner risk). Flutterwave Test webhook points at the dev preview (with the Vercel
   automation-bypass query param); Live webhook untouched until launch.
 - Cron: Hobby only allows daily crons, so `vercel.json` has no `crons` (deploys are refused
   otherwise). The jobs are `GET /api/cron/sync-orders` (every 5 min) and
