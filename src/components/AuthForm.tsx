@@ -165,6 +165,7 @@ export default function AuthForm({ mode, captchaSiteKey }: { mode: "signup" | "l
         <button type="submit" className="btn btn-primary" disabled={busy || waiting}>
           {waiting ? "Checking you're human…" : busy ? "Please wait…" : signup ? "Create account" : "Log in"}
         </button>
+        {signup && <p className="muted" style={{ fontSize: 12 }}>By creating an account you agree to our <Link href="/terms">Terms</Link> and <Link href="/privacy">Privacy Policy</Link>.</p>}
         {!signup && <p className="muted" style={{ fontSize: 12 }}>Don&apos;t tick “Remember me” on a shared or public phone or computer.</p>}
         <p className="muted" style={{ fontSize: 14 }}>
           {signup ? <>Already have an account? <Link href="/login">Log in</Link></> : <>New here? <Link href="/signup">Create an account</Link></>}

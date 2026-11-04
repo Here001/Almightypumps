@@ -156,6 +156,12 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   CSP (scripts self+inline+challenges.cloudflare.com, fonts.googleapis/gstatic, img data:/blob:, frame-ancestors none,
   form-action self; upgrade-insecure-requests only on Vercel) and COOP. Generic "email and password don't match"
   with a dummy bcrypt compare already existed, as do the login/signup rate limits.
+- Legal pages (2026-11-04): /privacy and /terms (`app/privacy`, `app/terms`, shared `src/components/LegalPage.tsx`,
+  CSS `.legal-doc` (NOT `.legal`: that class is the homepage footer's mono copyright line)). Plain-English drafts,
+  NDPA 2023, list every processor (Flutterwave, SMM providers, TextVerified, eSIM supplier, Cloudflare Turnstile with
+  the Turnstile Privacy Addendum link required for Invisible mode, Vercel, Neon EU, Zoho), cookies ap_session/ap_vid,
+  escrow 72h/48h/3%, ₦1,000 top-up / ₦2,000 withdrawal minimums, prohibited items. Linked from the homepage footer and
+  the sign-up form. Owner told to have a lawyer review. Keep them in sync when features/processors change.
 - `app/api/**` route handlers; `app/page.tsx` 3D homepage; `app/signup`, `app/login`,
   `app/dashboard`; `app/admin` (Insights, Growth providers, Services, Pricing, Shop, Listings review; admins only).
 - Shop (`src/server/shop.ts`, /admin/shop, migration 0008): admin categories → products. Delivery

@@ -23,6 +23,8 @@ const PREFIXES: [string, string][] = [
   ["/templates", "Website Templates"],
   ["/signup", "Sign up"],
   ["/login", "Log in"],
+  ["/privacy", "Privacy & terms"],
+  ["/terms", "Privacy & terms"],
 ];
 
 export function sectionFor(path: string, hash = ""): string | null {
