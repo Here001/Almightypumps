@@ -20,6 +20,8 @@ import { Settings } from "./Settings";
 import { SellerPanel } from "./SellerPanel";
 import { Marketplace } from "./Marketplace";
 import { TradeActions } from "./TradeActions";
+import { TradeRoom } from "./TradeRoom";
+import { useRouter } from "next/navigation";
 import { SHOP_ICON_PATHS } from "../icons";
 
 type Order = { id: number; service: string; platform: string; link: string; quantity: number; amount: number; status: string; remains: number | null; when: string };
@@ -68,6 +70,8 @@ function Dashboard(props: Props) {
   const [tab, setTab] = useState<Tab>("services");
   const [p2pView, setP2pView] = useState<"market" | "mine">("market");
   const [esimKind, setEsimKind] = useState<"travel" | "us">("us");
+  const [room, setRoom] = useState<string | null>(null);
+  const router = useRouter();
 
   // Tabs live in the URL hash so the back button and Insights tracking work.
   useEffect(() => {
@@ -365,6 +369,7 @@ function Dashboard(props: Props) {
                           <div className="ap-row-end"><strong>{money(t.amount)}</strong><span className={`status ${st.tone}`}>{st.label}</span></div>
                         </div>
                         <TradeActions t={t} />
+                        <div><button type="button" className="btn btn-ghost ap-mini" onClick={() => setRoom(t.uuid)}>Open trade room & chat</button></div>
                       </li>
                     );
                   })}
@@ -372,6 +377,7 @@ function Dashboard(props: Props) {
               )}
             </section>
           )}
+          {room && <TradeRoom tradeId={room} myId={props.userId} onClose={() => setRoom(null)} onChanged={() => router.refresh()} />}
         </main>
       </div>
 

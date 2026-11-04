@@ -29,6 +29,7 @@ export const LIMITS = {
   sellerApply: { max: 5, windowSec: 60 * 60 },
   avatar: { max: 10, windowSec: 60 * 60 },
   listingWrite: { max: 30, windowSec: 60 * 60 },
+  listingPhoto: { max: 60, windowSec: 60 * 60 },
   apiKey: { max: 10, windowSec: 60 * 60 },
   resellerApi: { max: 120, windowSec: 60 },
   track: { max: 120, windowSec: 60 },

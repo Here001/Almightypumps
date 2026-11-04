@@ -9,7 +9,7 @@ import type { P2PCategory } from "./SellerPanel";
 
 type Ad = {
   id: string; title: string; description: string; category: string; categoryName: string | null; deliveryType: string;
-  price: number; stock: number; minQty: number; maxQty: number; answers: Record<string, string>;
+  price: number; stock: number; minQty: number; maxQty: number; answers: Record<string, string>; images: string[];
   sellerId: string; sellerName: string; sellerVerified: boolean; sellerAvatar: string | null; sellerOrders: number; sellerClosed: number;
 };
 const DELIVERY: Record<string, string> = { digital: "Instant digital", physical: "Physical item", service: "Service" };
@@ -103,7 +103,16 @@ export function Marketplace({ myId, balance, onAddMoney, onViewTrades }: { myId:
                 <span className={`ap-tag${a.deliveryType === "digital" ? " ok" : ""}`}>{DELIVERY[a.deliveryType] ?? a.deliveryType}</span>
                 <span className="ap-tag">Escrow protected</span>
               </div>
-              <button type="button" className="mk-title" onClick={() => setPicked(a)}>{a.title}</button>
+              <div className="mk-main">
+                {a.images?.[0] && (
+                  <button type="button" className="mk-thumb" onClick={() => setPicked(a)} aria-label={`Photos of ${a.title}`}>
+                    {/* eslint-disable-next-line @next/next/no-img-element -- small cached ad photo */}
+                    <img src={a.images[0]} alt="" width={72} height={72} loading="lazy" decoding="async" />
+                    {a.images.length > 1 && <span className="mk-thumb-n">{a.images.length}</span>}
+                  </button>
+                )}
+                <button type="button" className="mk-title" onClick={() => setPicked(a)}>{a.title}</button>
+              </div>
               <div className="mk-bottom">
                 <div>
                   <div className="mk-price">{money(a.price)}</div>
@@ -169,6 +178,7 @@ function BuySheet({ ad, questions, mine, balance, onClose, onAddMoney, onDone }:
           </>
         ) : (
           <>
+            {ad.images?.length > 0 && <AdGallery images={ad.images} title={ad.title} />}
             <p style={{ fontSize: 14, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{ad.description}</p>
             {answered.length > 0 && (
               <dl className="ap-facts">
@@ -216,5 +226,19 @@ function BuySheet({ ad, questions, mine, balance, onClose, onAddMoney, onDone }:
       </div>
     </div>,
     document.body,
+  );
+}
+
+/** Swipeable row of the ad's photos; tap one to see it full size. */
+export function AdGallery({ images, title }: { images: string[]; title: string }) {
+  return (
+    <div className="mk-gallery" role="list" aria-label={`Photos of ${title}`}>
+      {images.map((src, i) => (
+        <a key={src} role="listitem" href={src} target="_blank" rel="noopener noreferrer" className="mk-gallery-item" aria-label={`Photo ${i + 1} of ${images.length}, open full size`}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- cached ad photo */}
+          <img src={src} alt="" loading={i === 0 ? "eager" : "lazy"} decoding="async" />
+        </a>
+      ))}
+    </div>
   );
 }

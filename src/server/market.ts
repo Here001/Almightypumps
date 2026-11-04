@@ -12,6 +12,9 @@ import { allCategories, getCategory } from "./listingCategories";
 import { disputes, listingCategories, listings, sellerAvatars, sellerProfiles, tradeEvents, tradeMessages, trades, users } from "./db/schema";
 import { badRequest, forbidden, notFound } from "./errors";
 import { avatarUrl } from "./sellers";
+import { imageUrlsSql } from "./listingImages";
+import { sendNotice } from "./email";
+import { env } from "./env";
 import { linkHold, placeHold, platformWalletId, settleHold, walletIdForUser } from "./wallet";
 
 /**
@@ -65,7 +68,7 @@ export async function listingsForReview(db: Db, status: "pending" | "declined" =
     .select({
       id: listings.id, title: listings.title, description: listings.description, category: listings.category,
       price: listings.price, stock: listings.stock, reviewNote: listings.reviewNote, createdAt: listings.createdAt,
-      sellerName: users.name, sellerEmail: users.email,
+      sellerName: users.name, sellerEmail: users.email, images: imageUrlsSql,
     })
     .from(listings)
     .innerJoin(users, eq(users.id, listings.sellerId))
@@ -108,6 +111,7 @@ export async function browseListings(db: Db, opts: { category?: string; q?: stri
       minQty: listings.minQty,
       maxQty: listings.maxQty,
       answers: listings.answers,
+      images: imageUrlsSql,
       createdAt: listings.createdAt,
       sellerId: listings.sellerId,
       sellerName: sql<string>`coalesce(${sellerProfiles.businessName}, ${users.name})`,
@@ -134,6 +138,15 @@ export async function browseListings(db: Db, opts: { category?: string; q?: stri
 
 /** Buy: lock stock, hold the buyer's money, open the trade. */
 export async function buy(db: Db, buyerId: string, listingId: string, quantity: number) {
+  const t = await buyTx(db, buyerId, listingId, quantity);
+  void notifyTrade(db, t.sellerId, `New order #M-${t.publicId}: please deliver`, [
+    `Someone bought your ad (order #M-${t.publicId}, quantity ${t.quantity}). The money is safe in escrow.`,
+    "Deliver within 72 hours, then tap “Mark as delivered” in the trade room. If you can't deliver, cancel so the buyer is refunded.",
+  ]);
+  return t;
+}
+
+async function buyTx(db: Db, buyerId: string, listingId: string, quantity: number) {
   return db.transaction(async (tx) => {
     const [l] = await tx.select().from(listings).where(eq(listings.id, listingId)).for("update");
     if (!l || l.status !== "active") throw notFound("Listing");
@@ -165,6 +178,23 @@ export async function act(
   action: TradeAction,
   actor: { userId: string | null; isAdmin?: boolean },
   extra: { note?: string; deliveryProof?: string } = {},
+) {
+  const updated = await actTx(db, tradeId, action, actor, extra);
+  if (action === "SHIP") {
+    void notifyTrade(db, updated.buyerId, `Order #M-${updated.publicId} was delivered: please check it`, [
+      `The seller marked P2P order #M-${updated.publicId} as delivered.`,
+      "Check what you received, then tap “Confirm received”. If something's wrong, tap “Something's wrong” within 48 hours, or the seller is paid automatically.",
+    ]);
+  }
+  return updated;
+}
+
+async function actTx(
+  db: Db,
+  tradeId: string,
+  action: TradeAction,
+  actor: { userId: string | null; isAdmin?: boolean },
+  extra: { note?: string; deliveryProof?: string },
 ) {
   return db.transaction(async (tx) => {
     const [t] = await tx.select().from(trades).where(eq(trades.id, tradeId)).for("update");
@@ -254,23 +284,59 @@ export async function runEscrowTimers(db: Db, now = new Date()) {
 }
 
 export async function tradeForUser(db: Db, tradeId: string, userId: string, isAdmin = false) {
+  if (!/^[0-9a-f-]{36}$/i.test(tradeId)) throw notFound("Trade");
   const [t] = await db.select().from(trades).where(eq(trades.id, tradeId));
   if (!t) throw notFound("Trade");
   if (!isAdmin && t.buyerId !== userId && t.sellerId !== userId) throw forbidden();
   const events = await db.select().from(tradeEvents).where(eq(tradeEvents.tradeId, t.id)).orderBy(tradeEvents.createdAt);
   const messages = await db.select().from(tradeMessages).where(eq(tradeMessages.tradeId, t.id)).orderBy(tradeMessages.createdAt);
-  return { trade: t, events, messages };
+  const [l] = await db.select({ title: listings.title, deliveryType: listings.deliveryType, images: imageUrlsSql }).from(listings).where(eq(listings.id, t.listingId));
+  const people = await db.select({ id: users.id, name: users.name, shop: sellerProfiles.businessName })
+    .from(users).leftJoin(sellerProfiles, eq(sellerProfiles.userId, users.id)).where(inArray(users.id, [t.buyerId, t.sellerId]));
+  const nameOf = (id: string) => { const p = people.find((x) => x.id === id); return id === t.sellerId ? (p?.shop || p?.name || "Seller") : (p?.name.split(" ")[0] || "Buyer"); };
+  const { holdId: _hold, ...trade } = t;
+  void _hold;
+  return {
+    trade, events, messages,
+    listing: { title: l?.title ?? "", deliveryType: l?.deliveryType ?? "", images: l?.images ?? [] },
+    buyerName: nameOf(t.buyerId), sellerName: nameOf(t.sellerId),
+    role: t.buyerId === userId ? "buyer" : t.sellerId === userId ? "seller" : "admin",
+    sellerReceives: payoutSplit(t.amount, ESCROW_DEFAULTS.sellerFeeBps).seller,
+  };
 }
 
 export async function postMessage(db: Db, tradeId: string, senderId: string, body: string) {
   const text = body.trim();
   if (text.length < 1 || text.length > 2000) throw badRequest("Messages must be between 1 and 2,000 characters.");
-  const [t] = await db.select({ buyerId: trades.buyerId, sellerId: trades.sellerId }).from(trades).where(eq(trades.id, tradeId));
+  if (!/^[0-9a-f-]{36}$/i.test(tradeId)) throw notFound("Trade");
+  const [t] = await db.select({ buyerId: trades.buyerId, sellerId: trades.sellerId, publicId: trades.publicId }).from(trades).where(eq(trades.id, tradeId));
   if (!t) throw notFound("Trade");
   if (senderId !== t.buyerId && senderId !== t.sellerId) throw forbidden();
+  // Email the other person about a new chat, but not for every message: only if this sender was quiet for 30 minutes.
+  const [recent] = await db.select({ id: tradeMessages.id }).from(tradeMessages)
+    .where(and(eq(tradeMessages.tradeId, tradeId), eq(tradeMessages.senderId, senderId), sql`${tradeMessages.createdAt} > now() - interval '30 minutes'`)).limit(1);
   const [m] = await db.insert(tradeMessages).values({ tradeId, senderId, body: text }).returning();
+  if (!recent) {
+    const to = senderId === t.buyerId ? t.sellerId : t.buyerId;
+    void notifyTrade(db, to, `New message on order #M-${t.publicId}`, [
+      `You have a new message about P2P order #M-${t.publicId}:`,
+      `“${text.length > 300 ? text.slice(0, 300) + "…" : text}”`,
+      "Reply in the trade room. Never pay or share passwords outside Almighty Pumps.",
+    ]);
+  }
   return m;
 }
+
+/** Email one customer about their trade (fire and forget). */
+async function notifyTrade(db: Db, userId: string, subject: string, lines: string[]) {
+  try {
+    const [u] = await db.select({ email: users.email }).from(users).where(eq(users.id, userId));
+    if (u) await sendNotice([u.email], subject, lines, { href: `${appUrl()}/dashboard#trades`, label: "Open the trade room" });
+  } catch (e) {
+    console.error("[market] notify", e);
+  }
+}
+const appUrl = () => (env().APP_URL || "https://almightypumps.com").replace(/\/+$/, "");
 
 export async function myTrades(db: Db, userId: string) {
   return db
@@ -295,7 +361,7 @@ export async function myListings(db: Db, sellerId: string) {
       id: listings.id, title: listings.title, description: listings.description, category: listings.category,
       deliveryType: listings.deliveryType, price: listings.price, stock: listings.stock, minQty: listings.minQty,
       maxQty: listings.maxQty, status: listings.status, reviewNote: listings.reviewNote, createdAt: listings.createdAt,
-      answers: listings.answers,
+      answers: listings.answers, images: imageUrlsSql,
       sold: sql<number>`(SELECT coalesce(sum(t.quantity), 0)::int FROM trades t WHERE t.listing_id = "listings"."id" AND t.status = 'COMPLETED')`,
       openOrders: sql<number>`(SELECT count(*)::int FROM trades t WHERE t.listing_id = "listings"."id" AND t.status IN ('PAID', 'SHIPPED', 'DISPUTED'))`,
     })

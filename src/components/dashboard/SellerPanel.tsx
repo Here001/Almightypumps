@@ -6,11 +6,12 @@ import { api } from "../api";
 import { useCurrency } from "./Currency";
 import type { Question } from "@/core/listingQuestions";
 import { ShopPhoto } from "./ShopPhoto";
+import { TradeRoom } from "./TradeRoom";
 
 type Listing = {
   id: string; title: string; description: string; category: string; deliveryType: string; price: number; stock: number;
   minQty: number; maxQty: number; status: "active" | "paused" | "pending" | "declined"; reviewNote: string | null; sold: number; openOrders: number;
-  answers: Record<string, string>;
+  answers: Record<string, string>; images: string[];
 };
 export type P2PCategory = { slug: string; name: string; description: string; questions: Question[]; requiresReview: boolean };
 type Order = {
@@ -41,6 +42,7 @@ export function SellerPanel() {
   const [form, setForm] = useState<{ listing?: Listing } | null>(null);
   const [notice, setNotice] = useState<Msg>(null);
   const [cats, setCats] = useState<P2PCategory[]>([]);
+  const [room, setRoom] = useState<string | null>(null);
   useEffect(() => { api<P2PCategory[]>("/api/market/categories").then(setCats).catch(() => {}); }, []);
   const catName = (slug: string) => cats.find((c) => c.slug === slug)?.name ?? slug;
 
@@ -94,7 +96,7 @@ export function SellerPanel() {
         <section className="card glass">
           <h2>Orders to deliver</h2>
           <p className="muted" style={{ fontSize: 14 }}>The buyer&apos;s money is safe in escrow. Deliver before the deadline, then mark it delivered. You&apos;re paid when they confirm (or automatically after 48 hours).</p>
-          <ul className="ap-list">{toFulfil.map((o) => <FulfilRow key={o.id} o={o} onDone={async (m) => { setNotice(m); await load(); router.refresh(); }} />)}</ul>
+          <ul className="ap-list">{toFulfil.map((o) => <FulfilRow key={o.id} o={o} onRoom={() => setRoom(o.id)} onDone={async (m) => { setNotice(m); await load(); router.refresh(); }} />)}</ul>
         </section>
       )}
 
@@ -142,6 +144,7 @@ export function SellerPanel() {
                 </div>
                 <div className="ap-row-end">
                   <strong>{charge(o.youReceive)}</strong>
+                  <button type="button" className="ap-link" style={{ fontSize: 13 }} onClick={() => setRoom(o.id)}>Trade room</button>
                   <span className={`status ${o.status === "COMPLETED" ? "ok" : o.status === "DISPUTED" ? "warn" : o.status === "SHIPPED" ? "info" : "bad"}`}>
                     {{ SHIPPED: "Buyer inspecting", COMPLETED: "Paid to you", DISPUTED: "In dispute", CANCELLED: "Cancelled", REFUNDED: "Refunded" }[o.status] ?? o.status}
                   </span>
@@ -151,11 +154,12 @@ export function SellerPanel() {
           </ul>
         </section>
       )}
+      {room && <TradeRoom tradeId={room} onClose={() => setRoom(null)} onChanged={() => { void load(); router.refresh(); }} />}
     </>
   );
 }
 
-function FulfilRow({ o, onDone }: { o: Order; onDone: (m: Msg) => Promise<void> }) {
+function FulfilRow({ o, onDone, onRoom }: { o: Order; onDone: (m: Msg) => Promise<void>; onRoom: () => void }) {
   const { charge } = useCurrency();
   const [open, setOpen] = useState(false);
   const [proof, setProof] = useState("");
@@ -190,6 +194,7 @@ function FulfilRow({ o, onDone }: { o: Order; onDone: (m: Msg) => Promise<void> 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button type="button" className="btn btn-primary ap-mini" onClick={() => setOpen(true)}>Mark as delivered</button>
           <button type="button" className="btn btn-ghost ap-mini" disabled={busy} onClick={() => void act("CANCEL")}>Can&apos;t deliver: cancel</button>
+          <button type="button" className="btn btn-ghost ap-mini" onClick={onRoom}>Chat with buyer</button>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -208,6 +213,42 @@ function FulfilRow({ o, onDone }: { o: Order; onDone: (m: Msg) => Promise<void> 
   );
 }
 
+const MAX_PHOTOS = 6;
+/** A photo on the ad form: `url` is the saved photo's address, or a preview when `data` (a new upload) is set. */
+type Photo = { url: string; data?: string };
+
+/** Shrink a photo in the browser (max 1280px, JPEG under ~450 KB) before uploading. */
+async function shrinkPhoto(file: File): Promise<string> {
+  const src = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
+    const scale = Math.min(1, 1280 / Math.max(img.width, img.height));
+    const c = document.createElement("canvas");
+    c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
+    c.getContext("2d")!.drawImage(img, 0, 0, c.width, c.height);
+    for (const q of [0.82, 0.7, 0.55, 0.42]) { const d = c.toDataURL("image/jpeg", q); if (d.length < 600_000) return d; }
+    return c.toDataURL("image/jpeg", 0.3);
+  } finally { URL.revokeObjectURL(src); }
+}
+
+/** After the ad is saved: delete removed photos, upload new ones, then put the chosen cover first. Returns an error message or null. */
+async function savePhotos(listingId: string, before: string[], after: Photo[]): Promise<string | null> {
+  const idOf = (url: string) => url.split("/").pop() ?? "";
+  const path = `/api/seller/listings/${listingId}/images`;
+  try {
+    for (const url of before) if (!after.some((p) => p.url === url)) await api(path, { action: "remove", imageId: idOf(url) });
+    let coverId: string | null = null;
+    for (const [i, p] of after.entries()) {
+      const id = p.data ? (await api<{ id: string }>(path, { action: "add", image: p.data })).id : idOf(p.url);
+      if (i === 0) coverId = id;
+    }
+    if (coverId && (before[0] ? idOf(before[0]) : null) !== coverId) await api(path, { action: "cover", imageId: coverId });
+    return null;
+  } catch (e) {
+    return (e as Error).message;
+  }
+}
+
 function ListingForm({ listing, categories, onCancel, onSaved }: { listing?: Listing; categories: P2PCategory[]; onCancel: () => void; onSaved: (msg: string) => Promise<void> }) {
   const { charge } = useCurrency();
   const [answers, setAnswers] = useState<Record<string, string>>(listing?.answers ?? {});
@@ -218,6 +259,8 @@ function ListingForm({ listing, categories, onCancel, onSaved }: { listing?: Lis
   });
   const [busy, setBusy] = useState(false);
   const [problems, setProblems] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<Photo[]>(() => (listing?.images ?? []).map((url) => ({ url })));
+  const [photoMsg, setPhotoMsg] = useState<string | null>(null);
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setF((x) => ({ ...x, [k]: e.target.value }));
   const priceKobo = Math.round(Number(f.price.replace(/,/g, "")) * 100);
   const cat = categories.find((c) => c.slug === f.category);
@@ -232,9 +275,11 @@ function ListingForm({ listing, categories, onCancel, onSaved }: { listing?: Lis
         setProblems([]);
         try {
           const r = listing
-            ? await api<{ message: string }>(`/api/seller/listings/${listing.id}`, { action: "update", ...f, answers })
-            : await api<{ message: string }>("/api/market/listings", { ...f, answers });
-          await onSaved(r.message);
+            ? await api<{ id?: string; message: string }>(`/api/seller/listings/${listing.id}`, { action: "update", ...f, answers })
+            : await api<{ id?: string; message: string }>("/api/market/listings", { ...f, answers });
+          const id = listing?.id ?? r.id ?? "";
+          const photoErr = await savePhotos(id, listing?.images ?? [], photos);
+          await onSaved(photoErr ? `${r.message} Some photos weren't saved: ${photoErr}` : r.message);
         } catch (err) {
           setProblems([(err as Error).message]);
         } finally {
@@ -254,6 +299,37 @@ function ListingForm({ listing, categories, onCancel, onSaved }: { listing?: Lis
         <div className="field"><label htmlFor="lf-desc">Description</label>
           <textarea id="lf-desc" className="input" rows={4} value={f.description} onChange={set("description")} placeholder="Condition, what's included, how you deliver" required minLength={20} maxLength={4000} />
           <span className="muted" style={{ fontSize: 12 }}>{f.description.trim().length}/20 characters minimum</span></div>
+        <div className="field">
+          <span id="lf-photos-label" style={{ fontWeight: 600, fontSize: 14 }}>Photos <span className="muted">(optional, up to {MAX_PHOTOS})</span></span>
+          <div className="ad-photos" role="group" aria-labelledby="lf-photos-label">
+            {photos.map((p, i) => (
+              <div key={p.url} className="ad-photo">
+                {/* eslint-disable-next-line @next/next/no-img-element -- local preview */}
+                <img src={p.url} alt={`Photo ${i + 1}`} />
+                {i === 0 ? <span className="ad-photo-cover">Cover</span> : (
+                  <button type="button" className="ad-photo-cover" onClick={() => setPhotos((ps) => [p, ...ps.filter((x) => x !== p)])}>Make cover</button>
+                )}
+                <button type="button" className="ad-photo-x" aria-label={`Remove photo ${i + 1}`} onClick={() => setPhotos((ps) => ps.filter((x) => x !== p))}>×</button>
+              </div>
+            ))}
+            {photos.length < MAX_PHOTOS && (
+              <label className="ad-photo-add">
+                + Add<br />photo
+                <input type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={async (e) => {
+                  const files = Array.from(e.target.files ?? []).slice(0, MAX_PHOTOS - photos.length);
+                  e.target.value = "";
+                  setPhotoMsg(null);
+                  for (const file of files) {
+                    try { const data = await shrinkPhoto(file); setPhotos((ps) => (ps.length < MAX_PHOTOS ? [...ps, { url: data, data }] : ps)); }
+                    catch { setPhotoMsg("One of those files couldn't be read as a photo."); }
+                  }
+                }} />
+              </label>
+            )}
+          </div>
+          <span className="muted" style={{ fontSize: 12 }}>Clear photos of the real item sell faster. The first photo is the cover buyers see in the list.</span>
+          {photoMsg && <span className="form-error" role="alert">{photoMsg}</span>}
+        </div>
         {cat && cat.questions.length > 0 && (
           <div className="ap-subform" style={{ gap: 10 }}>
             <span className="muted" style={{ fontSize: 13, fontWeight: 600 }}>About this {cat.name.toLowerCase()} item</span>

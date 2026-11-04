@@ -618,3 +618,13 @@ export const referrals = pgTable("referrals", {
   rewardedAt: ts("rewarded_at"),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
+
+/** Photos on P2P ads (migration 0026). */
+export const listingImages = pgTable("listing_images", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  listingId: uuid("listing_id").notNull().references(() => listings.id, { onDelete: "cascade" }),
+  position: integer("position").notNull().default(0),
+  contentType: text("content_type").notNull(),
+  data: bytea("data").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});

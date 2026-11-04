@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { api, naira } from "./api";
+import { AdGallery } from "./dashboard/Marketplace";
 
 type Item = {
   id: string; title: string; description: string; category: string; price: number; stock: number;
-  reviewNote: string | null; createdAt: string; sellerName: string; sellerEmail: string;
+  reviewNote: string | null; createdAt: string; sellerName: string; sellerEmail: string; images: string[];
 };
 
 export function AdminListings() {
@@ -55,6 +56,7 @@ export function AdminListings() {
               </div>
               <strong>{naira(it.price)}</strong>
             </div>
+            {it.images?.length > 0 && <AdGallery images={it.images} title={it.title} />}
             <p style={{ fontSize: 14, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{it.description}</p>
             {it.reviewNote && <div className="muted ap-row-sub">Why: {it.reviewNote}</div>}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
