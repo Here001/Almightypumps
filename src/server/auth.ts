@@ -11,6 +11,7 @@ import { getDb } from "./db";
 import { users, wallets } from "./db/schema";
 import { env } from "./env";
 import { AppError, badRequest, unauthorized } from "./errors";
+import { forgetOtherDevices } from "./emailCodes";
 
 const COOKIE = "ap_session";
 let dummyHash: string | undefined;
@@ -40,23 +41,32 @@ export const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email("Enter your email address"),
   password: z.string().min(1, "Enter your password").max(200),
   remember: z.union([z.boolean(), z.literal("on"), z.literal("true"), z.literal("false")]).optional().transform((v) => v === true || v === "on" || v === "true"),
-  captcha: z.string().max(4000).optional(),
 });
 
 function key() {
   return new TextEncoder().encode(env().SESSION_SECRET);
 }
 
-export async function register(db: Db, input: z.infer<typeof registerSchema>) {
+/**
+ * Create an account. With email codes on (`verified: false`), the account can't be used until the code from the
+ * sign-up email is entered. Someone who never finished signing up can sign up again with the same email
+ * (the unfinished account is replaced; it can't hold money because it was never logged in).
+ */
+export async function register(db: Db, input: z.infer<typeof registerSchema>, opts: { verified: boolean }) {
   const weak = weakPassword(input.password, input.email, input.name);
   if (weak) throw badRequest(weak);
   const passwordHash = await bcrypt.hash(input.password, 12);
   return db.transaction(async (tx) => {
-    const [existing] = await tx.select({ id: users.id }).from(users).where(eq(users.email, input.email));
-    if (existing) throw new AppError(409, "EMAIL_TAKEN", "An account with this email already exists. Log in instead.");
+    const [existing] = await tx.select({ id: users.id, verified: users.emailVerifiedAt, isSystem: users.isSystem }).from(users).where(eq(users.email, input.email)).for("update");
+    if (existing && (existing.verified || existing.isSystem)) throw new AppError(409, "EMAIL_TAKEN", "An account with this email already exists. Log in instead.");
+    if (existing) {
+      const [u] = await tx.update(users).set({ name: input.name, phone: input.phone || null, passwordHash, sessionVersion: sql`${users.sessionVersion} + 1` })
+        .where(eq(users.id, existing.id)).returning({ id: users.id, name: users.name, email: users.email, role: users.role });
+      return u;
+    }
     const [u] = await tx
       .insert(users)
-      .values({ name: input.name, email: input.email, phone: input.phone || null, passwordHash })
+      .values({ name: input.name, email: input.email, phone: input.phone || null, passwordHash, emailVerifiedAt: opts.verified ? new Date() : null })
       .returning({ id: users.id, name: users.name, email: users.email, role: users.role });
     await tx.insert(wallets).values({ userId: u.id });
     return u;
@@ -69,7 +79,7 @@ export async function login(db: Db, input: z.infer<typeof loginSchema>) {
   dummyHash ??= await bcrypt.hash("not-a-real-password", 12);
   const ok = await bcrypt.compare(input.password, u && !u.isSystem ? u.passwordHash : dummyHash);
   if (!u || !ok || u.isSystem) throw badRequest("That email and password don't match.");
-  return { id: u.id, name: u.name, email: u.email, role: u.role };
+  return { id: u.id, name: u.name, email: u.email, role: u.role, verified: Boolean(u.emailVerifiedAt) };
 }
 
 /**
@@ -162,6 +172,7 @@ export async function changePassword(db: Db, userId: string, input: z.infer<type
   if (weak) throw badRequest(weak);
   const passwordHash = await bcrypt.hash(input.next, 12);
   await db.update(users).set({ passwordHash, sessionVersion: sql`${users.sessionVersion} + 1` }).where(eq(users.id, userId));
+  await forgetOtherDevices(db, userId);
   await startSession(userId, await sessionRemembered());
   return { changed: true };
 }
@@ -169,6 +180,7 @@ export async function changePassword(db: Db, userId: string, input: z.infer<type
 /** Log out every other device; this one stays signed in with a fresh session. */
 export async function logoutEverywhere(db: Db, userId: string) {
   await db.update(users).set({ sessionVersion: sql`${users.sessionVersion} + 1` }).where(eq(users.id, userId));
+  await forgetOtherDevices(db, userId);
   await startSession(userId, await sessionRemembered());
   return { loggedOutOthers: true };
 }

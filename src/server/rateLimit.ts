@@ -32,6 +32,9 @@ export const LIMITS = {
   apiKey: { max: 10, windowSec: 60 * 60 },
   resellerApi: { max: 120, windowSec: 60 },
   track: { max: 120, windowSec: 60 },
+  emailCodeUser: { max: 6, windowSec: 60 * 60 },   // codes emailed to one account
+  emailCodeIp: { max: 20, windowSec: 60 * 60 },    // codes emailed from one network
+  emailCodeCheck: { max: 30, windowSec: 15 * 60 }, // code guesses from one network
 } satisfies Record<string, Rule>;
 
 const hash = (s: string) => createHmac("sha256", env().SESSION_SECRET).update(s).digest("base64url").slice(0, 32);

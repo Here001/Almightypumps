@@ -6,89 +6,94 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "./api";
 import { PasswordInput } from "./PasswordInput";
 
-type Turnstile = {
-  render: (el: HTMLElement, opts: Record<string, unknown>) => string;
-  reset: (id?: string) => void;
-  remove: (id?: string) => void;
-};
-declare global { interface Window { turnstile?: Turnstile } }
-
 const EMAIL_KEY = "ap_login_email";
-const SCRIPT = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
 
-/**
- * Cloudflare Turnstile "I'm not a robot" check. Starts as soon as the page opens so it finishes while the
- * person types; the box only shows if Cloudflare needs a click ("interaction-only").
- */
-function Captcha({ siteKey, onToken, resetKey }: { siteKey: string; onToken: (t: string) => void; resetKey: number }) {
-  const box = useRef<HTMLDivElement>(null);
-  const id = useRef<string | null>(null);
-  const [failed, setFailed] = useState(false);
+type Challenge = { needsCode: true; challenge: string; email: string; purpose: "signup" | "login" };
+const isChallenge = (r: unknown): r is Challenge => Boolean(r && typeof r === "object" && (r as Challenge).needsCode);
+
+/** Step 2: the 6-digit code we emailed. Fills itself from the keyboard suggestion on phones and submits at 6 digits. */
+function CodeStep({ c, onChange, onBack, onDone }: { c: Challenge; onChange: (c: Challenge) => void; onBack: () => void; onDone: () => void }) {
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+  const [wait, setWait] = useState(30);
+  const input = useRef<HTMLInputElement>(null);
+  const lastTried = useRef("");
+
+  useEffect(() => { input.current?.focus(); }, [c.challenge]);
   useEffect(() => {
-    let cancelled = false;
-    let tries = 0;
-    const mount = () => {
-      if (cancelled || !box.current || id.current) return;
-      if (!window.turnstile) {
-        // The script tag below is loading; check again shortly (gives up after ~20s).
-        if (++tries > 200) { setFailed(true); return; }
-        setTimeout(mount, 100);
-        return;
-      }
-      id.current = window.turnstile.render(box.current, {
-        sitekey: siteKey,
-        appearance: "interaction-only",
-        "refresh-expired": "auto",
-        theme: document.documentElement.dataset.theme === "light" ? "light" : "dark",
-        callback: (t: string) => { setFailed(false); onToken(t); },
-        "expired-callback": () => onToken(""),
-        "error-callback": () => { setFailed(true); onToken(""); },
-      });
-    };
-    mount();
-    return () => {
-      cancelled = true;
-      if (id.current && window.turnstile) window.turnstile.remove(id.current);
-      id.current = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [siteKey]);
-  // After a failed attempt the old token is used up: get a new one.
-  useEffect(() => {
-    if (resetKey && id.current && window.turnstile) { window.turnstile.reset(id.current); onToken(""); }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resetKey]);
+    if (wait <= 0) return;
+    const t = setTimeout(() => setWait((w) => w - 1), 1000);
+    return () => clearTimeout(t);
+  }, [wait]);
+
+  async function verify(value: string) {
+    if (value.length !== 6 || busy) return;
+    lastTried.current = value;
+    setBusy(true); setError(null); setInfo(null);
+    try {
+      await api("/api/auth/verify", { challenge: c.challenge, code: value });
+      onDone();
+    } catch (e) {
+      setError((e as Error).message);
+      setBusy(false);
+      input.current?.select();
+    }
+  }
+
+  async function resend() {
+    setError(null); setInfo(null);
+    try {
+      const n = await api<Challenge>("/api/auth/verify/resend", { challenge: c.challenge });
+      onChange(n);
+      setCode(""); lastTried.current = "";
+      setWait(30);
+      setInfo(`New code sent to ${n.email}.`);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+
   return (
-    <div className="captcha">
-      {/* Hoisted to <head> by React and fetched straight away, in parallel with the page. */}
-      <link rel="preconnect" href="https://challenges.cloudflare.com" />
-      <script src={SCRIPT} async />
-      <div ref={box} />
-      {failed && <span className="muted" style={{ fontSize: 13 }}>The robot check couldn&apos;t load. Check your connection and refresh the page.</span>}
-    </div>
+    <form className="auth-card glass" onSubmit={(e) => { e.preventDefault(); void verify(code); }} noValidate>
+      <Link href="/" className="logo" style={{ color: "var(--fg)" }}><span className="logo-mark">AP</span>ALMIGHTY PUMPS</Link>
+      <h1>Check your email</h1>
+      <p className="muted">
+        {c.purpose === "signup" ? "To finish creating your account, enter" : "You're logging in on a new device. Enter"} the 6-digit code we sent to <b>{c.email}</b>.
+      </p>
+      {error && <div className="form-error" role="alert">{error}</div>}
+      {info && <div className="form-ok" role="status">{info}</div>}
+      <div className="field">
+        <label htmlFor="code">Code</label>
+        <input
+          ref={input} id="code" name="code" className="input auth-code" inputMode="numeric" autoComplete="one-time-code" pattern="\d{6}" maxLength={6}
+          value={code} placeholder="••••••"
+          onChange={(e) => {
+            const v = e.target.value.replace(/\D/g, "").slice(0, 6);
+            setCode(v);
+            if (v.length === 6 && v !== lastTried.current) void verify(v);
+          }}
+        />
+      </div>
+      <button type="submit" className="btn btn-primary" disabled={busy || code.length !== 6}>{busy ? "Checking…" : "Continue"}</button>
+      <p className="muted" style={{ fontSize: 13 }}>
+        Not there? Check your spam or promotions folder.{" "}
+        {wait > 0 ? <span>You can ask for a new code in {wait}s.</span> : <button type="button" className="ap-link" onClick={() => void resend()}>Send a new code</button>}
+      </p>
+      <p className="muted" style={{ fontSize: 13 }}><button type="button" className="ap-link" onClick={onBack}>← Use a different email</button></p>
+    </form>
   );
 }
 
-export default function AuthForm({ mode, captchaSiteKey }: { mode: "signup" | "login"; captchaSiteKey?: string | null }) {
+export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [token, setToken] = useState("");
-  const [resetKey, setResetKey] = useState(0);
   const [email, setEmail] = useState("");
-  const [waiting, setWaiting] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
   const [remember, setRemember] = useState(false);
+  const [challenge, setChallenge] = useState<Challenge | null>(null);
   const signup = mode === "signup";
-
-  useEffect(() => {
-    if (waiting && token) { setWaiting(false); formRef.current?.requestSubmit(); }
-  }, [waiting, token]);
-  useEffect(() => {
-    if (!waiting) return;
-    const t = setTimeout(() => { setWaiting(false); setError("The robot check is taking too long. If a box appeared, tick it, then try again."); }, 20000);
-    return () => clearTimeout(t);
-  }, [waiting]);
 
   // "Remember me" also remembers the email on this device (never the password).
   useEffect(() => {
@@ -99,34 +104,45 @@ export default function AuthForm({ mode, captchaSiteKey }: { mode: "signup" | "l
     } catch { /* private mode */ }
   }, [signup]);
 
+  const finish = () => {
+    router.push("/dashboard");
+    router.refresh();
+  };
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    // Tapped Log in before the robot check finished: wait for it, then continue automatically.
-    if (captchaSiteKey && !token) { setWaiting(true); return; }
     setBusy(true);
     const f = Object.fromEntries(new FormData(e.currentTarget).entries()) as Record<string, string>;
     try {
-      await api(signup ? "/api/auth/register" : "/api/auth/login", { ...f, ...(signup ? {} : { remember }), captcha: token || undefined });
+      const r = await api(signup ? "/api/auth/register" : "/api/auth/login", { ...f, ...(signup ? {} : { remember }) });
       if (!signup) {
         try {
           if (remember) localStorage.setItem(EMAIL_KEY, String(f.email ?? "").trim().toLowerCase());
           else localStorage.removeItem(EMAIL_KEY);
         } catch { /* ignore */ }
       }
-      router.push("/dashboard");
-      router.refresh();
+      if (isChallenge(r)) { setChallenge(r); setBusy(false); return; }
+      finish();
     } catch (err) {
       setError((err as Error).message);
       setBusy(false);
-      setResetKey((k) => k + 1);
     }
+  }
+
+  if (challenge) {
+    return (
+      <main className="app-shell auth-wrap">
+        <div className="app-bg" aria-hidden="true" />
+        <CodeStep c={challenge} onChange={setChallenge} onBack={() => setChallenge(null)} onDone={finish} />
+      </main>
+    );
   }
 
   return (
     <main className="app-shell auth-wrap">
       <div className="app-bg" aria-hidden="true" />
-      <form ref={formRef} className="auth-card glass" onSubmit={onSubmit} noValidate>
+      <form className="auth-card glass" onSubmit={onSubmit} noValidate>
         <Link href="/" className="logo" style={{ color: "var(--fg)" }}>
           <span className="logo-mark">AP</span>ALMIGHTY PUMPS
         </Link>
@@ -143,6 +159,7 @@ export default function AuthForm({ mode, captchaSiteKey }: { mode: "signup" | "l
           <label htmlFor="email">Email</label>
           <input id="email" name="email" type="email" className="input" autoComplete={signup ? "email" : "username"} inputMode="email" autoCapitalize="none" spellCheck={false} required
             value={email} onChange={(e) => setEmail(e.target.value)} />
+          {signup && <span className="muted" style={{ fontSize: 12 }}>We&apos;ll email you a 6-digit code to confirm it.</span>}
         </div>
         {signup && (
           <div className="field">
@@ -161,9 +178,8 @@ export default function AuthForm({ mode, captchaSiteKey }: { mode: "signup" | "l
             <span>Remember me on this device</span>
           </label>
         )}
-        {captchaSiteKey && <Captcha siteKey={captchaSiteKey} onToken={setToken} resetKey={resetKey} />}
-        <button type="submit" className="btn btn-primary" disabled={busy || waiting}>
-          {waiting ? "Checking you're human…" : busy ? "Please wait…" : signup ? "Create account" : "Log in"}
+        <button type="submit" className="btn btn-primary" disabled={busy}>
+          {busy ? "Please wait…" : signup ? "Create account" : "Log in"}
         </button>
         {signup && <p className="muted" style={{ fontSize: 12 }}>By creating an account you agree to our <Link href="/terms">Terms</Link> and <Link href="/privacy">Privacy Policy</Link>.</p>}
         {!signup && <p className="muted" style={{ fontSize: 12 }}>Don&apos;t tick “Remember me” on a shared or public phone or computer.</p>}

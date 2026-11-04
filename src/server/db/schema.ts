@@ -19,6 +19,8 @@ export const users = pgTable("users", {
   isSystem: boolean("is_system").notNull().default(false),
   /** Bumped on password change / "log out everywhere"; older sessions stop working. */
   sessionVersion: integer("session_version").notNull().default(0),
+  /** Null until the 6-digit email code from sign-up is entered (migration 0021). */
+  emailVerifiedAt: ts("email_verified_at"),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 
@@ -517,4 +519,27 @@ export const travelEsimOrders = pgTable("travel_esim_orders", {
   error: text("error"),
   createdAt: ts("created_at").notNull().defaultNow(),
   updatedAt: ts("updated_at").notNull().defaultNow(),
+});
+
+/* ---------- Email codes + trusted devices (migration 0021) ---------- */
+
+export const emailCodes = pgTable("email_codes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  purpose: text("purpose").$type<"signup" | "login">().notNull(),
+  codeHash: text("code_hash").notNull(),
+  attempts: integer("attempts").notNull().default(0),
+  remember: boolean("remember").notNull().default(false),
+  expiresAt: ts("expires_at").notNull(),
+  usedAt: ts("used_at"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+
+export const trustedDevices = pgTable("trusted_devices", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  tokenHash: text("token_hash").notNull().unique(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  lastUsedAt: ts("last_used_at").notNull().defaultNow(),
+  expiresAt: ts("expires_at").notNull(),
 });

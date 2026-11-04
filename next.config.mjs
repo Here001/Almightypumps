@@ -1,12 +1,12 @@
 const CSP = [
   "default-src 'self'",
-  // Next.js needs inline scripts; external scripts only from Cloudflare's robot check.
-  "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com",
-  "frame-src https://challenges.cloudflare.com",
+  // Next.js needs inline scripts; no external scripts.
+  "script-src 'self' 'unsafe-inline'",
+  "frame-src 'none'",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:",
   "img-src 'self' data: blob: https://*.reloadly.com",
-  "connect-src 'self' https://challenges.cloudflare.com",
+  "connect-src 'self'",
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",

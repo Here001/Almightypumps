@@ -1,21 +1,20 @@
-import { z } from "zod";
 import { getDb } from "@/server/db";
 import { register, registerSchema, startSession } from "@/server/auth";
-import { verifyCaptcha } from "@/server/captcha";
+import { emailConfigured, sendCode } from "@/server/emailCodes";
 import { body, route } from "@/server/http";
 import { clientIp, rateLimit } from "@/server/rateLimit";
 
 export const dynamic = "force-dynamic";
 
-const schema = registerSchema.extend({ captcha: z.string().max(4000).optional() });
-
+/** Create an account. With email codes on, the reply is { needsCode, challenge, email } until the code is entered. */
 export const POST = route(async (req: Request) => {
-  const input = await body(req, schema);
+  const input = await body(req, registerSchema);
   const db = getDb();
   const ip = clientIp(req);
   await rateLimit(db, "registerIp", ip);
-  await verifyCaptcha(input.captcha, ip);
-  const user = await register(db, input);
+  const codes = emailConfigured();
+  const user = await register(db, input, { verified: !codes });
+  if (codes) return sendCode(db, user, "signup", true, ip);
   await startSession(user.id, true);
   return user;
 });

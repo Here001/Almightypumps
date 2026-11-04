@@ -282,7 +282,6 @@ img.mk-avatar { object-fit: cover; background: var(--surface-2); }
 .pw-wrap .input { flex: 1; padding-right: 52px; }
 .pw-eye { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 12px; background: none; color: var(--muted); cursor: pointer; }
 .pw-eye:hover { color: var(--fg); background: rgb(var(--ov) / .08); }
-.captcha { display: flex; flex-direction: column; gap: 6px; }
 
 /* Privacy / Terms */
 .legal-wrap { min-height: 100vh; padding: 40px max(16px, env(safe-area-inset-right, 0px)) 60px max(16px, env(safe-area-inset-left, 0px)); display: flex; justify-content: center; }
@@ -306,3 +305,6 @@ img.mk-avatar { object-fit: cover; background: var(--surface-2); }
 .gc-from { font-size: 12px; }
 .ap-service.at-on { border: 2px solid var(--accent); background: rgb(var(--ov) / .08); }
 @media (max-width: 420px) { .gc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Email code entry */
+.auth-code { font-family: var(--mono); font-size: 28px; letter-spacing: .4em; text-align: center; }

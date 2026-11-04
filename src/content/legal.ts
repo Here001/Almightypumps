@@ -20,7 +20,7 @@ Almighty Pumps is an online platform based in Lagos, Nigeria. We are the data co
 - **Sellers:** shop name, contact phone, what you sell, payout bank details, ID type and ID number, and your shop picture. ID and full account numbers are visible only to our admins.
 - **P2P marketplace:** your ads, purchases, trade messages, delivery proof, disputes and their outcome.
 - **Usage:** which pages and sections of the site are visited, linked to a random cookie ID (and to your account if you are logged in). We do not store your IP address or device details for this.
-- **Security:** to stop password guessing and abuse we count requests per network and per account. These counters are scrambled (hashed) so they don't contain your IP address or email, and are deleted after a day.
+- **Security:** to stop password guessing and abuse we count requests per network and per account. We email you a one-time code when you sign up and when you log in on a new device; we store only a scrambled copy of each code, and it stops working after 10 minutes. These counters are scrambled (hashed) so they don't contain your IP address or email, and are deleted after a day.
 - **Messages to us:** anything you send to our email or support.
 
 ## 3. Why we use it (and our legal basis)
@@ -38,7 +38,9 @@ We share only what each service needs to do its job:
 - **Social-growth providers**: receive the link or username and quantity of your order, not your name or contact details.
 - **TextVerified**: provides the numbers for verification codes; receives which app the code is for.
 - **Our eSIM supplier**: receives the IMEI and, if you keep your number, the transfer details needed to set up your line.
-- **Cloudflare Turnstile**: checks that sign-ups and log-ins come from real people, not bots. Turnstile collects limited information from your browser for this purpose; see Cloudflare's [Turnstile Privacy Addendum](https://www.cloudflare.com/turnstile-privacy-policy/).
+- **Resend**: sends our emails, such as the 6-digit codes for signing up and logging in on a new device; receives your email address and first name.
+- **Reloadly**: delivers gift cards and airtime/data; receives the phone number you top up (not your name or email).
+- **eSIM Access**: provides travel eSIMs; receives which data package you bought (not your name or email).
 - **Hosting and email**: Vercel (website hosting), Neon (database, located in the EU) and Zoho (our email).
 - **Other users**: in the P2P marketplace, buyers see the seller's shop name, picture, ratings and ad answers; sellers see what a buyer ordered and their trade messages.
 - **Authorities**: when the law requires it, or to protect users from fraud.
@@ -55,10 +57,10 @@ Some of these providers process data outside Nigeria (for example in the EU or t
 - **ap_session**: keeps you logged in. With “Remember me” it lasts 30 days; otherwise it ends when you close your browser.
 - **ap_vid**: a random ID used to count page visits (see “Usage” above).
 - Your browser also remembers your settings on your device only: theme, ₦/$ display, hidden balance and, if you ticked “Remember me”, your email address (never your password).
-- Cloudflare Turnstile may use storage needed for the bot check.
+- **ap_device**: a random code that marks this device as one you've confirmed with an email code, so you aren't asked again for 30 days.
 
 ## 7. How we protect it
-Encrypted connections (https) everywhere, hashed passwords, encrypted storage for sensitive details such as eSIM transfer information and provider keys, limits on login attempts, a bot check, and admin-only access to ID and bank details. No system is perfectly secure; if a breach affects you, we will tell you and the regulator as the law requires.
+Encrypted connections (https) everywhere, hashed passwords, encrypted storage for sensitive details such as eSIM transfer information and provider keys, limits on login attempts, email codes for new sign-ups and new devices, and admin-only access to ID and bank details. No system is perfectly secure; if a breach affects you, we will tell you and the regulator as the law requires.
 
 ## 8. Your rights
 Under the NDPA you can ask us to: see a copy of your data; correct it; delete it (where we don't need to keep it by law); restrict or object to how we use it; receive it in a portable format; and withdraw consent you gave us. Email [support@almightypumps.com](mailto:support@almightypumps.com) from your account email and we will reply within 30 days. If you're unhappy with our answer you can complain to the Nigeria Data Protection Commission (NDPC).

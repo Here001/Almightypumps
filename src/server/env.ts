@@ -36,9 +36,10 @@ const schema = z.object({
   ESIMACCESS_ACCESS_CODE: z.string().optional().default(""),
   ESIMACCESS_SECRET_KEY: z.string().optional().default(""),
   ESIMACCESS_BASE_URL: z.string().url().optional().default("https://api.esimaccess.com"),
-  // Cloudflare Turnstile ("I'm not a robot") for log in / sign up. Off until both are set.
-  TURNSTILE_SITE_KEY: z.string().optional().default(""),
-  TURNSTILE_SECRET_KEY: z.string().optional().default(""),
+  // Resend (sends the 6-digit sign-up / new-device codes). Codes are off until RESEND_API_KEY is set.
+  RESEND_API_KEY: z.string().optional().default(""),
+  EMAIL_FROM: z.string().optional().default("Almighty Pumps <no-reply@almightypumps.com>"),
+  RESEND_BASE_URL: z.string().url().optional().default("https://api.resend.com"), // local tests only
   CRON_SECRET: z.string().min(16, "CRON_SECRET must be at least 16 characters"),
   MIN_FUNDING_KOBO: z.coerce.number().int().positive().default(100_000), // ₦1,000
   MIN_WITHDRAWAL_KOBO: z.coerce.number().int().positive().default(200_000), // ₦2,000

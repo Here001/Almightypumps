@@ -13,8 +13,8 @@ await client.connect();
 await client.query("BEGIN");
 const hash = await bcrypt.hash(ADMIN_PASSWORD, 12);
 const { rows } = await client.query(
-  `INSERT INTO users (email, password_hash, name, role) VALUES ($1, $2, 'Admin', 'admin')
-   ON CONFLICT (email) DO UPDATE SET role = 'admin' RETURNING id`,
+  `INSERT INTO users (email, password_hash, name, role, email_verified_at) VALUES ($1, $2, 'Admin', 'admin', now())
+   ON CONFLICT (email) DO UPDATE SET role = 'admin', email_verified_at = coalesce(users.email_verified_at, now()) RETURNING id`,
   [ADMIN_EMAIL.toLowerCase(), hash],
 );
 await client.query("INSERT INTO wallets (user_id) VALUES ($1) ON CONFLICT (user_id) DO NOTHING", [rows[0].id]);

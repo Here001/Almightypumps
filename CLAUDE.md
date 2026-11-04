@@ -147,11 +147,15 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 - Login security (2026-11-04): `PasswordInput.tsx` eye toggle on all password fields; "Remember me" on /login =
   30-day cookie + JWT claim r=1, otherwise a browser-session cookie with a 12h token (`startSession(userId, remember)`;
   password change / log-out-others keep the current choice); remembered email in localStorage `ap_login_email`
-  (never the password). Cloudflare Turnstile on log in + sign up (`src/server/captcha.ts`; env TURNSTILE_SITE_KEY +
-  TURNSTILE_SECRET_KEY, off until both set (owner to create the Cloudflare widget for almightypumps.com + the dev preview host and add both keys to Vercel Production+Preview, then redeploy); verified before the password is checked; fails open only if Cloudflare is
-  unreachable). The Turnstile script + preconnect are rendered in the page (React hoists them to <head>) so the check runs
-  while the user types; appearance "interaction-only" (box shows only if a click is needed); tapping Log in early waits
-  ("Checking you're human…", 20s cap) and auto-submits when the token arrives. Weak/common passwords refused (`weakPassword`). `middleware.ts` blocks cross-site POST/PUT/PATCH/
+  (never the password). EMAIL CODES replaced Cloudflare Turnstile (owner's choice 2026-11-04; `src/server/captcha.ts` and
+  the CSP entries for challenges.cloudflare.com removed; TURNSTILE_* env vars are unused): migration 0021
+  (`users.email_verified_at`, existing users marked verified; `email_codes`, `trusted_devices`), `src/server/emailCodes.ts`,
+  `src/server/email.ts` (Resend API; env RESEND_API_KEY, EMAIL_FROM default "Almighty Pumps <no-reply@almightypumps.com>",
+  RESEND_BASE_URL for mocks). A 6-digit code (10 min, 5 tries, HMAC-stored) at sign-up and when logging in on a device
+  without a valid `ap_device` cookie (trusted 30 days; other devices forgotten on password change / log-out-others).
+  Login/register reply { needsCode, challenge, email, purpose } → POST /api/auth/verify { challenge, code } (or
+  /api/auth/verify/resend). An unfinished sign-up can be redone with the same email. Codes are OFF (straight log in)
+  while RESEND_API_KEY is unset, so set it in Production before/with going live. Weak/common passwords refused (`weakPassword`). `middleware.ts` blocks cross-site POST/PUT/PATCH/
   DELETE to /api/* (Origin/Sec-Fetch-Site), except /api/v2, /api/webhooks/, /api/cron/. next.config.mjs adds HSTS,
   CSP (scripts self+inline+challenges.cloudflare.com, fonts.googleapis/gstatic, img data:/blob:, frame-ancestors none,
   form-action self; upgrade-insecure-requests only on Vercel) and COOP. Generic "email and password don't match"
@@ -236,7 +240,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
     usd auto, Instagram Likes/Live viewers 100% rules. NOT copied: dev's P2P category renamed "Accounts"
     (account sales are blocked); live keeps "Digital products". Re-star 3 TikTok follower services
     (Owlet ids 8277, 24221, 8619) after the first live sync. No users yet (owner signs up, then promote to admin).
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0020 applied (main: 0000–0019). Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0021 applied (main: 0000–0019). Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).
