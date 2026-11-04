@@ -7,6 +7,7 @@ import { useThemePref, type ThemePref } from "../Theme";
 import { useCurrency } from "./Currency";
 import { ID_TYPES, NG_BANKS } from "@/core/banks";
 import { ShopPhoto } from "./ShopPhoto";
+import { PasswordInput } from "../PasswordInput";
 
 type Me = { name: string; email: string; phone: string | null; sellerStatus: string; isAdmin: boolean };
 type Msg = { ok: boolean; text: string } | null;
@@ -129,11 +130,11 @@ function Security() {
         }
       }}>
         <div className="field"><label htmlFor="st-cur">Current password</label>
-          <input id="st-cur" type="password" className="input" value={current} onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" required /></div>
+          <PasswordInput id="st-cur" value={current} onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" required /></div>
         <div className="field"><label htmlFor="st-new">New password</label>
-          <input id="st-new" type="password" className="input" value={next} onChange={(e) => setNext(e.target.value)} autoComplete="new-password" minLength={8} required /></div>
+          <PasswordInput id="st-new" value={next} onChange={(e) => setNext(e.target.value)} autoComplete="new-password" minLength={8} required /></div>
         <div className="field"><label htmlFor="st-conf">Type the new password again</label>
-          <input id="st-conf" type="password" className="input" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" required aria-invalid={mismatch} />
+          <PasswordInput id="st-conf" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" required aria-invalid={mismatch} />
           {mismatch && <span className="muted" style={{ fontSize: 13, color: "var(--warn)" }}>The two new passwords don&apos;t match.</span>}</div>
         <button className="btn btn-primary" style={{ alignSelf: "flex-start" }} disabled={busy !== null || !current || next.length < 8 || next !== confirm}>{busy === "pw" ? "Changing…" : "Change password"}</button>
         <Note msg={msg} />

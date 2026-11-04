@@ -276,3 +276,10 @@ img.mk-avatar { object-fit: cover; background: var(--surface-2); }
 .es-price-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .es-price-rows li { display: grid; grid-template-columns: minmax(70px, 1fr) minmax(100px, 1.2fr) minmax(90px, 1.2fr) auto auto; gap: 6px; align-items: center; }
 @media (max-width: 420px) { .es-price-rows li { grid-template-columns: 1fr 1fr; } }
+
+/* Password field with show/hide eye */
+.pw-wrap { position: relative; display: flex; }
+.pw-wrap .input { flex: 1; padding-right: 52px; }
+.pw-eye { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 12px; background: none; color: var(--muted); cursor: pointer; }
+.pw-eye:hover { color: var(--fg); background: rgb(var(--ov) / .08); }
+.captcha { min-height: 65px; display: flex; flex-direction: column; gap: 6px; }

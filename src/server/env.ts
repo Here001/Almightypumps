@@ -25,6 +25,9 @@ const schema = z.object({
   TEXTVERIFIED_API_KEY: z.string().optional().default(""),
   TEXTVERIFIED_API_USERNAME: z.string().optional().default(""),
   TEXTVERIFIED_BASE_URL: z.string().url().optional().default("https://www.textverified.com"),
+  // Cloudflare Turnstile ("I'm not a robot") for log in / sign up. Off until both are set.
+  TURNSTILE_SITE_KEY: z.string().optional().default(""),
+  TURNSTILE_SECRET_KEY: z.string().optional().default(""),
   CRON_SECRET: z.string().min(16, "CRON_SECRET must be at least 16 characters"),
   MIN_FUNDING_KOBO: z.coerce.number().int().positive().default(100_000), // ₦1,000
   MIN_WITHDRAWAL_KOBO: z.coerce.number().int().positive().default(200_000), // ₦2,000

@@ -144,6 +144,16 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   Admin queue: copy IMEI/port details, deliver with US number + activation code (LPA:1$…, or SM-DP+ + code,
   or uploaded QR picture) + note → capture to `revenue:esim`; or refund with a reason. Customer sees number,
   QR (generated server-side with `qrcode` 1.5.4), iPhone one-tap install link, SM-DP+/code with copy buttons.
+- Login security (2026-11-04): `PasswordInput.tsx` eye toggle on all password fields; "Remember me" on /login =
+  30-day cookie + JWT claim r=1, otherwise a browser-session cookie with a 12h token (`startSession(userId, remember)`;
+  password change / log-out-others keep the current choice); remembered email in localStorage `ap_login_email`
+  (never the password). Cloudflare Turnstile on log in + sign up (`src/server/captcha.ts`; env TURNSTILE_SITE_KEY +
+  TURNSTILE_SECRET_KEY, off until both set; verified before the password is checked; fails open only if Cloudflare is
+  unreachable). Weak/common passwords refused (`weakPassword`). `middleware.ts` blocks cross-site POST/PUT/PATCH/
+  DELETE to /api/* (Origin/Sec-Fetch-Site), except /api/v2, /api/webhooks/, /api/cron/. next.config.mjs adds HSTS,
+  CSP (scripts self+inline+challenges.cloudflare.com, fonts.googleapis/gstatic, img data:/blob:, frame-ancestors none,
+  form-action self; upgrade-insecure-requests only on Vercel) and COOP. Generic "email and password don't match"
+  with a dummy bcrypt compare already existed, as do the login/signup rate limits.
 - `app/api/**` route handlers; `app/page.tsx` 3D homepage; `app/signup`, `app/login`,
   `app/dashboard`; `app/admin` (Insights, Growth providers, Services, Pricing, Shop, Listings review; admins only).
 - Shop (`src/server/shop.ts`, /admin/shop, migration 0008): admin categories → products. Delivery
