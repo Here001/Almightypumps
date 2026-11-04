@@ -36,7 +36,7 @@ export const holds = pgTable("holds", {
   amount: money("amount").notNull(),
   settled: money("settled").notNull().default(0),
   status: text("status").$type<"active" | "captured" | "released" | "partial">().notNull().default("active"),
-  purpose: text("purpose").$type<"smm_order" | "escrow" | "withdrawal" | "shop_order" | "sms_verify">().notNull(),
+  purpose: text("purpose").$type<"smm_order" | "escrow" | "withdrawal" | "shop_order" | "sms_verify" | "esim_order">().notNull(),
   refId: uuid("ref_id"),
   createdAt: ts("created_at").notNull().defaultNow(),
   closedAt: ts("closed_at"),
@@ -381,4 +381,51 @@ export const rateLimits = pgTable("rate_limits", {
   key: text("key").notNull(),
   windowStart: ts("window_start").notNull(),
   count: integer("count").notNull().default(1),
+});
+
+/** eSIMs sold by hand (drizzle/0019_esim.sql). */
+export const esimPlans = pgTable("esim_plans", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  network: text("network").notNull().default(""),
+  description: text("description").notNull().default(""),
+  allowKeepNumber: boolean("allow_keep_number").notNull().default(true),
+  keepNumberFee: money("keep_number_fee").notNull().default(0),
+  active: boolean("active").notNull().default(true),
+  position: integer("position").notNull().default(0),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+
+export const esimPrices = pgTable("esim_prices", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  planId: uuid("plan_id").notNull().references(() => esimPlans.id, { onDelete: "cascade" }),
+  dataLabel: text("data_label").notNull(),
+  months: integer("months").notNull(),
+  price: money("price").notNull(),
+  active: boolean("active").notNull().default(true),
+});
+
+export const esimOrders = pgTable("esim_orders", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  publicId: serial("public_id").unique(),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  planId: uuid("plan_id").notNull().references(() => esimPlans.id),
+  planName: text("plan_name").notNull(),
+  dataLabel: text("data_label").notNull(),
+  months: integer("months").notNull(),
+  amount: money("amount").notNull(),
+  holdId: uuid("hold_id").notNull().references(() => holds.id),
+  imei: text("imei").notNull(),
+  numberMode: text("number_mode").$type<"new" | "keep">().notNull(),
+  portEnc: text("port_enc"),
+  portNumber: text("port_number"),
+  status: text("status").$type<"pending" | "delivered" | "refunded">().notNull().default("pending"),
+  phoneNumber: text("phone_number"),
+  lpa: text("lpa"),
+  qrImage: bytea("qr_image"),
+  qrType: text("qr_type"),
+  customerNote: text("customer_note"),
+  adminNote: text("admin_note"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
 });

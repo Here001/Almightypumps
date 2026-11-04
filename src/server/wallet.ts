@@ -71,7 +71,7 @@ export async function placeHold(
   tx: Tx,
   walletId: string,
   amount: Kobo,
-  purpose: "smm_order" | "escrow" | "withdrawal" | "shop_order" | "sms_verify",
+  purpose: "smm_order" | "escrow" | "withdrawal" | "shop_order" | "sms_verify" | "esim_order",
   ref: Ref = {},
 ): Promise<string> {
   const w = (await lockWallets(tx, [walletId])).get(walletId)!;

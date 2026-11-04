@@ -378,3 +378,18 @@ test("rate limit windows", async () => {
   assert.equal(r.waitText(15 * 60), "15 minutes");
   assert.equal(r.waitText(3601), "2 hours");
 });
+
+test("eSIM order checks", async () => {
+  const e = await import("../src/core/esim.ts");
+  assert.deepEqual(e.checkImei("490154203237518"), { imei: "490154203237518" });
+  assert.ok("error" in e.checkImei("490154203237519"));
+  assert.ok("error" in e.checkImei("12345"));
+  assert.deepEqual(e.checkImei("35-209900-176148-1"), { imei: "352099001761481" });
+  assert.equal(e.usNumber("+1 (312) 216-9314"), "3122169314");
+  assert.equal(e.usNumber("123"), null);
+  assert.equal(e.formatUs("3122169314"), "+1 (312) 216-9314");
+  assert.equal(e.buildLpa({ lpa: "lpa:1$sm-v4-001.prod.example.com$ABC-123" }), "LPA:1$sm-v4-001.prod.example.com$ABC-123");
+  assert.equal(e.buildLpa({ smdp: "https://smdp.example.com", code: "XYZ" }), "LPA:1$smdp.example.com$XYZ");
+  assert.equal(e.buildLpa({ lpa: "hello" }), null);
+  assert.deepEqual(e.splitLpa("LPA:1$smdp.example.com$XYZ"), { smdp: "smdp.example.com", code: "XYZ" });
+});

@@ -23,9 +23,9 @@ export const HUB_SERVICES: HubService[] = [
   {
     id: "esim",
     title: "eSIMs",
-    description: "Mobile data for travel. Buy online, scan the QR code, connect in minutes.",
+    description: "A US phone line on your phone as an eSIM: talk, text and data. Keep your number or get a new one.",
     icon: "M7 2h7l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM9 12h6v6H9z",
-    status: "soon",
+    status: "live",
   },
   {
     id: "giftcards",

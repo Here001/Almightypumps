@@ -13,6 +13,7 @@ const LINKS = [
   { href: "/admin/pricing", label: "Pricing" },
   { href: "/admin/shop", label: "Shop" },
   { href: "/admin/verify", label: "Verification codes" },
+  { href: "/admin/esim", label: "eSIMs" },
   { href: "/admin/sellers", label: "Sellers" },
   { href: "/admin/p2p-categories", label: "P2P categories" },
   { href: "/admin/listings", label: "Listings review" },

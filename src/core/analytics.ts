@@ -7,6 +7,7 @@ const DASHBOARD_ANCHORS: Record<string, string> = {
   boost: "Social Growth",
   growth: "Social Growth",
   verify: "Verification codes",
+  esim: "eSIMs",
   orders: "My orders",
   trades: "P2P Marketplace",
   wallet: "Wallet",

@@ -42,12 +42,12 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 ## Layout
 - `src/core/` pure business rules with no dependencies: money (integer kobo), ledger,
   escrow state machine, SMM pricing/parsing, listing policy, crypto helpers.
-  Tested by `tests/core.test.ts` (`npm test`, Node's built-in runner, 31 tests).
+  Tested by `tests/core.test.ts` (`npm test`, Node's built-in runner, 32 tests).
 - `src/server/` database access, wallet (row locks, holds, idempotent ledger),
   market, smm, payments (Flutterwave), auth, env, http helpers.
 - Customer dashboard (`app/dashboard` → `src/components/dashboard/`): tabs Services / Orders /
   Wallet / P2P / Settings (URL hash; bottom tab bar on phones). Services = hub of service tiles from
-  `src/components/dashboard/services.ts` (Boost Account and Get Verification Code live; eSIMs "coming soon"). Boost Account (#boost) = all SMM/Owlet services: search + platform tiles +
+  `src/components/dashboard/services.ts` (Boost Account, Get Verification Code and eSIMs live). Boost Account (#boost) = all SMM/Owlet services: search + platform tiles +
   kind chips + paged service cards (recommended first, then cheapest) + order sheet.
   "Recommended" = provider flag (`provider_recommended`, detected by `isProviderRecommended`;
   sync logs the provider's field names as `[provider] … service fields`) OR admin star
@@ -135,6 +135,15 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   if any provider's copy is. `placeOrder` uses the customer's pick if on sale, else the cheapest other-provider copy
   priced ≤ what they were shown (else "price just changed"). Reseller /api/v2 `services` still lists every copy.
   Migrations 0017–0018 applied to dev and production (2026-11-04, owner's yes).
+- eSIMs sold by hand (#esim, migration 0019, `src/server/esim.ts`, `src/core/esim.ts`, `Esim.tsx`, /admin/esim
+  `AdminEsim.tsx`): owner's supplier (Airvoice-style US prepaid, AT&T) has no API and blocked his country, so the
+  admin defines plans (name, network, description, keep-number on/off + fee) with a price grid (data label ×
+  months → ₦; quick-fill rows). Customer: data chips → length cards (per-month + % saving vs 1 month) → IMEI
+  (14–16 digits, Luhn for 15) → new number or keep number (port-in: number, carrier, account no., PIN, ZIP,
+  holder; stored encrypted with secretBox and wiped on deliver/refund) → hold `esim_order` (max 3 pending).
+  Admin queue: copy IMEI/port details, deliver with US number + activation code (LPA:1$…, or SM-DP+ + code,
+  or uploaded QR picture) + note → capture to `revenue:esim`; or refund with a reason. Customer sees number,
+  QR (generated server-side with `qrcode` 1.5.4), iPhone one-tap install link, SM-DP+/code with copy buttons.
 - `app/api/**` route handlers; `app/page.tsx` 3D homepage; `app/signup`, `app/login`,
   `app/dashboard`; `app/admin` (Insights, Growth providers, Services, Pricing, Shop, Listings review; admins only).
 - Shop (`src/server/shop.ts`, /admin/shop, migration 0008): admin categories → products. Delivery
@@ -182,7 +191,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
     usd auto, Instagram Likes/Live viewers 100% rules. NOT copied: dev's P2P category renamed "Accounts"
     (account sales are blocked); live keeps "Digital products". Re-star 3 TikTok follower services
     (Owlet ids 8277, 24221, 8619) after the first live sync. No users yet (owner signs up, then promote to admin).
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0018 applied (main too). Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0019 applied (main: 0000–0018). Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

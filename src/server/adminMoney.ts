@@ -117,6 +117,7 @@ const SOURCES: Record<string, string> = {
   "revenue:smm": "Boost Account sales",
   "revenue:sms_verify": "Verification code sales",
   "revenue:shop": "Shop sales",
+  "revenue:esim": "eSIM sales",
   "fee:escrow": "P2P fees (3%)",
 };
 
