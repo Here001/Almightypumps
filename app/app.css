@@ -293,3 +293,5 @@ img.mk-avatar { object-fit: cover; background: var(--surface-2); }
 .legal-doc ul { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
 .legal-doc a { color: var(--accent); }
 .legal-nav { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 24px; padding-top: 16px; border-top: 1px solid rgb(var(--ov) / .12); font-size: 14px; }
+.legal-editor { width: 100%; min-height: 60vh; font-family: var(--mono); font-size: 13px; line-height: 1.6; resize: vertical; }
+.legal-preview { max-width: none; padding: 16px; border-radius: 16px; border: 1px solid rgb(var(--ov) / .12); background: rgb(var(--ov) / .03); }

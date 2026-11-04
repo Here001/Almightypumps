@@ -393,3 +393,21 @@ test("eSIM order checks", async () => {
   assert.equal(e.buildLpa({ lpa: "hello" }), null);
   assert.deepEqual(e.splitLpa("LPA:1$smdp.example.com$XYZ"), { smdp: "smdp.example.com", code: "XYZ" });
 });
+
+test("legal page text format is safe", async () => {
+  const m = await import("../src/core/miniMarkdown.ts");
+  const b = m.parseMarkdown("## 1. Title\n\nHello **there** see [Terms](/terms).\nsame para\n\n- one\n- two [mail](mailto:support@almightypumps.com)\n\n### Sub");
+  assert.equal(b.length, 4);
+  assert.equal(b[0].t, "h2");
+  assert.equal(b[1].t, "p");
+  assert.deepEqual((b[1] as { c: unknown[] }).c[1], { t: "bold", v: "there" });
+  assert.equal(b[2].t, "ul");
+  assert.equal(b[3].t, "h3");
+  // dangerous links stay plain text; HTML is never interpreted
+  const js = m.parseInline("[x](javascript:alert(1))");
+  assert.ok(js.every((p) => p.t === "text"));
+  assert.equal(js.map((p) => p.v).join(""), "[x](javascript:alert(1))");
+  assert.equal(m.safeHref("//evil.com"), null);
+  assert.equal(m.safeHref("https://www.cloudflare.com/turnstile-privacy-policy/"), "https://www.cloudflare.com/turnstile-privacy-policy/");
+  assert.deepEqual(m.parseInline("<script>x</script>"), [{ t: "text", v: "<script>x</script>" }]);
+});

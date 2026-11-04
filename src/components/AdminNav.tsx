@@ -14,6 +14,7 @@ const LINKS = [
   { href: "/admin/shop", label: "Shop" },
   { href: "/admin/verify", label: "Verification codes" },
   { href: "/admin/esim", label: "eSIMs" },
+  { href: "/admin/legal", label: "Legal pages" },
   { href: "/admin/sellers", label: "Sellers" },
   { href: "/admin/p2p-categories", label: "P2P categories" },
   { href: "/admin/listings", label: "Listings review" },

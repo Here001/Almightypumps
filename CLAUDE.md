@@ -42,7 +42,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 ## Layout
 - `src/core/` pure business rules with no dependencies: money (integer kobo), ledger,
   escrow state machine, SMM pricing/parsing, listing policy, crypto helpers.
-  Tested by `tests/core.test.ts` (`npm test`, Node's built-in runner, 32 tests).
+  Tested by `tests/core.test.ts` (`npm test`, Node's built-in runner, 33 tests).
 - `src/server/` database access, wallet (row locks, holds, idempotent ledger),
   market, smm, payments (Flutterwave), auth, env, http helpers.
 - Customer dashboard (`app/dashboard` → `src/components/dashboard/`): tabs Services / Orders /
@@ -162,6 +162,11 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   the Turnstile Privacy Addendum link required for Invisible mode, Vercel, Neon EU, Zoho), cookies ap_session/ap_vid,
   escrow 72h/48h/3%, ₦1,000 top-up / ₦2,000 withdrawal minimums, prohibited items. Linked from the homepage footer and
   the sign-up form. Owner told to have a lawyer review. Keep them in sync when features/processors change.
+  EDITABLE in Admin → Legal pages (/admin/legal, `AdminLegal.tsx`, /api/admin/legal): text stored in app_settings
+  `legal_privacy` / `legal_terms` as {body, updated YYYY-MM-DD (Lagos)}; originals in `src/content/legal.ts` (used until
+  edited and for "Reset to original"). Safe mini-format (`src/core/miniMarkdown.ts` + `RichText.tsx`): ## / ### headings,
+  "- " bullets, **bold**, [text](https|mailto|/path) links; never renders HTML; js: links stay plain text. Pages are
+  force-dynamic so saves show immediately.
   PUBLIC CONTACT EMAIL = support@almightypumps.com (owner's rule, 2026-11-04): use it everywhere customers see
   (legal pages, footer Support link); hello@ is only for supplier sign-ups.
 - `app/api/**` route handlers; `app/page.tsx` 3D homepage; `app/signup`, `app/login`,
