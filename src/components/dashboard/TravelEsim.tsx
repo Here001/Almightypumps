@@ -9,7 +9,7 @@ import { BalanceGate, Copy, Sheet, countryName, flag, statusTone, usePollPending
 
 type Dest = { code: string; packages: number; fromKobo: number };
 type Pkg = { code: string; name: string; data: string; days: string; duration: number; countries: number; locations: string[]; priceKobo: number };
-type Order = { id: string; publicId: number; label: string; priceKobo: number; status: Status; createdAt: string; lpa: string | null; qr: string | null; iccid: string | null; hasUsage: boolean };
+type Order = { id: string; publicId: number; label: string; priceKobo: number; status: Status; waiting?: boolean; createdAt: string; lpa: string | null; qr: string | null; iccid: string | null; hasUsage: boolean };
 
 const POPULAR = ["US", "GB", "AE", "CA", "SA", "TR", "FR", "DE", "CN", "GH", "ZA", "IT", "ES", "JP", "QA", "EG"];
 const STATUS: Record<Status, string> = { pending: "Preparing…", delivered: "Ready to install", refunded: "Refunded", failed: "Not charged" };
@@ -177,7 +177,7 @@ function TravelOrder({ o, money }: { o: Order; money: (k: number) => string }) {
       </button>
       {open && (
         <div className="es-order-body">
-          {o.status === "pending" && <div className="vc-wait"><span className="vc-dot" aria-hidden="true" /> Preparing your eSIM (usually under a minute)…</div>}
+          {o.status === "pending" && <div className="vc-wait"><span className="vc-dot" aria-hidden="true" /> {o.waiting ? "In the queue: your eSIM will be ready here shortly. You're only charged once it's delivered." : "Preparing your eSIM (usually under a minute)…"}</div>}
           {(o.status === "refunded" || o.status === "failed") && <div className="form-ok" role="status">This eSIM couldn&apos;t be prepared, so you weren&apos;t charged.</div>}
           {o.status === "delivered" && o.lpa && (
             <>

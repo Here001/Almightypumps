@@ -140,7 +140,7 @@ export const apiKeys = pgTable("api_keys", {
   revokedAt: ts("revoked_at"),
 });
 
-export type SmmOrderStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "PARTIAL" | "CANCELLED" | "FAILED";
+export type SmmOrderStatus = "QUEUED" | "PENDING" | "PROCESSING" | "COMPLETED" | "PARTIAL" | "CANCELLED" | "FAILED";
 
 export const smmOrders = pgTable("smm_orders", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -463,6 +463,8 @@ export const giftOrders = pgTable("gift_orders", {
   status: text("status").$type<OrderStatus>().notNull().default("pending"),
   providerTx: text("provider_tx"),
   codesEnc: text("codes_enc"),
+  /** Supplier had no balance: accepted, money held, retried by the cron (migration 0023). */
+  waitingFunds: boolean("waiting_funds").notNull().default(false),
   error: text("error"),
   createdAt: ts("created_at").notNull().defaultNow(),
   updatedAt: ts("updated_at").notNull().defaultNow(),
@@ -483,6 +485,8 @@ export const topupOrders = pgTable("topup_orders", {
   holdId: uuid("hold_id").notNull().references(() => holds.id),
   status: text("status").$type<OrderStatus>().notNull().default("pending"),
   providerTx: text("provider_tx"),
+  /** Supplier had no balance: accepted, money held, retried by the cron (migration 0023). */
+  waitingFunds: boolean("waiting_funds").notNull().default(false),
   error: text("error"),
   createdAt: ts("created_at").notNull().defaultNow(),
   updatedAt: ts("updated_at").notNull().defaultNow(),
@@ -516,6 +520,8 @@ export const travelEsimOrders = pgTable("travel_esim_orders", {
   esimTranNo: text("esim_tran_no"),
   iccid: text("iccid"),
   lpa: text("lpa"),
+  /** Supplier had no balance: accepted, money held, retried by the cron (migration 0023). */
+  waitingFunds: boolean("waiting_funds").notNull().default(false),
   error: text("error"),
   createdAt: ts("created_at").notNull().defaultNow(),
   updatedAt: ts("updated_at").notNull().defaultNow(),

@@ -10,6 +10,7 @@ import { appSettings, smsServices, smsVerifications, users } from "./db/schema";
 import { AppError, badRequest, notFound } from "./errors";
 import { getUsdRateKobo } from "./pricing";
 import { TextVerified, textVerifiedConfigured } from "./textverified";
+import { alertSupplierFunds, isOutOfFunds } from "./supplierFunds";
 import { linkHold, placeHold, platformWalletId, settleHold, walletIdForUser } from "./wallet";
 
 export type VerifyConfig = { markupBps: number; enabled: boolean; syncedAt: string | null };
@@ -153,6 +154,10 @@ export async function startVerification(db: Db, userId: string, name: string, ex
     return present(u);
   } catch (e) {
     await finish(db, v.id, "failed");
+    if (isOutOfFunds((e as Error).message)) {
+      await alertSupplierFunds(db, "TextVerified", { customerFacing: "A customer couldn't get a verification number (they were not charged). Verification codes stay unavailable until you top up.", adminPath: "/admin/verify" });
+      throw new AppError(503, "PROVIDER_ERROR", "Verification numbers are temporarily unavailable. You have not been charged. Please try again in a little while.");
+    }
     if (e instanceof AppError && e.code === "PROVIDER_ERROR") {
       throw new AppError(502, "PROVIDER_ERROR", "No number is available for that service right now. You have not been charged. Please try again shortly.");
     }

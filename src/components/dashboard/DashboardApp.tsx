@@ -37,7 +37,7 @@ type Tab = (typeof TABS)[number]["id"] | "boost" | "verify" | "esim" | "giftcard
 const SERVICE_SCREENS = new Set<string>(["boost", "verify", "esim", "giftcards", "airtime"]);
 
 const ORDER_STATUS: Record<string, { label: string; tone: string }> = {
-  PENDING: { label: "Starting", tone: "" }, PROCESSING: { label: "Delivering", tone: "info" }, COMPLETED: { label: "Delivered", tone: "ok" },
+  QUEUED: { label: "In queue", tone: "info" }, PENDING: { label: "Starting", tone: "" }, PROCESSING: { label: "Delivering", tone: "info" }, COMPLETED: { label: "Delivered", tone: "ok" },
   PARTIAL: { label: "Partly delivered", tone: "warn" }, CANCELLED: { label: "Refunded", tone: "bad" }, FAILED: { label: "Failed, refunded", tone: "bad" },
 };
 const TRADE_STATUS: Record<string, { label: string; tone: string }> = {
@@ -105,7 +105,7 @@ function Dashboard(props: Props) {
   const shopSlug = tab.startsWith("shop-") ? tab.slice(5) : null;
   const shopName = props.shopCategories.find((c) => c.slug === shopSlug)?.name ?? "Shop";
 
-  const delivering = props.orders.filter((o) => o.status === "PENDING" || o.status === "PROCESSING").length;
+  const delivering = props.orders.filter((o) => o.status === "QUEUED" || o.status === "PENDING" || o.status === "PROCESSING").length;
 
   return (
     <div className="app-shell">

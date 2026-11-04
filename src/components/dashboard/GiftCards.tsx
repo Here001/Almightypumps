@@ -13,7 +13,7 @@ type Product = {
 };
 type Catalog = { countries: { code: string; products: number }[]; products: Product[] };
 type Card = { cardNumber: string | null; pinCode: string | null; redemptionUrl?: string | null };
-type Order = { id: string; publicId: number; name: string; country: string; value: number; currency: string; priceKobo: number; status: Status; codes: Card[]; redeem: string | null; createdAt: string };
+type Order = { id: string; publicId: number; name: string; country: string; value: number; currency: string; priceKobo: number; status: Status; waiting?: boolean; codes: Card[]; redeem: string | null; createdAt: string };
 
 const PAGE = 30;
 const STATUS: Record<Status, string> = { pending: "Delivering…", delivered: "Delivered", refunded: "Refunded", failed: "Not charged" };
@@ -171,7 +171,7 @@ function GiftOrder({ o, money }: { o: Order; money: (k: number) => string }) {
       </button>
       {open && (
         <div className="es-order-body">
-          {o.status === "pending" && <div className="vc-wait"><span className="vc-dot" aria-hidden="true" /> Getting your code…</div>}
+          {o.status === "pending" && <div className="vc-wait"><span className="vc-dot" aria-hidden="true" /> {o.waiting ? "In the queue: your code will appear here shortly. You're only charged once it's delivered." : "Getting your code…"}</div>}
           {(o.status === "refunded" || o.status === "failed") && <div className="form-ok" role="status">This card couldn&apos;t be delivered, so you weren&apos;t charged.</div>}
           {o.status === "delivered" && !shown && <button type="button" className="btn btn-primary ap-mini" style={{ alignSelf: "flex-start" }} onClick={() => setShown(true)}>Show code</button>}
           {o.status === "delivered" && shown && o.codes.map((c, i) => (

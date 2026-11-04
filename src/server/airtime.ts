@@ -10,6 +10,7 @@ import { topupOrders, users } from "./db/schema";
 import { AppError, badRequest, notFound } from "./errors";
 import { getUsdRateKobo } from "./pricing";
 import { ReloadlyTopup, adminReason, reloadlyConfigured, reloadlyMode, type RlOperator, type RlTopup } from "./reloadly";
+import { alertSupplierFunds, isOutOfFunds, WAIT_LIMIT_MS } from "./supplierFunds";
 import { linkHold, placeHold, platformWalletId, settleHold, walletIdForUser } from "./wallet";
 
 export type AirtimeConfig = { airtimeMarkupBps: number; dataMarkupBps: number; enabled: boolean };
@@ -173,21 +174,36 @@ export async function buyTopup(db: Db, userId: string, input: { operatorId: numb
     await linkHold(tx, holdId, o.id);
     return o;
   });
+  await sendTopup(db, order.id);
+  const [o] = await db.select().from(topupOrders).where(eq(topupOrders.id, order.id));
+  return present(o);
+}
+
+/** Send (or re-send) a top-up. Out of Reloadly balance → it waits (money held) and the owner is emailed. */
+async function sendTopup(db: Db, id: string) {
+  const [order] = await db.select().from(topupOrders).where(eq(topupOrders.id, id));
+  if (!order || order.status !== "pending" || order.providerTx) return;
   try {
-    const r = await ReloadlyTopup.topup({ operatorId: q.op.id, amount: q.send, customIdentifier: order.id, phone });
+    const r = await ReloadlyTopup.topup({ operatorId: order.operatorId, amount: Number(order.sendAmount), customIdentifier: order.id, phone: order.phone });
     console.log(`[airtime] order ${order.publicId} tx=${r.transactionId} status=${r.status}`);
+    await db.update(topupOrders).set({ waitingFunds: false, error: null }).where(eq(topupOrders.id, id));
     await applyResult(db, order.id, r);
   } catch (e) {
     const status = e instanceof AppError ? (e.details as { status?: number } | undefined)?.status : undefined;
+    if (isOutOfFunds((e as Error).message)) {
+      await db.update(topupOrders).set({ waitingFunds: true, error: "Waiting for Reloadly balance", updatedAt: new Date() }).where(eq(topupOrders.id, id));
+      await alertSupplierFunds(db, "Reloadly", { adminPath: "/admin/instant" });
+      return;
+    }
+    if (order.waitingFunds && status && status >= 500) return;
     if (status && status >= 400 && status < 500 && status !== 408 && status !== 429) {
       await closeTopup(db, order.id, "failed", (e as Error).message);
-      throw new AppError(502, "PROVIDER_ERROR", `The top-up didn't go through (${(e as Error).message}). You have not been charged.`);
+      if (!order.waitingFunds) throw new AppError(502, "PROVIDER_ERROR", `The top-up didn't go through (${(e as Error).message}). You have not been charged.`);
+      return;
     }
     console.error("[airtime] top-up unclear", order.id, e);
-    await db.update(topupOrders).set({ error: "Checking with the network", updatedAt: new Date() }).where(eq(topupOrders.id, order.id));
+    await db.update(topupOrders).set({ waitingFunds: false, error: "Checking with the network", updatedAt: new Date() }).where(eq(topupOrders.id, order.id));
   }
-  const [o] = await db.select().from(topupOrders).where(eq(topupOrders.id, order.id));
-  return present(o);
 }
 
 async function applyResult(db: Db, id: string, r: RlTopup | null) {
@@ -215,7 +231,10 @@ async function closeTopup(db: Db, id: string, status: "delivered" | "refunded" |
 export async function refreshTopup(db: Db, id: string) {
   const [o] = await db.select().from(topupOrders).where(eq(topupOrders.id, id));
   if (!o || o.status !== "pending") return o;
-  if (o.providerTx) {
+  if (o.waitingFunds) {
+    if (Date.now() - o.createdAt.getTime() > WAIT_LIMIT_MS) await closeTopup(db, id, "refunded", "Refunded: supplier balance wasn't topped up in time");
+    else await sendTopup(db, id);
+  } else if (o.providerTx) {
     const s = await ReloadlyTopup.status(o.providerTx);
     await applyResult(db, id, { ...(s.transaction ?? {}), status: s.status ?? s.transaction?.status, transactionId: Number(o.providerTx) });
   } else {
@@ -228,7 +247,7 @@ export async function refreshTopup(db: Db, id: string) {
 }
 
 function present(o: typeof topupOrders.$inferSelect) {
-  return { id: o.id, publicId: o.publicId, kind: o.kind, network: o.network, phone: o.phone, description: o.description, priceKobo: o.priceKobo, status: o.status, createdAt: o.createdAt };
+  return { id: o.id, publicId: o.publicId, kind: o.kind, network: o.network, phone: o.phone, description: o.description, priceKobo: o.priceKobo, status: o.status, waiting: o.status === "pending" && o.waitingFunds, createdAt: o.createdAt };
 }
 
 export async function myTopups(db: Db, userId: string) {

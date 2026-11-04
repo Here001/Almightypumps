@@ -1,6 +1,6 @@
 import { getDb } from "@/server/db";
 import { requireCron, route } from "@/server/http";
-import { syncOrders } from "@/server/smm";
+import { retryQueuedOrders, syncOrders } from "@/server/smm";
 import { refreshUsdRate } from "@/server/pricing";
 import { sweepVerifications } from "@/server/smsVerify";
 import { pruneRateLimits } from "@/server/rateLimit";
@@ -15,6 +15,8 @@ export const GET = route(async (req: Request) => {
   requireCron(req);
   const db = getDb();
   const orders = await syncOrders(db);
+  // Boost orders that were waiting for the provider's balance to be topped up.
+  const queued = await retryQueuedOrders(db).catch((e) => { console.error("[cron] queued retry", e); return null; });
   // Keep the automatic dollar rate fresh (only fetches when it's older than 6 hours).
   const fx = await refreshUsdRate(db).catch(() => null);
   // Settle verification codes customers left waiting (code arrived, or refund when none came).
@@ -26,5 +28,5 @@ export const GET = route(async (req: Request) => {
     sweepTopups(db).catch((e) => { console.error("[cron] topup sweep", e); return null; }),
     sweepTravelOrders(db).catch((e) => { console.error("[cron] travel sweep", e); return null; }),
   ]);
-  return { ...orders, giftChecked: gift?.checked ?? 0, topupChecked: topup?.checked ?? 0, travelChecked: travel?.checked ?? 0, usdRateRefreshed: fx?.refreshed ?? false, verifyChecked: verify?.checked ?? 0 };
+  return { ...orders, queuedSent: queued?.sent ?? 0, queuedWaiting: queued ? queued.queued - queued.sent - queued.refunded : 0, giftChecked: gift?.checked ?? 0, topupChecked: topup?.checked ?? 0, travelChecked: travel?.checked ?? 0, usdRateRefreshed: fx?.refreshed ?? false, verifyChecked: verify?.checked ?? 0 };
 });

@@ -174,6 +174,14 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   (`src/server/email.ts`). Admin "Confirm & fund" (amount editable) = creditWallet kind `deposit`, idempotency
   `manual:<id>`; or reject with a reason. Customer is emailed either way. Terms/Privacy defaults mention it. eSIM tab
   shows "US phone line" first (default), then "Travel data · instant" (owner's request).
+- SUPPLIER OUT OF MONEY (2026-11-04, owner's request, migration 0023): `src/server/supplierFunds.ts` (`isOutOfFunds` regex on
+  supplier errors, `alertSupplierFunds` emails all admins at most once an hour per supplier via app_settings
+  `supplier_alerts`, `WAIT_LIMIT_MS` = 72h). Boost: `placeOrder` keeps the hold and sets smm_orders.status `QUEUED`
+  ("In queue" for customers; /api/v2 shows Pending); `retryQueuedOrders` in the sync-orders cron re-sends oldest first,
+  stops per provider while still broke, refunds after 72h or on a real refusal. Gift cards / airtime / travel eSIMs:
+  `waiting_funds` column; `sendGiftOrder` / `sendTopup` / `sendTravelOrder` re-send from the existing sweeps; customers see
+  "In the queue… only charged once delivered". TextVerified (can't wait): customer gets "temporarily unavailable" and admins
+  are emailed. Admin Home shows "Top up <supplier>: N orders waiting" (`waitingBySupplier`), badge key `waitingFunds`.
 - Legal pages (2026-11-04): /privacy and /terms (`app/privacy`, `app/terms`, shared `src/components/LegalPage.tsx`,
   CSS `.legal-doc` (NOT `.legal`: that class is the homepage footer's mono copyright line)). Plain-English drafts,
   NDPA 2023, list every processor (Flutterwave, SMM providers, TextVerified, eSIM supplier, Cloudflare Turnstile with
@@ -262,7 +270,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
     usd auto, Instagram Likes/Live viewers 100% rules. NOT copied: dev's P2P category renamed "Accounts"
     (account sales are blocked); live keeps "Digital products". Re-star 3 TikTok follower services
     (Owlet ids 8277, 24221, 8619) after the first live sync. No users yet (owner signs up, then promote to admin).
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0022 applied (main too, 2026-11-04 with owner's yes). Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0023 applied (main: 0000–0022). Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

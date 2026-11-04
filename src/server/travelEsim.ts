@@ -12,6 +12,7 @@ import { travelEsimOrders, travelPackages, users } from "./db/schema";
 import { AppError, badRequest, notFound } from "./errors";
 import { EsimAccess, esimAccessConfigured, type EaPackage } from "./esimaccess";
 import { getUsdRateKobo } from "./pricing";
+import { alertSupplierFunds, isOutOfFunds, WAIT_LIMIT_MS } from "./supplierFunds";
 import { linkHold, placeHold, platformWalletId, settleHold, walletIdForUser } from "./wallet";
 
 export type TravelConfig = { markupBps: number; enabled: boolean; syncedAt: string | null };
@@ -130,23 +131,37 @@ export async function buyTravelEsim(db: Db, userId: string, code: string, expect
     await linkHold(tx, holdId, o.id);
     return o;
   });
+  await sendTravelOrder(db, order.id);
+  return presentOrder((await db.select().from(travelEsimOrders).where(eq(travelEsimOrders.id, order.id)))[0]);
+}
+
+/** Send (or re-send) an order to eSIM Access. Out of balance → it waits (money held) and the owner is emailed. */
+async function sendTravelOrder(db: Db, id: string) {
+  const [order] = await db.select().from(travelEsimOrders).where(eq(travelEsimOrders.id, id));
+  if (!order || order.status !== "pending" || order.providerOrderNo) return;
   try {
-    const r = await EsimAccess.order(order.id.replace(/-/g, ""), code, Math.round(fresh.price));
+    const r = await EsimAccess.order(order.id.replace(/-/g, ""), order.packageCode, order.costE4);
     console.log(`[esimaccess] order ${order.publicId} orderNo=${r.orderNo}`);
     if (!r.orderNo) throw new AppError(502, "PROVIDER_ERROR", "No order number returned", { definite: true });
-    await db.update(travelEsimOrders).set({ providerOrderNo: r.orderNo, updatedAt: new Date() }).where(eq(travelEsimOrders.id, order.id));
+    await db.update(travelEsimOrders).set({ providerOrderNo: r.orderNo, waitingFunds: false, error: null, updatedAt: new Date() }).where(eq(travelEsimOrders.id, order.id));
     await refreshTravelOrder(db, order.id).catch((e) => console.error("[esimaccess] first query", e));
   } catch (e) {
-    // eSIM Access answers with { success: false } for refusals (price changed, balance, unavailable): definite failures.
+    if (isOutOfFunds((e as Error).message)) {
+      await db.update(travelEsimOrders).set({ waitingFunds: true, error: "Waiting for eSIM Access balance", updatedAt: new Date() }).where(eq(travelEsimOrders.id, order.id));
+      await alertSupplierFunds(db, "eSIM Access", { adminPath: "/admin/instant" });
+      return;
+    }
+    // eSIM Access answers with { success: false } for refusals (price changed, unavailable): definite failures.
     const definite = e instanceof AppError && e.code === "PROVIDER_ERROR";
     if (definite) {
       await closeTravel(db, order.id, "failed", { error: (e as Error).message });
-      throw new AppError(502, "PROVIDER_ERROR", "We couldn't get that eSIM right now. You have not been charged. Please try again shortly or pick another package.");
+      if (!order.waitingFunds) throw new AppError(502, "PROVIDER_ERROR", "We couldn't get that eSIM right now. You have not been charged. Please try again shortly or pick another package.");
+      return;
     }
+    if (order.waitingFunds) return; // network trouble: try again next run
     console.error("[esimaccess] order unclear", order.id, e);
     await db.update(travelEsimOrders).set({ error: "Checking with the provider", updatedAt: new Date() }).where(eq(travelEsimOrders.id, order.id));
   }
-  return presentOrder((await db.select().from(travelEsimOrders).where(eq(travelEsimOrders.id, order.id)))[0]);
 }
 
 async function closeTravel(db: Db, id: string, status: "delivered" | "refunded" | "failed", extra: { lpa?: string; iccid?: string; esimTranNo?: string; error?: string } = {}) {
@@ -169,6 +184,11 @@ async function closeTravel(db: Db, id: string, status: "delivered" | "refunded" 
 export async function refreshTravelOrder(db: Db, id: string) {
   const [o] = await db.select().from(travelEsimOrders).where(eq(travelEsimOrders.id, id));
   if (!o || o.status !== "pending") return o;
+  if (o.waitingFunds && !o.providerOrderNo) {
+    if (Date.now() - o.createdAt.getTime() > WAIT_LIMIT_MS) return closeTravel(db, id, "refunded", { error: "Refunded: supplier balance wasn't topped up in time" });
+    await sendTravelOrder(db, id);
+    return (await db.select().from(travelEsimOrders).where(eq(travelEsimOrders.id, id)))[0];
+  }
   if (!o.providerOrderNo) {
     // Order call never confirmed. Give up (refund) after 30 minutes; the admin can check eSIM Access for a stray order.
     if (Date.now() - o.createdAt.getTime() > 30 * 60_000) return closeTravel(db, id, "refunded", { error: "Provider never confirmed the order. Check eSIM Access for a stray order." });
@@ -188,7 +208,7 @@ async function qr(lpa: string) {
 async function presentOrder(o: typeof travelEsimOrders.$inferSelect) {
   const delivered = o.status === "delivered" && o.lpa;
   return {
-    id: o.id, publicId: o.publicId, label: o.packageName, priceKobo: o.priceKobo, status: o.status, createdAt: o.createdAt,
+    id: o.id, publicId: o.publicId, label: o.packageName, priceKobo: o.priceKobo, status: o.status, waiting: o.status === "pending" && o.waitingFunds, createdAt: o.createdAt,
     lpa: delivered ? o.lpa : null, qr: delivered ? await qr(o.lpa!) : null, iccid: delivered ? o.iccid : null, hasUsage: Boolean(delivered && o.esimTranNo),
   };
 }

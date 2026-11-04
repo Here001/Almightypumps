@@ -12,6 +12,7 @@ import { AppError, badRequest, notFound } from "./errors";
 import { getUsdRateKobo } from "./pricing";
 import { ReloadlyGift, adminReason, reloadlyConfigured, reloadlyMode, type RlCard } from "./reloadly";
 import { open, seal } from "./secretBox";
+import { alertSupplierFunds, isOutOfFunds, WAIT_LIMIT_MS } from "./supplierFunds";
 import { linkHold, placeHold, platformWalletId, settleHold, walletIdForUser } from "./wallet";
 
 export type GiftConfig = { markupBps: number; enabled: boolean; countries: string[]; syncedAt: string | null };
@@ -142,25 +143,40 @@ export async function buyGiftCard(db: Db, userId: string, productId: number, val
     await linkHold(tx, holdId, o.id);
     return o;
   });
+  await sendGiftOrder(db, order.id);
+  return presentOne(db, order.id);
+}
+
+/** Send (or re-send) an order to Reloadly. Out of balance → it waits (money held) and the owner is emailed. */
+async function sendGiftOrder(db: Db, id: string) {
+  const [order] = await db.select().from(giftOrders).where(eq(giftOrders.id, id));
+  if (!order || order.status !== "pending" || order.providerTx) return;
+  const value = Number(order.faceValue);
   try {
-    const r = await ReloadlyGift.order({ productId, countryCode: q.product.country, unitPrice: value, customIdentifier: order.id });
+    const r = await ReloadlyGift.order({ productId: order.productId, countryCode: order.country, unitPrice: value, customIdentifier: order.id });
     console.log(`[giftcards] order ${order.publicId} tx=${r.transactionId} status=${r.status} amount=${r.amount} ${r.currencyCode}`);
     await db.update(giftOrders).set({
-      providerTx: String(r.transactionId), cost: r.amount !== undefined ? String(r.amount) : String(q.cost),
-      costCurrency: r.currencyCode ?? q.data.senderCurrency, updatedAt: new Date(),
+      providerTx: String(r.transactionId), cost: r.amount !== undefined ? String(r.amount) : order.cost,
+      costCurrency: r.currencyCode ?? order.costCurrency, waitingFunds: false, error: null, updatedAt: new Date(),
     }).where(eq(giftOrders.id, order.id));
     await refreshGiftOrder(db, order.id).catch((e) => console.error("[giftcards] first fetch", e));
   } catch (e) {
     const status = e instanceof AppError ? (e.details as { status?: number } | undefined)?.status : undefined;
+    if (isOutOfFunds((e as Error).message)) {
+      await db.update(giftOrders).set({ waitingFunds: true, error: "Waiting for Reloadly balance", updatedAt: new Date() }).where(eq(giftOrders.id, order.id));
+      await alertSupplierFunds(db, "Reloadly", { adminPath: "/admin/instant" });
+      return;
+    }
+    if (order.waitingFunds && status && status >= 500) return; // try again next run
     if (status && status >= 400 && status < 500 && status !== 408 && status !== 429) {
       await closeGift(db, order.id, "failed", { error: e instanceof Error ? e.message : String(e) });
-      throw new AppError(502, "PROVIDER_ERROR", `We couldn't buy that card right now (${(e as Error).message}). You have not been charged.`);
+      if (!order.waitingFunds) throw new AppError(502, "PROVIDER_ERROR", `We couldn't buy that card right now (${(e as Error).message}). You have not been charged.`);
+      return;
     }
     // Timeout or provider outage: it may still have gone through. The cron checks and settles it.
     console.error("[giftcards] order unclear", order.id, e);
-    await db.update(giftOrders).set({ error: "Checking with the provider", updatedAt: new Date() }).where(eq(giftOrders.id, order.id));
+    await db.update(giftOrders).set({ waitingFunds: false, error: "Checking with the provider", updatedAt: new Date() }).where(eq(giftOrders.id, order.id));
   }
-  return presentOne(db, order.id);
 }
 
 /** Capture (delivered) or release (refunded/failed). Safe to call twice. */
@@ -184,6 +200,11 @@ async function closeGift(db: Db, id: string, status: "delivered" | "refunded" | 
 export async function refreshGiftOrder(db: Db, id: string) {
   const [o] = await db.select().from(giftOrders).where(eq(giftOrders.id, id));
   if (!o || o.status !== "pending") return o;
+  if (o.waitingFunds) {
+    if (Date.now() - o.createdAt.getTime() > WAIT_LIMIT_MS) return closeGift(db, id, "refunded", { error: "Refunded: supplier balance wasn't topped up in time" });
+    await sendGiftOrder(db, id);
+    return (await db.select().from(giftOrders).where(eq(giftOrders.id, id)))[0];
+  }
   let tx = o.providerTx;
   if (!tx) {
     const found = await ReloadlyGift.findByCustomId(o.id);
@@ -211,7 +232,7 @@ function codesOf(o: typeof giftOrders.$inferSelect): RlCard[] {
 function present(o: typeof giftOrders.$inferSelect, redeem?: string | null) {
   return {
     id: o.id, publicId: o.publicId, name: o.productName, country: o.country, value: Number(o.faceValue), currency: o.faceCurrency,
-    priceKobo: o.priceKobo, status: o.status, codes: o.status === "delivered" ? codesOf(o) : [], redeem: redeem ?? null,
+    priceKobo: o.priceKobo, status: o.status, waiting: o.status === "pending" && o.waitingFunds, codes: o.status === "delivered" ? codesOf(o) : [], redeem: redeem ?? null,
     createdAt: o.createdAt,
   };
 }

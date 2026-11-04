@@ -5,7 +5,7 @@ import { platformWalletId } from "./wallet";
 
 export type AdminCounts = {
   payments: number; withdrawals: number; disputes: number; esim: number; shop: number;
-  sellers: number; listings: number; instantStuck: number;
+  sellers: number; listings: number; instantStuck: number; waitingFunds: number;
 };
 
 const one = async <T>(db: Db, q: ReturnType<typeof sql>) => ((await db.execute(q)) as unknown as { rows: T[] }).rows[0];
@@ -19,9 +19,13 @@ export async function adminCounts(db: Db): Promise<AdminCounts> {
     (select count(*) from shop_orders where status = 'pending')::int as shop,
     (select count(*) from users where seller_status = 'pending')::int as sellers,
     (select count(*) from listings where status = 'pending')::int as listings,
-    ((select count(*) from gift_orders where status = 'pending' and created_at < now() - interval '15 minutes')
-      + (select count(*) from topup_orders where status = 'pending' and created_at < now() - interval '15 minutes')
-      + (select count(*) from travel_esim_orders where status = 'pending' and created_at < now() - interval '15 minutes'))::int as "instantStuck"`);
+    ((select count(*) from gift_orders where status = 'pending' and not waiting_funds and created_at < now() - interval '15 minutes')
+      + (select count(*) from topup_orders where status = 'pending' and not waiting_funds and created_at < now() - interval '15 minutes')
+      + (select count(*) from travel_esim_orders where status = 'pending' and not waiting_funds and created_at < now() - interval '15 minutes'))::int as "instantStuck",
+    ((select count(*) from smm_orders where status = 'QUEUED')
+      + (select count(*) from gift_orders where status = 'pending' and waiting_funds)
+      + (select count(*) from topup_orders where status = 'pending' and waiting_funds)
+      + (select count(*) from travel_esim_orders where status = 'pending' and waiting_funds))::int as "waitingFunds"`);
   return r;
 }
 
@@ -41,4 +45,19 @@ export async function adminToday(db: Db) {
     salesKobo: Number(r.sales), orders: r.orders, topupsKobo: Number(r.topups), topupCount: r.topup_count, signups: r.signups,
     platformKobo: Number(r.platform), customersKobo: Number(r.customers),
   };
+}
+
+/** Which suppliers need topping up, with how many orders and how much customer money is waiting on each. */
+export async function waitingBySupplier(db: Db) {
+  const res = (await db.execute(sql`
+    select p.name as supplier, count(*)::int as orders, sum(o.cost)::bigint as kobo, '/admin/providers' as href
+      from smm_orders o join smm_services s on s.id = o.service_id join smm_providers p on p.id = s.provider_id
+      where o.status = 'QUEUED' group by p.name
+    union all
+    select 'Reloadly', count(*)::int, sum(price_kobo)::bigint, '/admin/instant' from (
+      select price_kobo from gift_orders where status = 'pending' and waiting_funds
+      union all select price_kobo from topup_orders where status = 'pending' and waiting_funds) r having count(*) > 0
+    union all
+    select 'eSIM Access', count(*)::int, sum(price_kobo)::bigint, '/admin/instant' from travel_esim_orders where status = 'pending' and waiting_funds having count(*) > 0`)) as unknown as { rows: { supplier: string; orders: number; kobo: string; href: string }[] };
+  return res.rows.map((r) => ({ ...r, kobo: Number(r.kobo) }));
 }

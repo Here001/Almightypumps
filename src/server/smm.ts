@@ -13,6 +13,7 @@ import { getMinOrderKobo, getUsdRateKobo, reprice } from "./pricing";
 import { keyHint, open, seal } from "./secretBox";
 import { smmOrders, smmProviders, smmServices } from "./db/schema";
 import { AppError, badRequest, notFound } from "./errors";
+import { isOutOfFunds, alertSupplierFunds, WAIT_LIMIT_MS } from "./supplierFunds";
 import { linkHold, placeHold, platformWalletId, settleHold, walletIdForUser } from "./wallet";
 
 type Provider = typeof smmProviders.$inferSelect;
@@ -328,14 +329,62 @@ export async function placeOrder(
     const [o] = await db.update(smmOrders).set({ providerOrderId, status: "PENDING", updatedAt: new Date() }).where(eq(smmOrders.id, order.id)).returning();
     return o;
   } catch (e) {
-    // Provider refused or was unreachable: refund the hold and mark the order failed.
     const message = (e as Error).message.slice(0, 300);
+    // Our account with the provider is out of money: accept the order, keep the money held, ask the owner to top up.
+    if (isOutOfFunds(message)) {
+      const [o] = await db.update(smmOrders).set({ status: "QUEUED", error: `Waiting for ${p.name} balance`, updatedAt: new Date() }).where(eq(smmOrders.id, order.id)).returning();
+      await alertQueued(db, p);
+      return o;
+    }
+    // Provider refused or was unreachable: refund the hold and mark the order failed.
     await db.transaction(async (tx) => {
       await settleHold(tx, order.holdId, 0, [], { refType: "smm_order", refId: order.id, idempotencyKey: `smm:${order.id}:settle` });
       await tx.update(smmOrders).set({ status: "FAILED", error: message, updatedAt: new Date() }).where(eq(smmOrders.id, order.id));
     });
     throw new AppError(502, "PROVIDER_REJECTED", "The service couldn't start this order, so your money is back in your wallet. Try again or pick another service.");
   }
+}
+
+async function alertQueued(db: Db, p: Provider) {
+  const [w] = await db.select({ n: sql<number>`count(*)::int`, kobo: sql<number>`coalesce(sum(${smmOrders.cost}), 0)::bigint` })
+    .from(smmOrders).innerJoin(smmServices, eq(smmServices.id, smmOrders.serviceId))
+    .where(and(eq(smmOrders.status, "QUEUED"), eq(smmServices.providerId, p.id)));
+  await alertSupplierFunds(db, p.name, { waiting: w.n, amountKobo: Number(w.kobo), adminPath: "/admin/providers" });
+}
+
+/** Refund a queued order (gave up waiting, or the provider refused it outright). */
+async function failQueued(db: Db, orderId: string, message: string) {
+  await db.transaction(async (tx) => {
+    const [o] = await tx.select().from(smmOrders).where(eq(smmOrders.id, orderId)).for("update");
+    if (!o || o.status !== "QUEUED") return;
+    await settleHold(tx, o.holdId, 0, [], { refType: "smm_order", refId: o.id, idempotencyKey: `smm:${o.id}:settle` });
+    await tx.update(smmOrders).set({ status: "FAILED", error: message.slice(0, 300), updatedAt: new Date() }).where(eq(smmOrders.id, o.id));
+  });
+}
+
+/** Cron: send orders that were waiting for provider balance (oldest first; stop at a provider still out of money). */
+export async function retryQueuedOrders(db: Db) {
+  const queued = await db.select({ o: smmOrders, svc: smmServices, p: smmProviders })
+    .from(smmOrders).innerJoin(smmServices, eq(smmServices.id, smmOrders.serviceId)).innerJoin(smmProviders, eq(smmProviders.id, smmServices.providerId))
+    .where(eq(smmOrders.status, "QUEUED")).orderBy(smmOrders.createdAt).limit(60);
+  const broke = new Set<string>();
+  let sent = 0, refunded = 0;
+  for (const { o, svc, p } of queued) {
+    if (Date.now() - o.createdAt.getTime() > WAIT_LIMIT_MS) { await failQueued(db, o.id, `Refunded: ${p.name} balance wasn't topped up within 72 hours`); refunded++; continue; }
+    if (broke.has(p.id) || !p.active) continue;
+    try {
+      const providerOrderId = parseAdd(await call(p, { action: "add", service: svc.providerServiceId, link: o.link, quantity: String(o.quantity) }));
+      await db.update(smmOrders).set({ providerOrderId, status: "PENDING", error: null, updatedAt: new Date() }).where(and(eq(smmOrders.id, o.id), eq(smmOrders.status, "QUEUED")));
+      sent++;
+    } catch (e) {
+      const msg = (e as Error).message;
+      if (isOutOfFunds(msg)) { broke.add(p.id); await alertQueued(db, p); continue; }
+      // Network trouble: try again next run; a real refusal: refund.
+      if (/timeout|fetch failed|ECONN|ENOTFOUND|5\d\d/i.test(msg)) continue;
+      await failQueued(db, o.id, msg); refunded++;
+    }
+  }
+  return { queued: queued.length, sent, refunded };
 }
 
 /** Cron: ask providers for the status of open orders and settle finished ones. */

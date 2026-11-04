@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 
 const naira = (kobo: number) => (kobo / 100).toFixed(2);
 const statusLabel: Record<string, string> = {
-  PENDING: "Pending", PROCESSING: "In progress", COMPLETED: "Completed", PARTIAL: "Partial", CANCELLED: "Canceled", FAILED: "Canceled",
+  QUEUED: "Pending", PENDING: "Pending", PROCESSING: "In progress", COMPLETED: "Completed", PARTIAL: "Partial", CANCELLED: "Canceled", FAILED: "Canceled",
 };
 
 async function readParams(req: Request): Promise<Record<string, string>> {

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getDb } from "@/server/db";
 import { adminOrRedirect } from "@/server/adminPage";
-import { adminCounts, adminToday, type AdminCounts } from "@/server/adminHome";
+import { adminCounts, adminToday, waitingBySupplier, type AdminCounts } from "@/server/adminHome";
 import { ADMIN_GROUPS } from "@/components/adminMenu";
 
 export const dynamic = "force-dynamic";
@@ -48,7 +48,7 @@ function greeting() {
 export default async function AdminHome() {
   const me = await adminOrRedirect();
   const db = getDb();
-  const [counts, today] = await Promise.all([adminCounts(db), adminToday(db)]);
+  const [counts, today, suppliers] = await Promise.all([adminCounts(db), adminToday(db), waitingBySupplier(db)]);
   const todo = TODO.filter((t) => counts[t.key] > 0);
   const date = new Date().toLocaleDateString("en-NG", { weekday: "long", day: "numeric", month: "long", timeZone: "Africa/Lagos" });
 
@@ -61,7 +61,20 @@ export default async function AdminHome() {
 
       <section className="card glass">
         <h2>Needs your attention</h2>
-        {todo.length === 0 ? (
+        {suppliers.length > 0 && (
+          <ul className="adm-todo" style={{ marginBottom: 8 }}>
+            {suppliers.map((w) => (
+              <li key={w.supplier}>
+                <Link href={w.href} className="adm-todo-urgent">
+                  <span className="adm-todo-n">{w.orders}</span>
+                  <span className="adm-todo-text"><strong>Top up {w.supplier}: {w.orders} order{w.orders === 1 ? " is" : "s are"} waiting</strong><span className="muted">{nairaWhole(w.kobo)} of customer orders on hold. They&apos;re sent automatically within 5 minutes of your top-up.</span></span>
+                  <span aria-hidden="true" className="adm-chev">›</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+        {todo.length === 0 && suppliers.length === 0 ? (
           <div className="adm-clear"><span aria-hidden="true">✓</span> All clear. Nothing is waiting for you.</div>
         ) : (
           <ul className="adm-todo">

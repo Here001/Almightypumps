@@ -13,7 +13,7 @@ type Net = {
   airtime: { operatorId: number; min: number; max: number; per1000Kobo: number } | { operatorId: number; plans: Plan[] } | null;
   data: Plan[];
 };
-type Topup = { id: string; publicId: number; kind: "airtime" | "data"; network: string; phone: string; description: string; priceKobo: number; status: Status; createdAt: string };
+type Topup = { id: string; publicId: number; kind: "airtime" | "data"; network: string; phone: string; description: string; priceKobo: number; status: Status; waiting?: boolean; createdAt: string };
 
 const QUICK = [100, 200, 500, 1000, 2000, 5000];
 const STATUS: Record<Status, string> = { pending: "Sending…", delivered: "Sent", refunded: "Refunded", failed: "Not charged" };
@@ -89,7 +89,7 @@ export function Airtime({ balance, onAddMoney }: { balance: number; onAddMoney: 
       router.refresh();
       setMsg(t.status === "delivered"
         ? { ok: true, text: `Done! ${t.description} sent to ${t.phone}.` }
-        : t.status === "pending" ? { ok: true, text: `Sending ${t.description} to ${t.phone}… You'll see it confirmed below.` }
+        : t.status === "pending" ? { ok: true, text: t.waiting ? `Your ${t.description} for ${t.phone} is in the queue and will be sent shortly. You're only charged once it's delivered.` : `Sending ${t.description} to ${t.phone}… You'll see it confirmed below.` }
         : { ok: false, text: "The top-up didn't go through. You were not charged." });
       setPlan(null);
     } catch (e) {
@@ -161,7 +161,7 @@ export function Airtime({ balance, onAddMoney }: { balance: number; onAddMoney: 
               <li key={h.id}>
                 <div><strong>{h.description}</strong> <span className="muted" style={{ fontSize: 13 }}>to {h.phone} · {new Date(h.createdAt).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" })}</span></div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                  <span className={`ap-tag${statusTone(h.status)}`}>{STATUS[h.status]}</span>
+                  <span className={`ap-tag${statusTone(h.status)}`}>{h.waiting ? "In queue" : STATUS[h.status]}</span>
                   <span className="muted" style={{ fontSize: 13 }}>{h.status === "delivered" || h.status === "pending" ? money(h.priceKobo) : "Not charged"}</span>
                 </div>
               </li>
