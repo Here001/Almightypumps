@@ -173,8 +173,11 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   framework Next.js, Node 22, region fra1. Preview env vars set (DATABASE_URL to Neon `dev`,
   DATABASE_SSL, SESSION_SECRET, CRON_SECRET); FLUTTERWAVE_WEBHOOK_HASH; owner adds
   FLUTTERWAVE_SECRET_KEY (test key) and SMM_PROVIDER_1_KEY. Production env vars are added only when going live.
-- Domain: owner owns `almightypumps.com` (old WooCommerce site there is retired); likely
-  launch domain. Flutterwave Test webhook points at the dev preview (with the Vercel
+- Domain: `almightypumps.com` had lapsed; RE-REGISTERED through Vercel 2026-11-04 (team otedola, $12.03/yr,
+  auto-renew on, expires 2027-11-04, registrant Olorunfemi Otedola / Almighty Pumps). DNS is on Vercel
+  (ns1/ns2.vercel-dns.com), so records are managed in Vercel. NOT yet attached to the project (that's a
+  go-live step). Email: owner chose Zoho Mail (hello@, support@); add Zoho's verification TXT, MX, SPF and
+  DKIM records in Vercel DNS. Owner wants P2P ON at launch (told about the licensed-escrow-partner risk). Flutterwave Test webhook points at the dev preview (with the Vercel
   automation-bypass query param); Live webhook untouched until launch.
 - Cron: Hobby only allows daily crons, so `vercel.json` has no `crons` (deploys are refused
   otherwise). The jobs are `GET /api/cron/sync-orders` (every 5 min) and
