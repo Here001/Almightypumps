@@ -236,6 +236,9 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   Override the feed URL with env `FX_RATE_URL` (tests). Display only: wallet, top-ups and charges stay in Naira. Customer ₦/$ switch
   (`src/components/dashboard/Currency.tsx`, remembered in localStorage); formatting in
   `src/core/currency.ts`. Charged amounts always show Naira (`charge()`), with ≈$ alongside.
+- 2026-11-04 owner's request: on LIVE (Neon main) hid every on-sale Boost service priced ₦0–₦480 or ₦2,000–₦2,970 per 1k
+  (1,842 services, hidden_reason 'admin', 12,808 left on sale). IDs saved in app_settings `boost_hidden_by_price_2026_11_04`
+  for a one-step undo. One-off: new services or later price changes in those ranges are NOT auto-hidden.
 - Service visibility: `smm_services.hidden_reason` null = on sale, `admin` (hidden in
   /admin/services, survives syncs), `policy` (isRestricted; can't be unhidden), `provider`
   (dropped upstream or 0-priced; returns on next sync if listed). `active` mirrors it.
