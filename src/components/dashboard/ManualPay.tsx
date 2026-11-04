@@ -92,6 +92,7 @@ export function ManualPay() {
                     </div>
                   )}
                   <div className="form-error" role="note" style={{ fontSize: 13 }}>Send only {m.coin} on the <b>{m.network}</b> network. Anything else sent to this address is lost. Network fees are on you: we credit what arrives.</div>
+                  {!m.stable && <p style={{ fontSize: 13 }}>Tip: in your wallet app, switch the amount to dollars (USD) and enter <b>${usd.toFixed(2)}</b>. We credit you based on the dollar value that arrives.</p>}
                   <p className="muted" style={{ fontSize: 12 }}>Rate: ₦{(data.cryptoRateKobo / 100).toLocaleString("en-NG")} per $1.</p>
                 </>
               )}

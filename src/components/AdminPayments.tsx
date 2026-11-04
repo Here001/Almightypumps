@@ -17,10 +17,15 @@ type Data = { config: Config; siteRateKobo: number; adminEmails: string[]; email
 type Msg = { ok: boolean; text: string } | null;
 
 const when = (d: string) => new Date(d).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" });
-const blank = (kind: "bank" | "crypto"): Method => ({
-  id: `${kind}-${Math.random().toString(36).slice(2, 8)}`, kind, label: kind === "bank" ? "Bank transfer" : "USDT (TRC20)", enabled: true,
-  bankName: "", accountNumber: "", accountName: "", coin: kind === "crypto" ? "USDT" : "", network: kind === "crypto" ? "TRC20 (Tron)" : "", address: "", note: "",
-});
+type Preset = "bank" | "usdt" | "btc";
+const blank = (preset: Preset): Method => {
+  const kind = preset === "bank" ? "bank" : "crypto";
+  const crypto = preset === "btc" ? { label: "Bitcoin (BTC)", coin: "BTC", network: "Bitcoin" } : preset === "usdt" ? { label: "USDT (TRC20)", coin: "USDT", network: "TRC20 (Tron)" } : { label: "Bank transfer", coin: "", network: "" };
+  return {
+    id: `${preset}-${Math.random().toString(36).slice(2, 8)}`, kind, enabled: true,
+    bankName: "", accountNumber: "", accountName: "", address: "", note: "", ...crypto,
+  };
+};
 
 export function AdminPayments() {
   const [data, setData] = useState<Data | null>(null);
@@ -102,7 +107,7 @@ export function AdminPayments() {
         {cfg.methods.map((m, i) => (
           <div key={m.id} className="ap-subform" style={{ gap: 8 }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
-              <strong>{m.kind === "bank" ? "🏦 Bank account" : "🪙 Crypto wallet"}</strong>
+              <strong>{m.kind === "bank" ? "🏦 Bank account" : m.coin === "BTC" ? "₿ Bitcoin wallet" : "🪙 Crypto wallet"}</strong>
               <span style={{ display: "flex", gap: 8 }}>
                 <label className="ap-toggle"><input type="checkbox" checked={m.enabled} onChange={(e) => setM(i, { enabled: e.target.checked })} /><span>On</span></label>
                 <button type="button" className="btn btn-ghost ap-mini" onClick={() => setCfg({ ...cfg, methods: cfg.methods.filter((_, k) => k !== i) })}>Remove</button>
@@ -119,7 +124,7 @@ export function AdminPayments() {
               <>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   <div className="field" style={{ flex: "1 1 100px" }}><label htmlFor={`coin-${m.id}`}>Coin</label><input id={`coin-${m.id}`} className="input" value={m.coin} onChange={(e) => setM(i, { coin: e.target.value.toUpperCase() })} placeholder="USDT" /></div>
-                  <div className="field" style={{ flex: "2 1 180px" }}><label htmlFor={`net-${m.id}`}>Network</label><input id={`net-${m.id}`} className="input" value={m.network} onChange={(e) => setM(i, { network: e.target.value })} placeholder="TRC20 (Tron)" /></div>
+                  <div className="field" style={{ flex: "2 1 180px" }}><label htmlFor={`net-${m.id}`}>Network</label><input id={`net-${m.id}`} className="input" value={m.network} onChange={(e) => setM(i, { network: e.target.value })} placeholder="TRC20 (Tron), Bitcoin, BEP20…" /></div>
                 </div>
                 <div className="field"><label htmlFor={`addr-${m.id}`}>Wallet address</label><input id={`addr-${m.id}`} className="input" value={m.address} onChange={(e) => setM(i, { address: e.target.value.trim() })} spellCheck={false} /></div>
               </>
@@ -129,7 +134,8 @@ export function AdminPayments() {
         ))}
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button type="button" className="btn btn-ghost ap-mini" onClick={() => setCfg({ ...cfg, methods: [...cfg.methods, blank("bank")] })}>+ Bank account</button>
-          <button type="button" className="btn btn-ghost ap-mini" onClick={() => setCfg({ ...cfg, methods: [...cfg.methods, blank("crypto")] })}>+ Crypto wallet</button>
+          <button type="button" className="btn btn-ghost ap-mini" onClick={() => setCfg({ ...cfg, methods: [...cfg.methods, blank("usdt")] })}>+ USDT wallet</button>
+          <button type="button" className="btn btn-ghost ap-mini" onClick={() => setCfg({ ...cfg, methods: [...cfg.methods, blank("btc")] })}>+ Bitcoin wallet</button>
         </div>
         <div className="field">
           <label htmlFor="ap-rate">Crypto rate: ₦ per $1 (leave empty to use the site dollar rate, now ₦{(data.siteRateKobo / 100).toLocaleString("en-NG")})</label>
