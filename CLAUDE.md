@@ -160,7 +160,12 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 - GitHub: `Here001/Almightypumps` (private). `main` (placeholder README only) and
   `dev` (full app) are both pushed.
 - Neon: project **almighty-pumps** (`jolly-dust-18900048`, AWS eu-central-1).
-  - `main` branch: production, still empty. Run the migration on it only after approval.
+  - `main` branch (`br-bitter-feather-ba9z9jv8`): PRODUCTION. Set up 2026-11-04 with owner's yes: 0000–0016
+    applied (schema identical to dev), platform wallet created. Config copied from dev: Owlet provider (markup 60%),
+    min order ₦1,000, sms_verify markup 200% + fixed prices (WhatsApp ₦4,500, Facebook ₦4,000, Telegram ₦3,500),
+    usd auto, Instagram Likes/Live viewers 100% rules. NOT copied: dev's P2P category renamed "Accounts"
+    (account sales are blocked); live keeps "Digital products". Re-star 3 TikTok follower services
+    (Owlet ids 8277, 24221, 8619) after the first live sync. No users yet (owner signs up, then promote to admin).
   - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0016 applied. Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
@@ -172,7 +177,11 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   `almightypumps` (`prj_Dn7OhM629JfEts2fr3LVipba0jvc`), linked to the GitHub repo,
   framework Next.js, Node 22, region fra1. Preview env vars set (DATABASE_URL to Neon `dev`,
   DATABASE_SSL, SESSION_SECRET, CRON_SECRET); FLUTTERWAVE_WEBHOOK_HASH; owner adds
-  FLUTTERWAVE_SECRET_KEY (test key) and SMM_PROVIDER_1_KEY. Production env vars are added only when going live.
+  FLUTTERWAVE_SECRET_KEY (test key) and SMM_PROVIDER_1_KEY. Production env vars set 2026-11-04: DATABASE_URL (Neon main pooled),
+  DATABASE_SSL, SESSION_SECRET + CRON_SECRET (fresh, different from preview; CRON_SECRET is "encrypted" so the
+  owner can copy it for cron-job.org), APP_URL=https://almightypumps.com; owner added FLUTTERWAVE_SECRET_KEY (live),
+  FLUTTERWAVE_WEBHOOK_HASH (owner's own value, must match Flutterwave LIVE webhook) and SMM_PROVIDER_1_KEY;
+  TEXTVERIFIED_* already there.
 - Domain: `almightypumps.com` had lapsed; RE-REGISTERED through Vercel 2026-11-04 (team otedola, $12.03/yr,
   auto-renew on, expires 2027-11-04, registrant Olorunfemi Otedola / Almighty Pumps). DNS is on Vercel
   (ns1/ns2.vercel-dns.com), so records are managed in Vercel. NOT yet attached to the project (that's a
