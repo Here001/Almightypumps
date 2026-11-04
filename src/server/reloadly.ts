@@ -28,6 +28,13 @@ function baseUrl(product: Product, mode: Mode) {
 const authUrl = () => (env().RELOADLY_MOCK_URL ? `${env().RELOADLY_MOCK_URL.replace(/\/+$/, "")}/oauth/token` : "https://auth.reloadly.com/oauth/token");
 
 let workingMode: Mode | null = null;
+const ADMIN_KEY_MSG = "Reloadly rejected our keys. Re-copy RELOADLY_CLIENT_ID / RELOADLY_CLIENT_SECRET (Live mode) into Vercel, then redeploy.";
+
+/** Error text for the admin page: the real reason when our keys were refused. */
+export function adminReason(e: unknown): string {
+  const d = (e as { details?: { admin?: string } } | null)?.details;
+  return d?.admin ?? (e instanceof Error ? e.message : String(e));
+}
 const tokens = new Map<string, { token: string; expiresAt: number }>();
 
 function preferredModes(): Mode[] {
@@ -89,7 +96,7 @@ async function auth(product: Product): Promise<{ token: string; mode: Mode }> {
     }
   }
   throw last instanceof AppError
-    ? new AppError(502, "PROVIDER_ERROR", "Reloadly rejected our keys. Check RELOADLY_CLIENT_ID / RELOADLY_CLIENT_SECRET in Vercel.", { status: 401 })
+    ? new AppError(503, "PROVIDER_ERROR", "Gift cards and airtime are temporarily unavailable. Please try again later.", { status: 401, admin: ADMIN_KEY_MSG })
     : last;
 }
 

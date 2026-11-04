@@ -9,7 +9,7 @@ import type { Db } from "./db";
 import { topupOrders, users } from "./db/schema";
 import { AppError, badRequest, notFound } from "./errors";
 import { getUsdRateKobo } from "./pricing";
-import { ReloadlyTopup, reloadlyConfigured, reloadlyMode, type RlOperator, type RlTopup } from "./reloadly";
+import { ReloadlyTopup, adminReason, reloadlyConfigured, reloadlyMode, type RlOperator, type RlTopup } from "./reloadly";
 import { linkHold, placeHold, platformWalletId, settleHold, walletIdForUser } from "./wallet";
 
 export type AirtimeConfig = { airtimeMarkupBps: number; dataMarkupBps: number; enabled: boolean };
@@ -256,7 +256,7 @@ export async function sweepTopups(db: Db) {
 export async function airtimeAdminOverview(db: Db) {
   const cfg = await getAirtimeConfig(db);
   const configured = reloadlyConfigured();
-  const balance = configured ? await ReloadlyTopup.balance().then((b) => ({ amount: b.balance, currency: b.currencyCode, error: null }), (e: Error) => ({ amount: null, currency: null, error: e.message })) : null;
+  const balance = configured ? await ReloadlyTopup.balance().then((b) => ({ amount: b.balance, currency: b.currencyCode, error: null }), (e: Error) => ({ amount: null, currency: null, error: adminReason(e) })) : null;
   const ops = configured ? await operators(db).catch(() => [] as Operator[]) : [];
   const [stats] = await db.select({
     delivered: sql<number>`count(*) filter (where status = 'delivered')::int`,

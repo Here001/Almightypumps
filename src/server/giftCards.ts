@@ -10,7 +10,7 @@ import type { Db } from "./db";
 import { giftOrders, giftProducts, users } from "./db/schema";
 import { AppError, badRequest, notFound } from "./errors";
 import { getUsdRateKobo } from "./pricing";
-import { ReloadlyGift, reloadlyConfigured, reloadlyMode, type RlCard } from "./reloadly";
+import { ReloadlyGift, adminReason, reloadlyConfigured, reloadlyMode, type RlCard } from "./reloadly";
 import { open, seal } from "./secretBox";
 import { linkHold, placeHold, platformWalletId, settleHold, walletIdForUser } from "./wallet";
 
@@ -252,7 +252,7 @@ export async function sweepGiftOrders(db: Db) {
 export async function giftAdminOverview(db: Db, q?: string) {
   const cfg = await getGiftConfig(db);
   const configured = reloadlyConfigured();
-  const balance = configured ? await ReloadlyGift.balance().then((b) => ({ amount: b.balance, currency: b.currencyCode, error: null }), (e: Error) => ({ amount: null, currency: null, error: e.message })) : null;
+  const balance = configured ? await ReloadlyGift.balance().then((b) => ({ amount: b.balance, currency: b.currencyCode, error: null }), (e: Error) => ({ amount: null, currency: null, error: adminReason(e) })) : null;
   const [stats] = await db.select({
     delivered: sql<number>`count(*) filter (where status = 'delivered')::int`,
     refunded: sql<number>`count(*) filter (where status in ('refunded','failed'))::int`,
