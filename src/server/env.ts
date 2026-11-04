@@ -21,6 +21,7 @@ const schema = z.object({
   FLUTTERWAVE_SECRET_KEY: z.string().optional().default(""),
   // The "secret hash" set in Flutterwave > Settings > Webhooks.
   FLUTTERWAVE_WEBHOOK_HASH: z.string().optional().default(""),
+  FLUTTERWAVE_BASE_URL: z.string().url().optional().default("https://api.flutterwave.com/v3"), // local tests only
   // TextVerified ("Get Verification Code"): API V2 key + the account's login email.
   TEXTVERIFIED_API_KEY: z.string().optional().default(""),
   TEXTVERIFIED_API_USERNAME: z.string().optional().default(""),

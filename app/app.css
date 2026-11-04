@@ -268,6 +268,12 @@ button.ad-photo-cover { background: rgb(0 0 0 / 0.7); color: #fff; cursor: point
   html, body { background: #fff !important; }
 }
 
+/* Automatic bank transfer */
+.bt-box { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 14px; border: 1px solid var(--line); background: rgb(var(--ov) / 0.04); }
+.bt-amount { font-size: 15px; }
+.bt-num { font-size: 18px; letter-spacing: 0.04em; white-space: nowrap; }
+.bt-form { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+
 /* P2P trade room */
 .tr-summary { display: flex; gap: 10px; flex-wrap: wrap; }
 .tr-summary > div { flex: 1 1 90px; display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 12px; background: rgb(var(--ov) / 0.05); font-size: 13px; }

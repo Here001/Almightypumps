@@ -628,3 +628,20 @@ export const listingImages = pgTable("listing_images", {
   data: bytea("data").notNull(),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
+
+/** Flutterwave virtual account numbers for automatic bank-transfer top-ups (migration 0027). */
+export const virtualAccounts = pgTable("virtual_accounts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  kind: text("kind").$type<"onetime" | "permanent">().notNull(),
+  txRef: text("tx_ref").notNull().unique(),
+  accountNumber: text("account_number").notNull(),
+  bankName: text("bank_name").notNull(),
+  accountName: text("account_name"),
+  amountKobo: money("amount_kobo"),
+  expiresAt: ts("expires_at"),
+  flwRef: text("flw_ref"),
+  orderRef: text("order_ref"),
+  status: text("status").$type<"active" | "paid" | "expired">().notNull().default("active"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});

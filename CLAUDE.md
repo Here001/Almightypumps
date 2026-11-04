@@ -285,6 +285,15 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 - Business Documents (#docs, `Documents.tsx`, free, no server): invoice / receipt / CV forms with live preview, saved in
   localStorage `ap_docs_v1`, "Download PDF / Print" = window.print with @media print showing only `.doc-sheet`. CSS class is
   `.bdoc` (NOT `.doc`: landing.css uses `.doc` for a tilted card).
+- AUTOMATIC BANK TRANSFER (2026-11-04, owner chose "both", migration 0027 `virtual_accounts`, `src/server/bankTransfer.ts`,
+  `BankTransfer.tsx` in the Wallet tab, `AdminBankTransfer.tsx` on /admin/payments, /api/wallet/bank-transfer {onetime|permanent|check},
+  /api/admin/bank-transfer): Flutterwave POST /virtual-account-numbers. One-time = exact amount, no BVN, expires (~1h);
+  permanent = BVN once (sent to Flutterwave, NEVER stored), one per customer. Webhook tx_ref AP-VA-/AP-VAP- →
+  `handleTransferWebhook` re-verifies GET /transactions/{id}/verify, credits verified amount once (payments row
+  `AP-VATX-<flwId>`, provider `flutterwave_transfer`, idempotency `flwtx:<id>`). "I've sent it" + sync-orders cron (recent one-time
+  accounts) look up GET /transactions?tx_ref=. app_settings `bank_transfer` {enabled default OFF, permanent}. FLUTTERWAVE_BASE_URL
+  env for local mocks. Flutterwave's transfer fee is the owner's (customer gets the full amount). Field names follow Flutterwave v3
+  docs from memory: check `[webhook] flutterwave` logs on the first real transfer.
 - Insights: `src/components/Tracker.tsx` beacons each page and dashboard #section to
   `/api/track` → `site_events` (anonymous cookie id, no IP/UA stored). Section names come
   from `src/core/analytics.ts` (add new pages there). Queries in `src/server/insights.ts`.
@@ -327,7 +336,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
     usd auto, Instagram Likes/Live viewers 100% rules. NOT copied: dev's P2P category renamed "Accounts"
     (account sales are blocked); live keeps "Digital products". Re-star 3 TikTok follower services
     (Owlet ids 8277, 24221, 8619) after the first live sync. No users yet (owner signs up, then promote to admin).
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0026 applied (main too, 0025–0026 applied 2026-11-04 with owner's yes). Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0027 applied (main has 0000–0026; 0027 needs the owner's yes). Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

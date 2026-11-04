@@ -8,6 +8,7 @@ import { sweepGiftOrders } from "@/server/giftCards";
 import { sweepTopups } from "@/server/airtime";
 import { sweepTravelOrders } from "@/server/travelEsim";
 import { payReferrals } from "@/server/referrals";
+import { sweepTransfers } from "@/server/bankTransfer";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -31,5 +32,7 @@ export const GET = route(async (req: Request) => {
   ]);
   // Invite bonuses for friends who have now spent enough.
   const referrals = await payReferrals(db).catch((e) => { console.error("[cron] referrals", e); return null; });
-  return { ...orders, referralsPaid: referrals?.paid ?? 0, queuedSent: queued?.sent ?? 0, queuedWaiting: queued ? queued.queued - queued.sent - queued.refunded : 0, giftChecked: gift?.checked ?? 0, topupChecked: topup?.checked ?? 0, travelChecked: travel?.checked ?? 0, usdRateRefreshed: fx?.refreshed ?? false, verifyChecked: verify?.checked ?? 0 };
+  // Bank-transfer top-ups whose webhook didn't arrive.
+  const transfers = await sweepTransfers(db).catch((e) => { console.error("[cron] transfers", e); return null; });
+  return { ...orders, transfersChecked: transfers?.checked ?? 0, referralsPaid: referrals?.paid ?? 0, queuedSent: queued?.sent ?? 0, queuedWaiting: queued ? queued.queued - queued.sent - queued.refunded : 0, giftChecked: gift?.checked ?? 0, topupChecked: topup?.checked ?? 0, travelChecked: travel?.checked ?? 0, usdRateRefreshed: fx?.refreshed ?? false, verifyChecked: verify?.checked ?? 0 };
 });

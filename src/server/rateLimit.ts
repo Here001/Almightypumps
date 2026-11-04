@@ -30,6 +30,8 @@ export const LIMITS = {
   avatar: { max: 10, windowSec: 60 * 60 },
   listingWrite: { max: 30, windowSec: 60 * 60 },
   listingPhoto: { max: 60, windowSec: 60 * 60 },
+  bankAccount: { max: 10, windowSec: 60 * 60 },
+  bankCheck: { max: 30, windowSec: 60 * 60 },
   apiKey: { max: 10, windowSec: 60 * 60 },
   resellerApi: { max: 120, windowSec: 60 },
   track: { max: 120, windowSec: 60 },

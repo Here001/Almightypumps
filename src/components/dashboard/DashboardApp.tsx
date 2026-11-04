@@ -16,6 +16,7 @@ import { Invite } from "./Invite";
 import { Documents } from "./Documents";
 import { Withdraw } from "./Withdraw";
 import { ManualPay } from "./ManualPay";
+import { BankTransfer } from "./BankTransfer";
 import { ShopCategory } from "./Shop";
 import { Settings } from "./Settings";
 import { SellerPanel } from "./SellerPanel";
@@ -335,6 +336,7 @@ function Dashboard(props: Props) {
                 <p className="muted" style={{ fontSize: 14 }}>{show(props.wallet.held)} held for orders, escrow and withdrawals</p>
                 <FundWallet />
               </section>
+              <BankTransfer />
               <ManualPay />
               <Withdraw available={props.wallet.available} hidden={hideBal} />
               <section className="card glass">

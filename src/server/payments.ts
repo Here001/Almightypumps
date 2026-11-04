@@ -12,13 +12,13 @@ import { payments, sellerProfiles, users, wallets, withdrawals } from "./db/sche
 import { env } from "./env";
 import { AppError, badRequest, notFound } from "./errors";
 import { creditWallet, placeHold, settleHold, walletIdForUser } from "./wallet";
+import { handleTransferWebhook } from "./bankTransfer";
 
-const FLUTTERWAVE = "https://api.flutterwave.com/v3";
-
-async function flutterwave<T>(path: string, init?: RequestInit): Promise<T> {
+/** Call Flutterwave's v3 API (also used by bankTransfer.ts). */
+export async function flutterwave<T>(path: string, init?: RequestInit): Promise<T> {
   const secret = env().FLUTTERWAVE_SECRET_KEY;
   if (!secret) throw new AppError(500, "PAYMENTS_NOT_CONFIGURED", "Payments aren't set up yet. Add FLUTTERWAVE_SECRET_KEY.");
-  const res = await fetch(`${FLUTTERWAVE}${path}`, {
+  const res = await fetch(`${env().FLUTTERWAVE_BASE_URL.replace(/\/+$/, "")}${path}`, {
     ...init,
     headers: { Authorization: `Bearer ${secret}`, "Content-Type": "application/json", ...(init?.headers ?? {}) },
     signal: AbortSignal.timeout(20_000),
@@ -99,8 +99,14 @@ export async function handleFlutterwaveWebhook(
     console.warn("[webhook] flutterwave: rejected (signature/secret hash mismatch)");
     throw new AppError(401, "BAD_SIGNATURE", "Invalid signature");
   }
-  const event = JSON.parse(rawBody) as { event?: string; data?: { tx_ref?: string; txRef?: string } };
+  const event = JSON.parse(rawBody) as { event?: string; data?: { id?: number; tx_ref?: string; txRef?: string } };
   const ref = event.data?.tx_ref ?? event.data?.txRef;
+  // Transfers into a customer's bank-transfer account number (one-time or permanent).
+  if (ref?.startsWith("AP-VA-") || ref?.startsWith("AP-VAP-")) {
+    const result = await handleTransferWebhook(db, event.data ?? {});
+    console.info(`[webhook] flutterwave ${event.event ?? "?"} ${ref}: ${"credited" in result && result.credited ? "credited (bank transfer)" : `no change (${JSON.stringify(result)})`}`);
+    return result;
+  }
   if (ref?.startsWith("AP-FUND-")) {
     const [known] = await db.select({ id: payments.id }).from(payments).where(eq(payments.reference, ref));
     if (!known) {
