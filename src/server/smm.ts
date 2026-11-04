@@ -170,6 +170,16 @@ const serviceColumns = {
   rateKobo: smmServices.rateKobo, min: smmServices.minQty, max: smmServices.maxQty, refill: smmServices.refill, cancel: smmServices.cancel,
 };
 const onSale = () => and(eq(smmServices.active, true), eq(smmProviders.active, true));
+/**
+ * Hide a service when a DIFFERENT connected provider sells the same product (same match_key) cheaper
+ * (ties: lower id wins). Duplicates inside one provider are separate services and all stay listed.
+ */
+const notBeatenByOtherProvider = () => sql`not exists (
+  select 1 from smm_services o join smm_providers op on op.id = o.provider_id
+  where o.match_key = "smm_services"."match_key" and o.provider_id <> "smm_services"."provider_id"
+    and o.active and op.active
+    and (o.rate_kobo < "smm_services"."rate_kobo" or (o.rate_kobo = "smm_services"."rate_kobo" and o.public_id < "smm_services"."public_id")))`;
+
 
 /** Every service on sale (used by the reseller API, which expects the full list). */
 export async function listServices(db: Db) {
@@ -186,10 +196,10 @@ export type CatalogPlatform = { platform: string; count: number; kinds: { kind: 
 /** Platforms (popular ones first) with their service kinds and counts. Small: sent with the dashboard. */
 export async function serviceCatalog(db: Db): Promise<CatalogPlatform[]> {
   const rows = await db
-    .select({ platform: smmServices.platform, kind: smmServices.kind, count: sql<number>`count(distinct ${smmServices.matchKey})::int` })
+    .select({ platform: smmServices.platform, kind: smmServices.kind, count: sql<number>`count(*)::int` })
     .from(smmServices)
     .innerJoin(smmProviders, eq(smmProviders.id, smmServices.providerId))
-    .where(onSale())
+    .where(and(onSale(), notBeatenByOtherProvider()))
     .groupBy(smmServices.platform, smmServices.kind);
   const map = new Map<string, CatalogPlatform>();
   for (const r of rows) {
@@ -224,36 +234,24 @@ export async function browseServices(db: Db, input: BrowseInput) {
     filters.push(sql`(${smmServices.name} ILIKE ${like} OR ${smmServices.platform} ILIKE ${like} OR ${smmServices.kind} ILIKE ${like})`);
   }
   if (!input.platform && words.length === 0) return { services: [], hasMore: false };
-  // One row per product: when several connected providers sell the same service (same match_key),
-  // show the cheapest copy. A product counts as recommended if any copy is starred/recommended.
-  const ranked = db
+  // When several connected providers sell the same product (same match_key), list only the cheapest copy;
+  // it counts as recommended if any provider's copy is starred/recommended.
+  const recommendedAny = sql<boolean>`(${smmServices.featured} OR ${smmServices.providerRecommended} OR exists (
+    select 1 from smm_services o join smm_providers op on op.id = o.provider_id
+    where o.match_key = "smm_services"."match_key" and o.provider_id <> "smm_services"."provider_id"
+      and o.active and op.active and (o.featured or o.provider_recommended)))`;
+  const rows = await db
     .select({
-      id: sql<number>`${smmServices.publicId}`.as("id"),
-      name: sql<string>`coalesce(nullif(${smmServices.displayName}, ''), ${smmServices.name})`.as("name"),
-      platform: sql<string>`${smmServices.platform}`.as("platform"),
-      kind: sql<string>`${smmServices.kind}`.as("kind"),
-      rateKobo: sql<number>`${smmServices.rateKobo}`.as("rate_kobo"),
-      min: sql<number>`${smmServices.minQty}`.as("min"),
-      max: sql<number>`${smmServices.maxQty}`.as("max"),
-      refill: sql<boolean>`${smmServices.refill}`.as("refill"),
-      cancel: sql<boolean>`${smmServices.cancel}`.as("cancel"),
-      recommended: sql<boolean>`bool_or(${smmServices.featured} OR ${smmServices.providerRecommended}) over (partition by ${smmServices.matchKey})`.as("recommended"),
-      sources: sql<number>`(count(*) over (partition by ${smmServices.matchKey}))::int`.as("sources"),
-      rn: sql<number>`row_number() over (partition by ${smmServices.matchKey} order by ${smmServices.rateKobo}, ${smmServices.publicId})`.as("rn"),
+      id: smmServices.publicId, name: sql<string>`coalesce(nullif(${smmServices.displayName}, ''), ${smmServices.name})`,
+      platform: smmServices.platform, kind: smmServices.kind, rateKobo: smmServices.rateKobo,
+      min: smmServices.minQty, max: smmServices.maxQty, refill: smmServices.refill, cancel: smmServices.cancel,
+      recommended: recommendedAny,
     })
     .from(smmServices)
     .innerJoin(smmProviders, eq(smmProviders.id, smmServices.providerId))
-    .where(and(...filters))
-    .as("ranked");
-  const rows = await db
-    .select({
-      id: ranked.id, name: ranked.name, platform: ranked.platform, kind: ranked.kind, rateKobo: ranked.rateKobo,
-      min: ranked.min, max: ranked.max, refill: ranked.refill, cancel: ranked.cancel, recommended: ranked.recommended,
-    })
-    .from(ranked)
-    .where(sql`${ranked.rn} = 1`)
+    .where(and(...filters, notBeatenByOtherProvider()))
     // Recommended (by the provider or starred by an admin) first, then cheapest.
-    .orderBy(sql`${ranked.recommended} DESC`, ranked.rateKobo, ranked.id)
+    .orderBy(sql`${recommendedAny} DESC`, smmServices.rateKobo, smmServices.publicId)
     .limit(limit + 1)
     .offset(offset);
   return { services: rows.slice(0, limit), hasMore: rows.length > limit };
@@ -286,13 +284,17 @@ export async function placeOrder(
     .select({ svc: smmServices, p: smmProviders })
     .from(smmServices)
     .innerJoin(smmProviders, eq(smmProviders.id, smmServices.providerId))
-    .where(and(onSale(), eq(smmServices.matchKey, chosen.matchKey ?? ""), sql`${smmServices.rateKobo} <= ${chosen.rateKobo}`))
-    .orderBy(smmServices.rateKobo, sql`(${smmServices.id} = ${chosen.id}) DESC`)
+    .where(and(
+      onSale(),
+      sql`(${smmServices.id} = ${chosen.id} or (${smmServices.matchKey} = ${chosen.matchKey ?? ""} and ${smmServices.providerId} <> ${chosen.providerId} and ${smmServices.rateKobo} <= ${chosen.rateKobo}))`,
+    ))
+    // The customer's own pick first; another provider's copy only if that one is no longer on sale.
+    .orderBy(sql`(${smmServices.id} = ${chosen.id}) DESC`, smmServices.rateKobo)
     .limit(1);
   if (!best) {
     const pricier = await db.select({ id: smmServices.id }).from(smmServices)
       .innerJoin(smmProviders, eq(smmProviders.id, smmServices.providerId))
-      .where(and(onSale(), eq(smmServices.matchKey, chosen.matchKey ?? ""))).limit(1);
+      .where(and(onSale(), eq(smmServices.matchKey, chosen.matchKey ?? ""), sql`${smmServices.providerId} <> ${chosen.providerId}`)).limit(1);
     if (pricier?.length) throw badRequest("This service's price just changed. Close and reopen it to see the new price.");
     throw notFound("Service");
   }

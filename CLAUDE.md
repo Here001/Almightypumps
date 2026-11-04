@@ -129,10 +129,12 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   Disconnect/Connect also on each card) and Remove (DELETE /api/admin/providers/[id]; refused if any of its
   services has orders, then disconnect instead).
 - Same service from several providers (migration 0018): generated `smm_services.match_key` =
-  platform|kind|lowercased alphanumeric name. `browseServices` shows one row per match_key (cheapest connected copy,
-  recommended if any copy is), `serviceCatalog` counts distinct keys, and `placeOrder` routes to the cheapest
-  connected copy priced ≤ what the customer was shown (else "price just changed"). Reseller /api/v2 `services`
-  still lists every copy. Migrations 0017–0018 applied to dev only; production needs the owner's yes.
+  platform|kind|lowercased alphanumeric name. Only copies from DIFFERENT providers are combined (Owlet itself has
+  ~2k same-named services; those all stay listed): `notBeatenByOtherProvider()` hides a service when another connected
+  provider sells the same key cheaper (tie: lower public_id). Used by `browseServices` and `serviceCatalog`; recommended
+  if any provider's copy is. `placeOrder` uses the customer's pick if on sale, else the cheapest other-provider copy
+  priced ≤ what they were shown (else "price just changed"). Reseller /api/v2 `services` still lists every copy.
+  Migrations 0017–0018 applied to dev and production (2026-11-04, owner's yes).
 - `app/api/**` route handlers; `app/page.tsx` 3D homepage; `app/signup`, `app/login`,
   `app/dashboard`; `app/admin` (Insights, Growth providers, Services, Pricing, Shop, Listings review; admins only).
 - Shop (`src/server/shop.ts`, /admin/shop, migration 0008): admin categories → products. Delivery
@@ -180,7 +182,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
     usd auto, Instagram Likes/Live viewers 100% rules. NOT copied: dev's P2P category renamed "Accounts"
     (account sales are blocked); live keeps "Digital products". Re-star 3 TikTok follower services
     (Owlet ids 8277, 24221, 8619) after the first live sync. No users yet (owner signs up, then promote to admin).
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0018 applied. Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0018 applied (main too). Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).
