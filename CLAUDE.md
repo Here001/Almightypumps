@@ -191,7 +191,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
     usd auto, Instagram Likes/Live viewers 100% rules. NOT copied: dev's P2P category renamed "Accounts"
     (account sales are blocked); live keeps "Digital products". Re-star 3 TikTok follower services
     (Owlet ids 8277, 24221, 8619) after the first live sync. No users yet (owner signs up, then promote to admin).
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0019 applied (main: 0000–0018). Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0019 applied (main too). Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).
