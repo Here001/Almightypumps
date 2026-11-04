@@ -260,6 +260,12 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   BreadcrumbList; index = ItemList). Homepage JSON-LD Organization + WebSite + OfferCatalog; homepage footer links to service
   pages. app/robots.ts (AI crawlers explicitly allowed on public pages), app/sitemap.ts, /llms.txt (app/llms.txt/route.ts),
   app/opengraph-image.tsx (1200×630), app/icon.svg, app/apple-icon.tsx. Add new public pages to SEO_PAGES (sitemap/llms follow).
+- BRAND LOGO (2026-11-04, owner's design canvas https://claude.ai/artifact/WjwNiNkuWuiqEZMLrFvBPK): "AP" monogram (A = triangle
+  20,175 120,20 120,175; P bowl path; orange chevron polyline 52,162 82,124 112,162 in #FF5A1F; glyph #F4F2EE on dark /
+  #0E1116 on light) + wordmark "ALMIGHTY PUMPS" in Space Grotesk 700 (font added to the layout's Google Fonts link).
+  Every `<span class="logo-mark">AP</span>` (landing markup, dashboard, admin, auth, public pages) now renders the monogram via
+  CSS background data-URI in app/app.css ("Brand logo" block; light-theme variant). `src/components/BrandMark.tsx` (SVG) is used
+  by app/apple-icon.tsx (dark square) and app/opengraph-image.tsx; app/icon.svg = dark rounded square + monogram.
 - Insights: `src/components/Tracker.tsx` beacons each page and dashboard #section to
   `/api/track` → `site_events` (anonymous cookie id, no IP/UA stored). Section names come
   from `src/core/analytics.ts` (add new pages there). Queries in `src/server/insights.ts`.

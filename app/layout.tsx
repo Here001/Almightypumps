@@ -5,7 +5,7 @@ import { Tracker } from "@/components/Tracker";
 import { THEME_BOOT_SCRIPT, ThemeSync } from "@/components/Theme";
 import { SITE_NAME, SITE_URL, isIndexable } from "@/core/site";
 
-const FONTS = "https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap";
+const FONTS = "https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=Space+Grotesk:wght@500;700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap";
 
 const TITLE = "Almighty Pumps: Social Media Growth, US Numbers, eSIMs & Gift Cards in Nigeria";
 const DESCRIPTION = "Buy Instagram, TikTok and YouTube followers, likes and views, get US numbers for verification codes, US and travel eSIMs, gift cards, airtime and data. One Naira wallet, pay-on-delivery.";
