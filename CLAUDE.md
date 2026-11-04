@@ -19,7 +19,7 @@ A Nigerian platform (Naira wallet) with:
    then captured, partly captured or refunded based on provider status.
 2. P2P marketplace with escrow (layout inspired by Bybit P2P): verified sellers post ads,
    buyer pays into escrow, seller ships, buyer confirms authenticity, funds release
-   (3% seller fee). Auto-release after 48h inspection; auto-refund if not shipped in 72h;
+   (7% seller fee; was 3% until 2026-11-04). Auto-release after 48h inspection; auto-refund if not shipped in 72h;
    disputes resolved by admins.
 3. Planned: Mockup Studio, business document generator (invoices, receipts, CVs, own
    staff ID cards), website templates.
@@ -74,7 +74,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   /admin/sellers shows full ID/account (admins only; sellers see masked). Verified sellers get the
   Seller panel in the P2P tab (`SellerPanel.tsx`): post/edit (policy re-check; flagged or previously
   declined → review)/pause/resume/remove ads, orders to deliver (SHIP with proof, or CANCEL = refund),
-  sales history, earnings after the 3% fee. APIs: /api/seller/{apply,listings,listings/[id],orders}.
+  sales history, earnings after the 7% fee. APIs: /api/seller/{apply,listings,listings/[id],orders}.
 - P2P categories (migration 0011 `listing_categories`, `src/server/listingCategories.ts`, /admin/p2p-categories):
   admin creates categories, each with its own seller questions (`src/core/listingQuestions.ts`: short/long
   answer, number, pick-from-list, yes/no; required flag; hint) and an "needs my approval" switch
@@ -197,7 +197,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   CSS `.legal-doc` (NOT `.legal`: that class is the homepage footer's mono copyright line)). Plain-English drafts,
   NDPA 2023, list every processor (Flutterwave, SMM providers, TextVerified, eSIM supplier, Cloudflare Turnstile with
   the Turnstile Privacy Addendum link required for Invisible mode, Vercel, Neon EU, Zoho), cookies ap_session/ap_vid,
-  escrow 72h/48h/3%, ₦1,000 top-up / ₦2,000 withdrawal minimums, prohibited items. Linked from the homepage footer and
+  escrow 72h/48h/7%, ₦1,000 top-up / ₦2,000 withdrawal minimums, prohibited items. Linked from the homepage footer and
   the sign-up form. Owner told to have a lawyer review. Keep them in sync when features/processors change.
   EDITABLE in Admin → Legal pages (/admin/legal, `AdminLegal.tsx`, /api/admin/legal): text stored in app_settings
   `legal_privacy` / `legal_terms` as {body, updated YYYY-MM-DD (Lagos)}; originals in `src/content/legal.ts` (used until
@@ -290,7 +290,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   from `src/core/analytics.ts` (add new pages there). Queries in `src/server/insights.ts`.
 - `src/landing/` homepage markup + effects ported from the approved prototype. Copy rewritten 2026-11-04 for the
   real services (Boost Account, Verification codes, US eSIMs, P2P escrow, Reseller API; hero "Boost. Verify. Trade.";
-  pricing = free account / pay per order / 3% seller fee; ticker = real highlights, no fake activity). Don't advertise
+  pricing = free account / pay per order / 7% seller fee; ticker = real highlights, no fake activity). Don't advertise
   unbuilt products (Mockup Studio, documents, templates) there until they exist. Performance (2026-11-03):
   text renders over a static `.scene-fallback` gradient; three.js is imported only after `load` +
   idle; scene built in stages (nebula+orb → shards/gates/dust/grid → bloom), each its own task;

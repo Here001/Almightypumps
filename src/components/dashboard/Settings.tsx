@@ -212,7 +212,7 @@ function Seller({ status, onOpenPanel }: { status: string; onOpenPanel: () => vo
       )}
       {st === "none" && !editing && (
         <>
-          <p className="muted" style={{ fontSize: 14 }}>Sell on the P2P marketplace. Buyers pay into escrow, you get paid when they confirm (3% fee). We verify every seller to keep buyers safe.</p>
+          <p className="muted" style={{ fontSize: 14 }}>Sell on the P2P marketplace. Buyers pay into escrow, you get paid when they confirm (7% fee). We verify every seller to keep buyers safe.</p>
           <button type="button" className="btn btn-primary" style={{ alignSelf: "flex-start" }} onClick={() => setEditing(true)}>Become a seller</button>
         </>
       )}

@@ -283,7 +283,7 @@ export const SEO_PAGES: SeoPage[] = [
     points: ["Verified sellers only", "Money held in escrow until you confirm", "72-hour delivery deadline and 48-hour inspection window", "Disputes resolved by our team"],
     faqs: [
       { q: "How do I become a seller?", a: "Apply in Settings → Become a seller. We verify your details before you can post ads." },
-      { q: "What does it cost sellers?", a: "A 3% fee on each completed sale, taken from the payout." },
+      { q: "What does it cost sellers?", a: "A 7% fee on each completed sale, taken from the payout." },
       { q: "What can't be sold?", a: "Counterfeit goods, fake documents, social media or gaming accounts, stolen cards or data, weapons, drugs and anything illegal in Nigeria." },
     ],
     cta: "Browse the marketplace",

@@ -114,7 +114,7 @@ const TERMS = `These terms are the agreement between you and Almighty Pumps (“
 ## 4. P2P marketplace and escrow
 - Only sellers we have verified can post ads. We check sellers but we are not the seller of items on the marketplace.
 - When you buy, your payment is held in escrow. The seller has **72 hours** to deliver, or you can cancel for a refund. After delivery you have **48 hours** to confirm or open a dispute; if you do nothing, the payment is released to the seller.
-- Sellers pay a **3% fee** on each completed sale, taken from the payout.
+- Sellers pay a **7% fee** on each completed sale, taken from the payout.
 - In a dispute, we review the evidence from both sides (messages, delivery proof) and decide whether to refund the buyer or pay the seller. Our decision on the escrowed funds is final on the platform.
 - **Prohibited items** include: counterfeit or replica goods; fake or forged ID, certificates or financial documents; social media, gaming or email accounts; stolen cards, “logs”, hacking tools or anyone's personal data; weapons, drugs and anything illegal in Nigeria. We remove such ads and may close the account.
 

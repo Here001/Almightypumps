@@ -29,7 +29,7 @@ export type Effect = "NONE" | "PAYOUT_SELLER" | "REFUND_BUYER";
 export const ESCROW_DEFAULTS = {
   shipWindowHours: 72,
   inspectionHours: 48,
-  sellerFeeBps: 300, // 3% charged to the seller on payout
+  sellerFeeBps: 700, // 7% charged to the seller on payout
 };
 
 export type TradeSnapshot = {

@@ -121,7 +121,7 @@ const SOURCES: Record<string, string> = {
   "revenue:travel_esim": "Travel eSIM sales",
   "revenue:gift_card": "Gift card sales",
   "revenue:airtime": "Airtime & data sales",
-  "fee:escrow": "P2P fees (3%)",
+  "fee:escrow": "P2P fees (7%)",
 };
 
 export async function platformOverview(db: Db) {

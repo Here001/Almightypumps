@@ -113,7 +113,8 @@ test("closed trades accept no further actions", () => {
 });
 
 test("payout split takes the seller fee", () => {
-  assert.deepEqual(payoutSplit(3_100_000), { seller: 3_007_000, fee: 93_000 });
+  assert.deepEqual(payoutSplit(3_100_000), { seller: 2_883_000, fee: 217_000 }); // 7%
+  assert.deepEqual(payoutSplit(3_100_000, 300), { seller: 3_007_000, fee: 93_000 });
   assert.deepEqual(payoutSplit(3_100_000, 0), { seller: 3_100_000, fee: 0 });
 });
 

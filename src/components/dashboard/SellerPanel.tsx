@@ -7,6 +7,7 @@ import { useCurrency } from "./Currency";
 import type { Question } from "@/core/listingQuestions";
 import { ShopPhoto } from "./ShopPhoto";
 import { TradeRoom } from "./TradeRoom";
+import { ESCROW_DEFAULTS } from "@/core/escrow";
 
 type Listing = {
   id: string; title: string; description: string; category: string; deliveryType: string; price: number; stock: number;
@@ -79,7 +80,7 @@ export function SellerPanel() {
         <div className="tiles">
           <div className="tile glass"><div className="tile-label">To deliver</div><div className="tile-num">{toFulfil.length}</div></div>
           <div className="tile glass"><div className="tile-label">Waiting for buyer</div><div className="tile-num">{waiting.length}</div></div>
-          <div className="tile glass"><div className="tile-label">Earned</div><div className="tile-num">{money(earned)}</div><div className="muted tile-sub">after the 3% fee</div></div>
+          <div className="tile glass"><div className="tile-label">Earned</div><div className="tile-num">{money(earned)}</div><div className="muted tile-sub">after the 7% fee</div></div>
         </div>
         <Note msg={notice} />
       </section>
@@ -264,7 +265,7 @@ function ListingForm({ listing, categories, onCancel, onSaved }: { listing?: Lis
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setF((x) => ({ ...x, [k]: e.target.value }));
   const priceKobo = Math.round(Number(f.price.replace(/,/g, "")) * 100);
   const cat = categories.find((c) => c.slug === f.category);
-  const fee = Number.isFinite(priceKobo) && priceKobo > 0 ? Math.ceil(priceKobo * 0.03) : 0;
+  const fee = Number.isFinite(priceKobo) && priceKobo > 0 ? Math.ceil((priceKobo * ESCROW_DEFAULTS.sellerFeeBps) / 10_000) : 0;
 
   return (
     <section className="card glass">
@@ -367,7 +368,7 @@ function ListingForm({ listing, categories, onCancel, onSaved }: { listing?: Lis
           <div className="field" style={{ flex: "1 1 90px" }}><label htmlFor="lf-max">Max per order</label>
             <input id="lf-max" className="input" inputMode="numeric" value={f.maxQty} onChange={set("maxQty")} /></div>
         </div>
-        {fee > 0 && <p className="muted" style={{ fontSize: 13 }}>For each sale you receive {charge(priceKobo - fee)} after our 3% escrow fee.</p>}
+        {fee > 0 && <p className="muted" style={{ fontSize: 13 }}>For each sale you receive {charge(priceKobo - fee)} after our 7% escrow fee.</p>}
         <p className="muted" style={{ fontSize: 13 }}>Some ads are checked by our team before going live. Fake documents, counterfeits, accounts, weapons and drugs aren&apos;t allowed.</p>
         {problems.length > 0 && <div className="form-error" role="alert">{problems.join(" ")}</div>}
         <div style={{ display: "flex", gap: 8 }}>

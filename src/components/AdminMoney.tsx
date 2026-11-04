@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { api, naira } from "./api";
+import { payoutSplit } from "@/core/escrow";
 
 type Msg = { ok: boolean; text: string } | null;
 const when = (d: string | null) => (d ? new Date(d).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" }) : "");
@@ -201,10 +202,10 @@ export function AdminDisputes() {
   const [notes, setNotes] = useState<Record<string, string>>({});
 
   async function resolve(d: Dispute, action: "RESOLVE_BUYER" | "RESOLVE_SELLER") {
-    const fee = Math.round(d.amount * 0.03);
+    const fee = payoutSplit(d.amount).fee;
     const q = action === "RESOLVE_BUYER"
       ? `Refund ${naira(d.amount)} to the buyer (${d.buyer.name})? The item goes back in stock.`
-      : `Pay the seller (${d.seller.name}) ${naira(d.amount - fee)} after the 3% fee?`;
+      : `Pay the seller (${d.seller.name}) ${naira(d.amount - fee)} after the 7% fee?`;
     if (!window.confirm(q)) return;
     setBusy(d.id);
     setMsg(null);

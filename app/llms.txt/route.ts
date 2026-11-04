@@ -19,7 +19,7 @@ export function GET() {
     "- Temporary US numbers for SMS verification codes (pay only if the code arrives)",
     "- US phone-line eSIMs and instant travel data eSIMs for 190+ countries",
     "- Digital gift cards (Amazon, Apple, Google Play, PlayStation, Steam…), Nigerian airtime and data (MTN, Airtel, Glo, 9mobile)",
-    "- Sell gift cards for Naira; P2P marketplace with escrow and verified sellers (3% seller fee)",
+    "- Sell gift cards for Naira; P2P marketplace with escrow and verified sellers (7% seller fee)",
     "",
     ...cats.flatMap((c) => ["## " + c, "", ...SEO_PAGES.filter((p) => p.category === c).map((p) => `- [${p.title}](${SITE_URL}/services/${p.slug}): ${p.description}`), ""]),
     "## Policies",
