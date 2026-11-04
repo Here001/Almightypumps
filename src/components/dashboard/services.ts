@@ -49,6 +49,13 @@ export const HUB_SERVICES: HubService[] = [
     status: "live",
   },
   {
+    id: "invite",
+    title: "Invite Friends & Earn",
+    description: "Share your link. When a friend you invite starts ordering, you both get a bonus in your wallet.",
+    icon: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM19 8v6M22 11h-6",
+    status: "live",
+  },
+  {
     id: "verify",
     title: "Get Verification Code",
     description: "Receive one-time SMS codes on a virtual number.",

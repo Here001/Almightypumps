@@ -21,6 +21,10 @@ export const users = pgTable("users", {
   sessionVersion: integer("session_version").notNull().default(0),
   /** Null until the 6-digit email code from sign-up is entered (migration 0021). */
   emailVerifiedAt: ts("email_verified_at"),
+  /** Invite code (migration 0025); created the first time it's needed. */
+  referralCode: text("referral_code").unique(),
+  /** Who invited this customer (users.id). */
+  referredBy: uuid("referred_by"),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 
@@ -599,5 +603,18 @@ export const tradeInImages = pgTable("trade_in_images", {
   tradeInId: uuid("trade_in_id").notNull().references(() => tradeIns.id, { onDelete: "cascade" }),
   contentType: text("content_type").notNull(),
   data: bytea("data").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+
+/** Referral program (migration 0025): one row per invited friend. */
+export const referrals = pgTable("referrals", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  referrerId: uuid("referrer_id").notNull().references(() => users.id),
+  referredId: uuid("referred_id").notNull().unique().references(() => users.id),
+  status: text("status").$type<"pending" | "rewarded" | "void">().notNull().default("pending"),
+  rewardKobo: money("reward_kobo"),
+  friendRewardKobo: money("friend_reward_kobo"),
+  note: text("note"),
+  rewardedAt: ts("rewarded_at"),
   createdAt: ts("created_at").notNull().defaultNow(),
 });

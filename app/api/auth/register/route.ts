@@ -3,6 +3,7 @@ import { register, registerSchema, startSession } from "@/server/auth";
 import { emailConfigured, sendCode } from "@/server/emailCodes";
 import { body, route } from "@/server/http";
 import { clientIp, rateLimit } from "@/server/rateLimit";
+import { linkReferral } from "@/server/referrals";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,7 @@ export const POST = route(async (req: Request) => {
   await rateLimit(db, "registerIp", ip);
   const codes = emailConfigured();
   const user = await register(db, input, { verified: !codes });
+  await linkReferral(db, user.id, input.ref).catch((e) => console.error("[referrals] link", e));
   if (codes) return sendCode(db, user, "signup", true, ip);
   await startSession(user.id, true);
   return user;

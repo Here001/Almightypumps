@@ -39,6 +39,7 @@ const ABOUT: Record<string, string> = {
   "/admin/sellers": "Approve or decline sellers",
   "/admin/listings": "Approve or decline ads",
   "/admin/p2p-categories": "Categories and seller questions",
+  "/admin/referrals": "Invite bonuses: amounts, who invited whom",
   "/admin/legal": "Edit your Privacy Policy and Terms",
 };
 

@@ -35,6 +35,8 @@ export const registerSchema = z.object({
   email: z.string().trim().toLowerCase().email("Enter a valid email address"),
   phone: z.string().trim().regex(/^(\+?234|0)[789]\d{9}$/, "Enter a Nigerian phone number, like 0803 123 4567").optional().or(z.literal("")),
   password: z.string().min(8, "Use at least 8 characters").max(200),
+  /** Invite code from /signup?ref=… (optional). */
+  ref: z.string().trim().max(32).optional(),
 });
 
 export const loginSchema = z.object({

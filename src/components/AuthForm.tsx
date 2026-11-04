@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "./api";
 import { PasswordInput } from "./PasswordInput";
 
+const REF_KEY = "ap_ref";
 const EMAIL_KEY = "ap_login_email";
 
 type Challenge = { needsCode: true; challenge: string; email: string; purpose: "signup" | "login" };
@@ -94,6 +95,18 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
   const [remember, setRemember] = useState(false);
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const signup = mode === "signup";
+  const [refCode, setRefCode] = useState("");
+
+  // Invite code from /signup?ref=CODE, kept on this device for 30 days in case they come back later.
+  useEffect(() => {
+    if (!signup) return;
+    try {
+      const fromUrl = new URLSearchParams(window.location.search).get("ref")?.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 16);
+      if (fromUrl) { localStorage.setItem(REF_KEY, JSON.stringify({ code: fromUrl, at: Date.now() })); setRefCode(fromUrl); return; }
+      const saved = JSON.parse(localStorage.getItem(REF_KEY) ?? "null") as { code?: string; at?: number } | null;
+      if (saved?.code && Date.now() - (saved.at ?? 0) < 30 * 86400_000) setRefCode(saved.code);
+    } catch { /* private mode */ }
+  }, [signup]);
 
   // "Remember me" also remembers the email on this device (never the password).
   useEffect(() => {
@@ -149,6 +162,9 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
         <h1>{signup ? "Create your account" : "Welcome back"}</h1>
         <p className="muted">{signup ? "Free to join. Fund your wallet in Naira when you're ready." : "Log in to your workspace and wallet."}</p>
         {error && <div className="form-error" role="alert">{error}</div>}
+        {signup && refCode && (
+          <div className="form-ok" role="status">You were invited by a friend (code {refCode}).<input type="hidden" name="ref" value={refCode} /></div>
+        )}
         {signup && (
           <div className="field">
             <label htmlFor="name">Full name</label>

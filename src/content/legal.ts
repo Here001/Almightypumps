@@ -104,6 +104,10 @@ const TERMS = `These terms are the agreement between you and Almighty Pumps (“
 - You can only sell gift cards you lawfully own and that haven't been used. Crypto must come from a wallet you control. We pay into your wallet after we've checked the card or seen the crypto arrive, at the rate shown when you submitted. If a card turns out to be invalid or used, or the crypto doesn't arrive, we don't pay. Crypto sent on the wrong network can't be recovered.
 - We may limit how much you can sell, ask for ID, refuse a trade, and report fraud to the authorities. Selling stolen or fraudulently obtained cards or crypto gets your account closed.
 
+### Invite friends (referral bonuses)
+- When a friend signs up with your invite link and spends the minimum shown on the Invite screen on paid orders, we pay the bonus shown there into your wallet (and theirs, if a friend bonus is shown). Bonus amounts, the minimum and the limits can change at any time; the amounts at the moment the friend qualifies apply.
+- Bonuses are for genuine new customers. Inviting yourself with another account, fake accounts or any other abuse means no bonus, and we may take back bonuses already paid and close the accounts involved.
+
 ### Shop items and gift cards
 - Codes delivered instantly can't be refunded once shown to you, unless the code doesn't work and the supplier confirms it.
 
