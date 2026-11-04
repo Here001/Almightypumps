@@ -239,6 +239,10 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 - 2026-11-04 owner's request: on LIVE (Neon main) hid every on-sale Boost service priced ₦0–₦480 or ₦2,000–₦2,970 per 1k
   (1,842 services, hidden_reason 'admin', 12,808 left on sale). IDs saved in app_settings `boost_hidden_by_price_2026_11_04`
   for a one-step undo. One-off: new services or later price changes in those ranges are NOT auto-hidden.
+  Owner then asked for a tool, NOT a rule: "Turn off by price" panel at the top of /admin/services (`AdminPriceHide.tsx`,
+  POST /api/admin/services/price-hide {preview|apply|undo}, `previewPriceHide`/`applyPriceHide`/`undoPriceHide` in smm.ts):
+  up to 10 ₦-per-1k ranges, count per range, apply once (hidden_reason 'admin'), "Undo last" from app_settings
+  `boost_price_hide_last` {ids, ranges, at}.
 - Service visibility: `smm_services.hidden_reason` null = on sale, `admin` (hidden in
   /admin/services, survives syncs), `policy` (isRestricted; can't be unhidden), `provider`
   (dropped upstream or 0-priced; returns on next sync if listed). `active` mirrors it.

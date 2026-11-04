@@ -3,6 +3,8 @@
  * that speak the standard panel API (services / add / status / balance).
  */
 import { and, desc, eq, inArray, notInArray, sql } from "drizzle-orm";
+import { z } from "zod";
+import { readSetting, writeSetting } from "./appSettings";
 import {
   orderCost, parseAdd, parseBalance, parseMultiStatus, parseServices, sellRatePer1000, settleOrder, validateQuantity,
   type OrderStatus,
@@ -670,4 +672,54 @@ export async function removeProvider(db: Db, id: string) {
     await tx.delete(smmProviders).where(eq(smmProviders.id, id));
   });
   return { removed: p.name };
+}
+
+/* ---------- Turn off by price (one-off, not a rule) ---------- */
+
+export const priceRangesSchema = z.array(z.object({
+  fromNaira: z.number().min(0).max(100_000_000),
+  toNaira: z.number().min(0).max(100_000_000),
+})).min(1, "Add at least one price range").max(10);
+type PriceRanges = z.output<typeof priceRangesSchema>;
+const UNDO_KEY = "boost_price_hide_last";
+
+function inRanges(ranges: PriceRanges) {
+  for (const r of ranges) if (r.fromNaira > r.toNaira) throw badRequest(`“From” must be below “to” (₦${r.fromNaira} – ₦${r.toNaira}).`);
+  return sql.join(ranges.map((r) => sql`(${smmServices.rateKobo} BETWEEN ${Math.round(r.fromNaira * 100)} AND ${Math.round(r.toNaira * 100)})`), sql` OR `);
+}
+
+/** How many on-sale services each range would turn off (prices are ₦ per 1k, as customers see them). */
+export async function previewPriceHide(db: Db, ranges: PriceRanges) {
+  const where = inRanges(ranges);
+  const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(smmServices).where(and(sql`${smmServices.hiddenReason} IS NULL`, sql`(${where})`));
+  const per = await Promise.all(ranges.map(async (r) => {
+    const [{ c }] = await db.select({ c: sql<number>`count(*)::int` }).from(smmServices)
+      .where(and(sql`${smmServices.hiddenReason} IS NULL`, sql`${smmServices.rateKobo} BETWEEN ${Math.round(r.fromNaira * 100)} AND ${Math.round(r.toNaira * 100)}`));
+    return { ...r, count: c };
+  }));
+  const last = await readSetting<{ ids: string[]; ranges?: unknown; at?: string }>(db, UNDO_KEY, { ids: [] });
+  return { total: n, ranges: per, undo: { count: last.ids.length, at: last.at ?? null } };
+}
+
+/** Turn them off now (hidden by admin, so syncs keep them off). Saves the list for "Undo last". */
+export async function applyPriceHide(db: Db, ranges: PriceRanges) {
+  const where = inRanges(ranges);
+  const hidden = await db.update(smmServices).set({ hiddenReason: "admin", active: false, updatedAt: new Date() })
+    .where(and(sql`${smmServices.hiddenReason} IS NULL`, sql`(${where})`)).returning({ id: smmServices.id });
+  await writeSetting(db, UNDO_KEY, { ids: hidden.map((h) => h.id), ranges, at: new Date().toISOString() });
+  return { turnedOff: hidden.length };
+}
+
+/** Switch the last batch back on (only ones still hidden by the admin). */
+export async function undoPriceHide(db: Db) {
+  const last = await readSetting<{ ids: string[] }>(db, UNDO_KEY, { ids: [] });
+  if (!last.ids.length) throw badRequest("Nothing to undo.");
+  let restored = 0;
+  for (let i = 0; i < last.ids.length; i += 1000) {
+    const r = await db.update(smmServices).set({ hiddenReason: null, active: true, updatedAt: new Date() })
+      .where(and(inArray(smmServices.id, last.ids.slice(i, i + 1000)), eq(smmServices.hiddenReason, "admin"))).returning({ id: smmServices.id });
+    restored += r.length;
+  }
+  await writeSetting(db, UNDO_KEY, { ids: [] });
+  return { turnedOn: restored };
 }

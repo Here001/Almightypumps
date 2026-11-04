@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api, naira } from "./api";
+import { AdminPriceHide } from "./AdminPriceHide";
 
 type Status = "all" | "on_sale" | "admin" | "policy" | "provider";
 type Row = {
@@ -116,6 +117,8 @@ export function AdminServices() {
   const filtered = Boolean(platform || kind || search.trim().length >= 2);
 
   return (
+    <>
+    <AdminPriceHide onChanged={() => void load(0)} />
     <section className="card glass">
       <div className="ap-chips ap-chips-wrap" role="group" aria-label="Status">
         {STATUS.map((s) => (
@@ -211,5 +214,6 @@ export function AdminServices() {
       {loading && <p className="muted" role="status">Loading…</p>}
       {data?.hasMore && !loading && <button type="button" className="btn btn-ghost" onClick={() => void load(rows.length)}>Show more</button>}
     </section>
+    </>
   );
 }
