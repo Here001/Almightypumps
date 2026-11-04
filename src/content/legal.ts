@@ -14,7 +14,7 @@ Almighty Pumps is an online platform based in Lagos, Nigeria. We are the data co
 
 ## 2. What we collect
 - **Account:** your name, email address, phone number (optional) and password. We store passwords only as a one-way hash; we can't read them.
-- **Wallet and payments:** your Naira balance, top-ups, charges, refunds and withdrawals. Card and bank payments are processed by Flutterwave; we do not receive or store your full card number. For withdrawals we keep the bank name, account number and account name you give us.
+- **Wallet and payments:** your Naira balance, top-ups, charges, refunds and withdrawals. For bank transfer or crypto top-ups, the transaction ID or sender name you give us. Card and bank payments are processed by Flutterwave; we do not receive or store your full card number. For withdrawals we keep the bank name, account number and account name you give us.
 - **Orders:** the details needed to deliver what you buy, e.g. the link or username for a social-growth order, the app you need a verification code for (and the SMS code we show you), gift-card or shop orders.
 - **eSIM orders:** your phone's IMEI number and, if you keep an existing number, the transfer details (number, carrier, account number, transfer PIN, ZIP code and account holder's name). Transfer details are stored encrypted and deleted once your order is delivered or refunded.
 - **Sellers:** shop name, contact phone, what you sell, payout bank details, ID type and ID number, and your shop picture. ID and full account numbers are visible only to our admins.
@@ -80,7 +80,7 @@ const TERMS = `These terms are the agreement between you and Almighty Pumps (“
 
 ## 2. Your wallet
 - Your wallet holds Naira you have topped up or earned, to spend on the site. It is not a bank account and does not earn interest. Dollar amounts on the site are estimates for display only; you are always charged in Naira.
-- Top-ups are processed by Flutterwave. The minimum top-up is ₦1,000.
+- Top-ups are processed by Flutterwave, or you can pay us directly by bank transfer or crypto using the details shown in your Wallet. Direct payments are added once our team confirms they arrived; crypto is credited in Naira at the rate shown when you pay, based on the amount that actually arrives (network fees are yours). Crypto sent on the wrong network or to the wrong address can't be recovered. Claiming a payment you didn't make is fraud. The minimum top-up is ₦1,000.
 - When you order, the price is usually **set aside** (held) and only taken when the order is delivered. If it can't be delivered, the held money returns to your wallet.
 - You can withdraw your available balance to a Nigerian bank account in your own name (minimum ₦2,000). Withdrawals are checked and paid by our team, usually within 24 hours on working days. We may delay or refuse a withdrawal while we check for fraud (for example, money topped up with a card and not spent).
 

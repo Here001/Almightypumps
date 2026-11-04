@@ -8,10 +8,10 @@ import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Db } from "./db";
 import { getDb } from "./db";
-import { users, wallets } from "./db/schema";
+import { emailCodes, users, wallets } from "./db/schema";
 import { env } from "./env";
 import { AppError, badRequest, unauthorized } from "./errors";
-import { forgetOtherDevices } from "./emailCodes";
+import { checkCode, forgetOtherDevices } from "./emailCodes";
 
 const COOKIE = "ap_session";
 let dummyHash: string | undefined;
@@ -183,4 +183,27 @@ export async function logoutEverywhere(db: Db, userId: string) {
   await forgetOtherDevices(db, userId);
   await startSession(userId, await sessionRemembered());
   return { loggedOutOthers: true };
+}
+
+/* ---------------- forgot password ---------------- */
+
+export const resetSchema = z.object({
+  challenge: z.string().uuid("Please start again."),
+  code: z.string().max(20),
+  password: z.string().min(8, "Use at least 8 characters").max(200),
+});
+
+/** Code from the reset email + new password → password changed, every device logged out, this one signed in. */
+export async function resetPassword(db: Db, input: z.infer<typeof resetSchema>) {
+  // Check the new password first so a weak one doesn't use up the code.
+  const [c] = await db.select({ email: users.email, name: users.name }).from(emailCodes).innerJoin(users, eq(users.id, emailCodes.userId)).where(eq(emailCodes.id, input.challenge));
+  const weak = weakPassword(input.password, c?.email, c?.name);
+  if (weak) throw badRequest(weak);
+  const passwordHash = await bcrypt.hash(input.password, 12);
+  // Wrong guesses are counted (committed) inside checkCode.
+  const r = await checkCode(db, input.challenge, input.code, ["reset"]);
+  await db.update(users).set({ passwordHash, sessionVersion: sql`${users.sessionVersion} + 1` }).where(eq(users.id, r.userId));
+  await forgetOtherDevices(db, r.userId);
+  await startSession(r.userId, false);
+  return { reset: true };
 }

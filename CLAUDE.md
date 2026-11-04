@@ -160,6 +160,20 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   CSP (scripts self+inline+challenges.cloudflare.com, fonts.googleapis/gstatic, img data:/blob:, frame-ancestors none,
   form-action self; upgrade-insecure-requests only on Vercel) and COOP. Generic "email and password don't match"
   with a dummy bcrypt compare already existed, as do the login/signup rate limits.
+- Forgot password (2026-11-04, migration 0022 adds purpose 'reset' to email_codes): "Forgot password?" link on /login →
+  /forgot-password (`ForgotPassword.tsx`) → POST /api/auth/forgot (same reply for unknown emails: fake challenge) → code +
+  new password → POST /api/auth/reset (`resetPassword` in auth.ts: weak-password check first, then `checkCode(..., ["reset"])`,
+  bumps session_version, forgets other trusted devices, signs in here). /api/auth/verify only accepts signup/login codes.
+- Manual top-ups: bank transfer + crypto (2026-11-04, owner's choice "manual for now", migration 0022 `manual_deposits`,
+  `src/server/manualPayments.ts`, `ManualPay.tsx` in the Wallet tab, /admin/payments `AdminPayments.tsx`, /api/wallet/manual,
+  /api/admin/payments). Admin lists methods in app_settings `manual_payments` (bank: bank/10-digit account/name; crypto:
+  coin/network/address, QR generated server-side), crypto rate ₦ per $1 (0 = site dollar rate; USDT/USDC etc. get an
+  exact coin amount, others "$X worth of"), extra notify emails. Customer: method → ₦ amount (min MIN_FUNDING_KOBO) →
+  exact instructions (bank narration code `AP-xxxxxx` from user id) → tx hash / sender name → "I have made payment"
+  (max 3 pending; crypto tx IDs can't be reused) → every admin's email (+ extra emails) gets a notice via `sendNotice`
+  (`src/server/email.ts`). Admin "Confirm & fund" (amount editable) = creditWallet kind `deposit`, idempotency
+  `manual:<id>`; or reject with a reason. Customer is emailed either way. Terms/Privacy defaults mention it. eSIM tab
+  shows "US phone line" first (default), then "Travel data · instant" (owner's request).
 - Legal pages (2026-11-04): /privacy and /terms (`app/privacy`, `app/terms`, shared `src/components/LegalPage.tsx`,
   CSS `.legal-doc` (NOT `.legal`: that class is the homepage footer's mono copyright line)). Plain-English drafts,
   NDPA 2023, list every processor (Flutterwave, SMM providers, TextVerified, eSIM supplier, Cloudflare Turnstile with
@@ -240,7 +254,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
     usd auto, Instagram Likes/Live viewers 100% rules. NOT copied: dev's P2P category renamed "Accounts"
     (account sales are blocked); live keeps "Digital products". Re-star 3 TikTok follower services
     (Owlet ids 8277, 24221, 8619) after the first live sync. No users yet (owner signs up, then promote to admin).
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0021 applied (main too, 2026-11-04 with owner's yes). Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0022 applied (main: 0000–0021). Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

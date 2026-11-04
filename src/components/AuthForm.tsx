@@ -171,6 +171,7 @@ export default function AuthForm({ mode }: { mode: "signup" | "login" }) {
           <label htmlFor="password">Password</label>
           <PasswordInput id="password" name="password" autoComplete={signup ? "new-password" : "current-password"} minLength={signup ? 8 : 1} maxLength={200} required />
           {signup && <span className="muted" style={{ fontSize: 12 }}>At least 8 characters. A short phrase is easiest to remember and hardest to guess.</span>}
+          {!signup && <Link href="/forgot-password" className="ap-link" style={{ fontSize: 13, alignSelf: "flex-end" }}>Forgot password?</Link>}
         </div>
         {!signup && (
           <label className="ap-toggle">

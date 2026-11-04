@@ -3,7 +3,7 @@
  * seen before. A device that passed gets an `ap_device` cookie and is trusted for 30 days.
  * Codes expire after 10 minutes, allow 5 wrong tries, and are stored only as an HMAC.
  */
-import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { and, eq, gt, isNull, ne, sql } from "drizzle-orm";
 import type { Db } from "./db";
@@ -29,10 +29,11 @@ export function maskEmail(email: string) {
   return `${local.slice(0, 1)}${"•".repeat(Math.max(2, Math.min(5, local.length - 1)))}@${domain}`;
 }
 
-export type Challenge = { needsCode: true; challenge: string; email: string; purpose: "signup" | "login" };
+export type Purpose = "signup" | "login" | "reset";
+export type Challenge = { needsCode: true; challenge: string; email: string; purpose: Purpose };
 
 /** Email a fresh code (earlier unused codes for this account stop working). */
-export async function sendCode(db: Db, user: { id: string; email: string; name: string }, purpose: "signup" | "login", remember: boolean, ip: string): Promise<Challenge> {
+export async function sendCode(db: Db, user: { id: string; email: string; name: string }, purpose: Purpose, remember: boolean, ip: string): Promise<Challenge> {
   await rateLimit(db, "emailCodeUser", user.id);
   await rateLimit(db, "emailCodeIp", ip);
   const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
@@ -48,11 +49,11 @@ export async function sendCode(db: Db, user: { id: string; email: string; name: 
 }
 
 /** Check a code. Right → returns who to sign in; wrong → error with tries left. */
-export async function checkCode(db: Db, challengeId: string, code: string) {
+export async function checkCode(db: Db, challengeId: string, code: string, purposes: Purpose[] = ["signup", "login"]) {
   const clean = code.replace(/\D/g, "");
   return db.transaction(async (tx) => {
     const [c] = await tx.select().from(emailCodes).where(eq(emailCodes.id, challengeId)).for("update");
-    if (!c || c.usedAt) throw badRequest("That code has expired. Tap “Send a new code”.");
+    if (!c || c.usedAt || !purposes.includes(c.purpose)) throw badRequest("That code has expired. Tap “Send a new code”.");
     if (c.expiresAt.getTime() < Date.now()) throw badRequest("That code has expired. Tap “Send a new code”.");
     if (c.attempts >= MAX_TRIES) throw badRequest("Too many wrong tries. Tap “Send a new code”.");
     const a = Buffer.from(hashCode(c.id, clean)), b = Buffer.from(c.codeHash);
@@ -63,7 +64,8 @@ export async function checkCode(db: Db, challengeId: string, code: string) {
       return { ok: false as const, left };
     }
     await tx.update(emailCodes).set({ usedAt: new Date() }).where(eq(emailCodes.id, c.id));
-    if (c.purpose === "signup") await tx.update(users).set({ emailVerifiedAt: new Date() }).where(and(eq(users.id, c.userId), isNull(users.emailVerifiedAt)));
+    // Any correct code proves the person owns the email.
+    await tx.update(users).set({ emailVerifiedAt: new Date() }).where(and(eq(users.id, c.userId), isNull(users.emailVerifiedAt)));
     return { ok: true as const, userId: c.userId, remember: c.remember, purpose: c.purpose };
   }).then((r) => {
     if (!r.ok) throw badRequest(r.left > 0 ? `That code isn't right. ${r.left} ${r.left === 1 ? "try" : "tries"} left.` : "Too many wrong tries. Tap “Send a new code”.");
@@ -75,7 +77,8 @@ export async function checkCode(db: Db, challengeId: string, code: string) {
 export async function resendCode(db: Db, challengeId: string, ip: string) {
   const [c] = await db.select({ userId: emailCodes.userId, purpose: emailCodes.purpose, remember: emailCodes.remember, createdAt: emailCodes.createdAt })
     .from(emailCodes).where(eq(emailCodes.id, challengeId));
-  if (!c) throw badRequest("Please start again: go back and enter your email and password.");
+  // Unknown challenge (e.g. a "forgot password" for an email with no account): answer like a real one.
+  if (!c) return { needsCode: true as const, challenge: randomUUID(), email: "your email", purpose: "reset" as const };
   if (Date.now() - c.createdAt.getTime() < 30_000) throw new AppError(429, "TOO_SOON", "Please wait a few seconds before asking for another code.");
   if (Date.now() - c.createdAt.getTime() > 60 * 60_000) throw badRequest("Please start again: go back and enter your email and password.");
   const [u] = await db.select({ id: users.id, email: users.email, name: users.name }).from(users).where(eq(users.id, c.userId));

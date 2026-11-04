@@ -526,7 +526,7 @@ export const travelEsimOrders = pgTable("travel_esim_orders", {
 export const emailCodes = pgTable("email_codes", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  purpose: text("purpose").$type<"signup" | "login">().notNull(),
+  purpose: text("purpose").$type<"signup" | "login" | "reset">().notNull(),
   codeHash: text("code_hash").notNull(),
   attempts: integer("attempts").notNull().default(0),
   remember: boolean("remember").notNull().default(false),
@@ -542,4 +542,24 @@ export const trustedDevices = pgTable("trusted_devices", {
   createdAt: ts("created_at").notNull().defaultNow(),
   lastUsedAt: ts("last_used_at").notNull().defaultNow(),
   expiresAt: ts("expires_at").notNull(),
+});
+
+/* ---------- Manual top-ups: bank transfer / crypto (migration 0022) ---------- */
+
+export const manualDeposits = pgTable("manual_deposits", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  publicId: serial("public_id").unique(),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  methodId: text("method_id").notNull(),
+  methodLabel: text("method_label").notNull(),
+  kind: text("kind").$type<"bank" | "crypto">().notNull(),
+  amountKobo: money("amount_kobo").notNull(),
+  payAmount: text("pay_amount").notNull(),
+  proof: text("proof").notNull(),
+  status: text("status").$type<"pending" | "confirmed" | "rejected">().notNull().default("pending"),
+  creditedKobo: money("credited_kobo"),
+  adminNote: text("admin_note"),
+  decidedBy: uuid("decided_by").references(() => users.id),
+  decidedAt: ts("decided_at"),
+  createdAt: ts("created_at").notNull().defaultNow(),
 });

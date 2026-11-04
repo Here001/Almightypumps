@@ -12,6 +12,7 @@ import { TravelEsim } from "./TravelEsim";
 import { GiftCards } from "./GiftCards";
 import { Airtime } from "./Airtime";
 import { Withdraw } from "./Withdraw";
+import { ManualPay } from "./ManualPay";
 import { ShopCategory } from "./Shop";
 import { Settings } from "./Settings";
 import { SellerPanel } from "./SellerPanel";
@@ -64,7 +65,7 @@ function Dashboard(props: Props) {
   const { money, currency, charge } = useCurrency();
   const [tab, setTab] = useState<Tab>("services");
   const [p2pView, setP2pView] = useState<"market" | "mine">("market");
-  const [esimKind, setEsimKind] = useState<"travel" | "us">("travel");
+  const [esimKind, setEsimKind] = useState<"travel" | "us">("us");
 
   // Tabs live in the URL hash so the back button and Insights tracking work.
   useEffect(() => {
@@ -192,8 +193,8 @@ function Dashboard(props: Props) {
                 <strong>eSIMs</strong>
               </div>
               <div className="ap-chips" role="group" aria-label="eSIM type">
-                <button type="button" className="ap-chip" aria-pressed={esimKind === "travel"} onClick={() => setEsimKind("travel")}>Travel data · instant</button>
                 <button type="button" className="ap-chip" aria-pressed={esimKind === "us"} onClick={() => setEsimKind("us")}>US phone line</button>
+                <button type="button" className="ap-chip" aria-pressed={esimKind === "travel"} onClick={() => setEsimKind("travel")}>Travel data · instant</button>
               </div>
               {esimKind === "travel"
                 ? <TravelEsim balance={props.wallet.available} onAddMoney={() => go("wallet")} />
@@ -297,6 +298,7 @@ function Dashboard(props: Props) {
                 <p className="muted" style={{ fontSize: 14 }}>{show(props.wallet.held)} held for orders, escrow and withdrawals</p>
                 <FundWallet />
               </section>
+              <ManualPay />
               <Withdraw available={props.wallet.available} hidden={hideBal} />
               <section className="card glass">
                 <h2>Wallet activity</h2>

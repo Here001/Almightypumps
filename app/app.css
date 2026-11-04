@@ -308,3 +308,8 @@ img.mk-avatar { object-fit: cover; background: var(--surface-2); }
 
 /* Email code entry */
 .auth-code { font-family: var(--mono); font-size: 28px; letter-spacing: .4em; text-align: center; }
+
+/* Bank transfer / crypto pay box */
+.mp-box { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 16px; border: 1px solid rgb(var(--ov) / .14); background: rgb(var(--ov) / .04); }
+.mp-box .ap-facts dd { overflow-wrap: anywhere; }
+.mp-box .ap-code { word-break: break-all; }
