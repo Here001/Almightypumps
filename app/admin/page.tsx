@@ -1,117 +1,106 @@
 import Link from "next/link";
 import { getDb } from "@/server/db";
 import { adminOrRedirect } from "@/server/adminPage";
-import { getInsights } from "@/server/insights";
-import { naira } from "@/components/api";
+import { adminCounts, adminToday, type AdminCounts } from "@/server/adminHome";
+import { ADMIN_GROUPS } from "@/components/adminMenu";
 
 export const dynamic = "force-dynamic";
 
-const RANGES = [7, 30, 90];
-const n = (v: number) => v.toLocaleString("en-NG");
-/** Whole naira for the headline tiles, e.g. ₦30,000 */
 const nairaWhole = (kobo: number) => "₦" + Math.round(kobo / 100).toLocaleString("en-NG");
 
-function shortDay(day: string) {
-  return new Date(`${day}T12:00:00Z`).toLocaleDateString("en-NG", { day: "numeric", month: "short", timeZone: "UTC" });
+/** Things waiting for the owner, in the order they usually matter (money first). */
+const TODO: { key: keyof AdminCounts; href: string; one: string; many: string; hint: string }[] = [
+  { key: "payments", href: "/admin/payments", one: "payment to confirm", many: "payments to confirm", hint: "Customers say they paid by bank transfer or crypto" },
+  { key: "withdrawals", href: "/admin/withdrawals", one: "withdrawal to pay", many: "withdrawals to pay", hint: "Send the bank transfer, then mark it paid" },
+  { key: "disputes", href: "/admin/disputes", one: "P2P dispute", many: "P2P disputes", hint: "Decide: refund the buyer or pay the seller" },
+  { key: "esim", href: "/admin/esim", one: "US eSIM to deliver", many: "US eSIMs to deliver", hint: "Customers are waiting for their QR code" },
+  { key: "shop", href: "/admin/shop", one: "shop order to deliver", many: "shop orders to deliver", hint: "Manual-delivery shop orders" },
+  { key: "instantStuck", href: "/admin/instant", one: "gift card / airtime / eSIM order stuck", many: "gift card / airtime / eSIM orders stuck", hint: "Still processing after 15 minutes: check or refund" },
+  { key: "sellers", href: "/admin/sellers", one: "seller application", many: "seller applications", hint: "Check their ID and bank details" },
+  { key: "listings", href: "/admin/listings", one: "ad to review", many: "ads to review", hint: "P2P ads waiting for your approval" },
+];
+
+/** One line per menu item, so the owner knows where to go. */
+const ABOUT: Record<string, string> = {
+  "/admin/payments": "Bank transfer & crypto top-ups",
+  "/admin/withdrawals": "Customers' cash-outs to their bank",
+  "/admin/money": "Your platform wallet and what you earned",
+  "/admin/insights": "Visitors, sign-ups and top sellers",
+  "/admin/instant": "Markups, balances, stuck orders",
+  "/admin/esim": "Plans, prices and orders to deliver",
+  "/admin/verify": "Markup and per-app prices",
+  "/admin/shop": "Your own products and codes",
+  "/admin/services": "Hide, star or check services",
+  "/admin/pricing": "Markups per platform, dollar rate",
+  "/admin/providers": "Connect panels, sync, balances",
+  "/admin/disputes": "Refund the buyer or pay the seller",
+  "/admin/sellers": "Approve or decline sellers",
+  "/admin/listings": "Approve or decline ads",
+  "/admin/p2p-categories": "Categories and seller questions",
+  "/admin/legal": "Edit your Privacy Policy and Terms",
+};
+
+function greeting() {
+  const h = Number(new Date().toLocaleString("en-GB", { hour: "numeric", hour12: false, timeZone: "Africa/Lagos" }));
+  return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
 }
 
-/** Horizontal bars, one hue, value printed as text beside each bar. */
-function BarList({ items, unit, empty }: { items: { label: string; value: number; note?: string }[]; unit: string; empty: string }) {
-  const max = Math.max(1, ...items.map((i) => i.value));
-  if (items.every((i) => i.value === 0)) return <div className="empty">{empty}</div>;
-  return (
-    <ul className="barlist">
-      {items.map((i) => (
-        <li key={i.label} title={`${i.label}: ${n(i.value)} ${unit}${i.note ? ` · ${i.note}` : ""}`}>
-          <div className="barlist-head"><span>{i.label}</span><span className="barlist-val">{n(i.value)}{i.note ? <span className="muted"> · {i.note}</span> : null}</span></div>
-          <div className="barlist-track"><div className="barlist-bar" style={{ width: `${Math.max(i.value > 0 ? 2 : 0, (i.value / max) * 100)}%` }} /></div>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-export default async function InsightsPage({ searchParams }: { searchParams: Promise<{ days?: string }> }) {
-  await adminOrRedirect();
-  const { days: raw } = await searchParams;
-  const days = RANGES.includes(Number(raw)) ? Number(raw) : 30;
-  const d = await getInsights(getDb(), days);
-  const maxDay = Math.max(1, ...d.daily.map((x) => x.visitors));
-  const labelEvery = days <= 7 ? 1 : days <= 30 ? 5 : 15;
+export default async function AdminHome() {
+  const me = await adminOrRedirect();
+  const db = getDb();
+  const [counts, today] = await Promise.all([adminCounts(db), adminToday(db)]);
+  const todo = TODO.filter((t) => counts[t.key] > 0);
+  const date = new Date().toLocaleDateString("en-NG", { weekday: "long", day: "numeric", month: "long", timeZone: "Africa/Lagos" });
 
   return (
     <>
-      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-        <div>
-          <h1 style={{ fontSize: 28 }}>Insights</h1>
-          <p className="muted">What people visit and do on Almighty Pumps. Anonymous: no names, IPs or devices are stored.</p>
-        </div>
-        <nav className="seg" aria-label="Time range">
-          {RANGES.map((r) => (
-            <Link key={r} href={`/admin?days=${r}`} aria-current={r === days ? "true" : undefined}>{r} days</Link>
-          ))}
-        </nav>
-      </div>
-
-      <div className="tiles">
-        <div className="tile glass"><div className="tile-label">Visitors</div><div className="tile-num">{n(d.visitors)}</div><div className="muted tile-sub">{n(d.views)} page views</div></div>
-        <div className="tile glass"><div className="tile-label">New sign-ups</div><div className="tile-num">{n(d.signups)}</div></div>
-        <div className="tile glass"><div className="tile-label">Wallet top-ups</div><div className="tile-num">{nairaWhole(d.topups.total)}</div><div className="muted tile-sub">{n(d.topups.count)} payments</div></div>
-        <div className="tile glass"><div className="tile-label">Growth sales</div><div className="tile-num">{nairaWhole(d.growth.charged)}</div><div className="muted tile-sub">≈ {naira(d.growth.markup)} your markup</div></div>
-        <div className="tile glass"><div className="tile-label">P2P completed</div><div className="tile-num">{nairaWhole(d.trades.volume)}</div><div className="muted tile-sub">{naira(d.trades.fees)} in fees</div></div>
-      </div>
-
-      <div className="grid-cards">
-        <section className="card glass">
-          <h2>Most used sections</h2>
-          <p className="muted" style={{ fontSize: 13, marginTop: -6 }}>Visits per section, most popular first</p>
-          <BarList
-            unit="visits"
-            empty="No visits recorded yet. Views start counting from this update."
-            items={d.sections.map((s) => ({ label: s.section, value: s.views, note: `${n(s.visitors)} people` }))}
-          />
-        </section>
-        <section className="card glass">
-          <h2>What people do</h2>
-          <p className="muted" style={{ fontSize: 13, marginTop: -6 }}>Actions completed in the last {days} days</p>
-          <BarList unit="times" empty="Nothing yet in this period." items={d.actions.map((a) => ({ label: a.label, value: a.count }))} />
-        </section>
+      <div>
+        <h1 style={{ fontSize: 28 }}>{greeting()}, {me.name.split(" ")[0]}</h1>
+        <p className="muted">{date}</p>
       </div>
 
       <section className="card glass">
-        <h2>Visitors per day</h2>
-        <div className="cols" role="img" aria-label={`Visitors per day over the last ${days} days. Peak ${n(maxDay)}.`}>
-          <div className="cols-grid"><span>{n(maxDay)}</span><span>0</span></div>
-          <div className="cols-bars">
-            {d.daily.map((x, i) => (
-              <div key={x.day} className="col" tabIndex={0}>
-                <div className="col-bar" style={{ height: `${(x.visitors / maxDay) * 100}%` }} />
-                <div className="col-tip" role="tooltip">{shortDay(x.day)}<br /><b>{n(x.visitors)}</b> visitors · {n(x.views)} views</div>
-                {(i % labelEvery === 0 || i === d.daily.length - 1) && (
-                  <div className={`col-label${i === 0 || i === d.daily.length - 1 ? "" : " mid"}`}>{shortDay(x.day)}</div>
-                )}
-              </div>
+        <h2>Needs your attention</h2>
+        {todo.length === 0 ? (
+          <div className="adm-clear"><span aria-hidden="true">✓</span> All clear. Nothing is waiting for you.</div>
+        ) : (
+          <ul className="adm-todo">
+            {todo.map((t) => (
+              <li key={t.key}>
+                <Link href={t.href}>
+                  <span className="adm-todo-n">{counts[t.key]}</span>
+                  <span className="adm-todo-text"><strong>{counts[t.key] === 1 ? t.one : t.many}</strong><span className="muted">{t.hint}</span></span>
+                  <span aria-hidden="true" className="adm-chev">›</span>
+                </Link>
+              </li>
             ))}
-          </div>
-        </div>
-        <details>
-          <summary className="muted" style={{ fontSize: 13, cursor: "pointer" }}>Show as table</summary>
-          <div className="tbl-wrap"><table className="tbl">
-            <thead><tr><th>Day</th><th>Visitors</th><th>Page views</th></tr></thead>
-            <tbody>{[...d.daily].reverse().map((x) => <tr key={x.day}><td>{shortDay(x.day)}</td><td>{n(x.visitors)}</td><td>{n(x.views)}</td></tr>)}</tbody>
-          </table></div>
-        </details>
-      </section>
-
-      <section className="card glass">
-        <h2>Top growth services</h2>
-        {d.topServices.length === 0 ? <div className="empty">No growth orders in this period.</div> : (
-          <div className="tbl-wrap"><table className="tbl">
-            <thead><tr><th>Service</th><th>Category</th><th>Orders</th><th>Sales</th></tr></thead>
-            <tbody>{d.topServices.map((s) => <tr key={s.name}><td>{s.name}</td><td>{s.category}</td><td>{n(s.orders)}</td><td>{naira(s.charged)}</td></tr>)}</tbody>
-          </table></div>
+          </ul>
         )}
       </section>
+
+      <div className="tiles">
+        <Link href="/admin/money" className="tile glass adm-tile"><div className="tile-label">Sales today</div><div className="tile-num">{nairaWhole(today.salesKobo)}</div><div className="muted tile-sub">{today.orders} sale{today.orders === 1 ? "" : "s"}</div></Link>
+        <Link href="/admin/insights" className="tile glass adm-tile"><div className="tile-label">Top-ups today</div><div className="tile-num">{nairaWhole(today.topupsKobo)}</div><div className="muted tile-sub">{today.topupCount} payment{today.topupCount === 1 ? "" : "s"}</div></Link>
+        <Link href="/admin/insights" className="tile glass adm-tile"><div className="tile-label">New customers today</div><div className="tile-num">{today.signups}</div></Link>
+        <Link href="/admin/money" className="tile glass adm-tile"><div className="tile-label">Your platform wallet</div><div className="tile-num">{nairaWhole(today.platformKobo)}</div><div className="muted tile-sub">Customers hold {nairaWhole(today.customersKobo)}</div></Link>
+      </div>
+
+      {ADMIN_GROUPS.filter((g) => g.title).map((g) => (
+        <section key={g.title} className="card glass">
+          <h2>{g.title}</h2>
+          <div className="adm-links">
+            {g.items.map((i) => {
+              const n = i.count ? counts[i.count] : 0;
+              return (
+                <Link key={i.href} href={i.href} className="adm-link">
+                  <span className="adm-link-top"><strong>{i.label}</strong>{n > 0 && <span className="adm-badge">{n}</span>}</span>
+                  <span className="muted">{ABOUT[i.href] ?? ""}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      ))}
     </>
   );
 }

@@ -187,6 +187,14 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   force-dynamic so saves show immediately.
   PUBLIC CONTACT EMAIL = support@almightypumps.com (owner's rule, 2026-11-04): use it everywhere customers see
   (legal pages, footer Support link); hello@ is only for supplier sign-ups.
+- ADMIN FRAME (redesign 2026-11-04, owner asked for "simple and easy"): `app/admin/layout.tsx` → `AdminShell` in
+  `src/components/AdminNav.tsx` (sidebar on computers; on phones a sticky top bar with page title + "Menu" button that opens a
+  drawer). Menu groups live in `src/components/adminMenu.ts` (Home; Money; What you sell; P2P marketplace; Website) with red
+  count badges from `adminCounts` (`src/server/adminHome.ts`, refreshed via GET /api/admin/counts on every page change).
+  /admin = Home: "Needs your attention" (payments to confirm, withdrawals, disputes, US eSIMs, shop orders, stuck instant
+  orders >15 min, seller applications, ads to review), today's numbers (Lagos day: sales, top-ups, new customers, platform
+  wallet + money customers hold) and a card per menu group with one-line descriptions. Insights moved to /admin/insights
+  ("Visitors & sales"). New admin pages: add them to `adminMenu.ts` (+ a description in ABOUT in app/admin/page.tsx).
 - `app/api/**` route handlers; `app/page.tsx` 3D homepage; `app/signup`, `app/login`,
   `app/dashboard`; `app/admin` (Insights, Growth providers, Services, Pricing, Shop, Listings review; admins only).
 - Shop (`src/server/shop.ts`, /admin/shop, migration 0008): admin categories → products. Delivery
