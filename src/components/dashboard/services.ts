@@ -49,6 +49,13 @@ export const HUB_SERVICES: HubService[] = [
     status: "live",
   },
   {
+    id: "docs",
+    title: "Business Documents",
+    description: "Make invoices, receipts and CVs in minutes and save them as PDF. Free.",
+    icon: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8M8 17h5",
+    status: "live",
+  },
+  {
     id: "invite",
     title: "Invite Friends & Earn",
     description: "Share your link. When a friend you invite starts ordering, you both get a bonus in your wallet.",

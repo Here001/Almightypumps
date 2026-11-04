@@ -12,6 +12,7 @@ const DASHBOARD_ANCHORS: Record<string, string> = {
   airtime: "Airtime & data",
   sell: "Sell gift cards & crypto",
   invite: "Invite friends",
+  docs: "Business documents",
   orders: "My orders",
   trades: "P2P Marketplace",
   wallet: "Wallet",

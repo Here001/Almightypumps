@@ -269,6 +269,22 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   Every `<span class="logo-mark">AP</span>` (landing markup, dashboard, admin, auth, public pages) now renders the monogram via
   CSS background data-URI in app/app.css ("Brand logo" block; light-theme variant). `src/components/BrandMark.tsx` (SVG) is used
   by app/apple-icon.tsx (dark square) and app/opengraph-image.tsx; app/icon.svg = dark rounded square + monogram.
+- INVITE FRIENDS (2026-11-04, migration 0025, `src/server/referrals.ts`, `Invite.tsx` tile #invite, /admin/referrals
+  `AdminReferrals.tsx`, /api/referrals, /api/admin/referrals): `users.referral_code` (7 chars, made on first use) + `referred_by`;
+  /signup?ref=CODE (AuthForm keeps it 30 days in localStorage `ap_ref`, sends `ref`; `linkReferral` after register). Bonus when
+  the friend's paid spend (captures except withdrawal) >= minSpend and email verified: `payReferrals` (sync-orders cron + on
+  view), ledger kind `bonus:referral` (money created, not taken from the platform wallet), cap per inviter per 30 days, admin
+  can cancel pending ones. app_settings `referrals` {enabled (default OFF), bonusKobo 500, friendBonusKobo 200, minSpendKobo
+  3000, monthlyCap 30}; bonuses together can't exceed min spend. Terms default has an "Invite friends" section.
+- P2P ad photos (migration 0026 `listing_images`, bytea, max 6 per ad, ≤500 KB, magic-byte checked; `src/server/listingImages.ts`):
+  seller form uploads after save (POST /api/seller/listings/[id]/images {add|remove|cover}); served by /api/listings/images/[id]
+  (immutable cache, any ad not removed). `imageUrlsSql` adds `images` to browse/myListings/review; `AdGallery` in Marketplace.tsx.
+- P2P trade room (`TradeRoom.tsx`, sheet from "My trades" and the seller panel): steps, live countdown, buyer/seller actions,
+  chat (GET/POST /api/market/trades/[id]/messages, polls 8 s), delivery details, timeline. Emails (`notifyTrade` in market.ts):
+  seller on new order, buyer when marked delivered, other party on a chat message if the sender was quiet for 30 min.
+- Business Documents (#docs, `Documents.tsx`, free, no server): invoice / receipt / CV forms with live preview, saved in
+  localStorage `ap_docs_v1`, "Download PDF / Print" = window.print with @media print showing only `.doc-sheet`. CSS class is
+  `.bdoc` (NOT `.doc`: landing.css uses `.doc` for a tilted card).
 - Insights: `src/components/Tracker.tsx` beacons each page and dashboard #section to
   `/api/track` → `site_events` (anonymous cookie id, no IP/UA stored). Section names come
   from `src/core/analytics.ts` (add new pages there). Queries in `src/server/insights.ts`.
@@ -311,7 +327,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
     usd auto, Instagram Likes/Live viewers 100% rules. NOT copied: dev's P2P category renamed "Accounts"
     (account sales are blocked); live keeps "Digital products". Re-star 3 TikTok follower services
     (Owlet ids 8277, 24221, 8619) after the first live sync. No users yet (owner signs up, then promote to admin).
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0024 applied (main too, 2026-11-04 with owner's yes). Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0026 applied (main has 0000–0024; 0025–0026 need the owner's yes). Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

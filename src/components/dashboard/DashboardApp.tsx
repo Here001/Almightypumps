@@ -13,6 +13,7 @@ import { GiftCards } from "./GiftCards";
 import { Airtime } from "./Airtime";
 import { SellDesk } from "./SellDesk";
 import { Invite } from "./Invite";
+import { Documents } from "./Documents";
 import { Withdraw } from "./Withdraw";
 import { ManualPay } from "./ManualPay";
 import { ShopCategory } from "./Shop";
@@ -36,9 +37,9 @@ const TABS = [
   { id: "settings", label: "Settings", icon: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" },
 ] as const;
 /** Screens: the tabs, plus service screens opened from the Services hub. */
-type Tab = (typeof TABS)[number]["id"] | "boost" | "verify" | "esim" | "giftcards" | "airtime" | "sell" | "invite" | `shop-${string}`;
+type Tab = (typeof TABS)[number]["id"] | "boost" | "verify" | "esim" | "giftcards" | "airtime" | "sell" | "invite" | "docs" | `shop-${string}`;
 
-const SERVICE_SCREENS = new Set<string>(["boost", "verify", "esim", "giftcards", "airtime", "sell", "invite"]);
+const SERVICE_SCREENS = new Set<string>(["boost", "verify", "esim", "giftcards", "airtime", "sell", "invite", "docs"]);
 
 const ORDER_STATUS: Record<string, { label: string; tone: string }> = {
   QUEUED: { label: "In queue", tone: "info" }, PENDING: { label: "Starting", tone: "" }, PROCESSING: { label: "Delivering", tone: "info" }, COMPLETED: { label: "Delivered", tone: "ok" },
@@ -79,7 +80,7 @@ function Dashboard(props: Props) {
       const h = window.location.hash.replace("#", "");
       const legacy: Record<string, Tab> = { growth: "boost" };
       const next = (legacy[h] ?? h) as Tab;
-      if (next === "boost" || next === "verify" || next === "esim" || next === "giftcards" || next === "airtime" || next === "sell" || next === "invite" || next.startsWith("shop-") || TABS.some((t) => t.id === next)) setTab(next);
+      if (next === "boost" || next === "verify" || next === "esim" || next === "giftcards" || next === "airtime" || next === "sell" || next === "invite" || next === "docs" || next.startsWith("shop-") || TABS.some((t) => t.id === next)) setTab(next);
     };
     read();
     window.addEventListener("hashchange", read);
@@ -225,6 +226,16 @@ function Dashboard(props: Props) {
                 <strong>Sell Gift Cards & Crypto</strong>
               </div>
               <SellDesk />
+            </>
+          )}
+          {tab === "docs" && (
+            <>
+              <div className="ap-crumb">
+                <button type="button" className="ap-link" onClick={() => go("services")}>← All services</button>
+                <span className="muted">/</span>
+                <strong>Business Documents</strong>
+              </div>
+              <Documents />
             </>
           )}
           {tab === "invite" && (
