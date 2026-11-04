@@ -208,10 +208,12 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 - `drizzle/*.sql` migrations, applied in order by `scripts/migrate.mjs` (tracked in `_migrations`);
   `src/server/db/schema.ts` mirrors them. New schema change = new numbered file + schema.ts.
 - `scripts/migrate.mjs`, `scripts/seed.mjs`.
+- Next integrations: Reloadly (gift cards, maybe airtime/data) and eSIM Access (travel data eSIMs). Owner has accounts
+  (2026-11-04). API notes in `docs/integrations-reloadly-esimaccess.md` (docs sites are blocked from the sandbox).
 
 ## Infrastructure state (as of 2026-11-03)
 - GitHub: `Here001/Almightypumps` (private). `main` = LIVE (fast-forwarded to dev 55d73ca, then 130dee2 provider tools, cdd5cf6 eSIMs,
-  757c38f login security, 2026-11-04, each with the owner's yes); `dev` = day-to-day work. Promote later changes only with an explicit yes.
+  757c38f login security, 8e08ee4 legal pages/homepage copy/support@, 2026-11-04, each with the owner's yes); `dev` = day-to-day work. Promote later changes only with an explicit yes.
 - Neon: project **almighty-pumps** (`jolly-dust-18900048`, AWS eu-central-1).
   - `main` branch (`br-bitter-feather-ba9z9jv8`): PRODUCTION. Set up 2026-11-04 with owner's yes: 0000–0016
     applied (schema identical to dev), platform wallet created. Config copied from dev: Owlet provider (markup 60%),
