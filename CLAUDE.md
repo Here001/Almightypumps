@@ -157,8 +157,8 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 - `scripts/migrate.mjs`, `scripts/seed.mjs`.
 
 ## Infrastructure state (as of 2026-11-03)
-- GitHub: `Here001/Almightypumps` (private). `main` (placeholder README only) and
-  `dev` (full app) are both pushed.
+- GitHub: `Here001/Almightypumps` (private). `main` = LIVE (fast-forwarded to dev 55d73ca on 2026-11-04 with the
+  owner's yes); `dev` = day-to-day work. Promote later changes only with an explicit yes.
 - Neon: project **almighty-pumps** (`jolly-dust-18900048`, AWS eu-central-1).
   - `main` branch (`br-bitter-feather-ba9z9jv8`): PRODUCTION. Set up 2026-11-04 with owner's yes: 0000–0016
     applied (schema identical to dev), platform wallet created. Config copied from dev: Owlet provider (markup 60%),
@@ -184,8 +184,8 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   TEXTVERIFIED_* already there.
 - Domain: `almightypumps.com` had lapsed; RE-REGISTERED through Vercel 2026-11-04 (team otedola, $12.03/yr,
   auto-renew on, expires 2027-11-04, registrant Olorunfemi Otedola / Almighty Pumps). DNS is on Vercel
-  (ns1/ns2.vercel-dns.com), so records are managed in Vercel. NOT yet attached to the project (that's a
-  go-live step). Email: owner chose Zoho Mail (hello@, support@); Zoho (US datacenter, accounts.zoho.com)
+  (ns1/ns2.vercel-dns.com), so records are managed in Vercel. Attached to the project 2026-11-04 (production;
+  www redirects 308 to the apex). The cloud sandbox can't resolve the live domain, so the owner checks it. Email: owner chose Zoho Mail (hello@, support@); Zoho (US datacenter, accounts.zoho.com)
   records added in Vercel DNS 2026-11-04: verification TXT, MX mx/mx2/mx3.zoho.com (10/20/50), SPF
   `v=spf1 include:zohomail.com ~all`. Verified in Zoho Mail Admin (old org "VirtualOffice" from ~2021);
   hello@almightypumps.com created 2026-11-04. DKIM TXT `zmail._domainkey` (1024-bit) added 2026-11-04. Owner wants P2P ON at launch (told about the licensed-escrow-partner risk). Flutterwave Test webhook points at the dev preview (with the Vercel
