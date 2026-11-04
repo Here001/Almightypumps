@@ -148,7 +148,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   30-day cookie + JWT claim r=1, otherwise a browser-session cookie with a 12h token (`startSession(userId, remember)`;
   password change / log-out-others keep the current choice); remembered email in localStorage `ap_login_email`
   (never the password). Cloudflare Turnstile on log in + sign up (`src/server/captcha.ts`; env TURNSTILE_SITE_KEY +
-  TURNSTILE_SECRET_KEY, off until both set; verified before the password is checked; fails open only if Cloudflare is
+  TURNSTILE_SECRET_KEY, off until both set (owner to create the Cloudflare widget for almightypumps.com + the dev preview host and add both keys to Vercel Production+Preview, then redeploy); verified before the password is checked; fails open only if Cloudflare is
   unreachable). Weak/common passwords refused (`weakPassword`). `middleware.ts` blocks cross-site POST/PUT/PATCH/
   DELETE to /api/* (Origin/Sec-Fetch-Site), except /api/v2, /api/webhooks/, /api/cron/. next.config.mjs adds HSTS,
   CSP (scripts self+inline+challenges.cloudflare.com, fonts.googleapis/gstatic, img data:/blob:, frame-ancestors none,
@@ -192,8 +192,8 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 - `scripts/migrate.mjs`, `scripts/seed.mjs`.
 
 ## Infrastructure state (as of 2026-11-03)
-- GitHub: `Here001/Almightypumps` (private). `main` = LIVE (fast-forwarded to dev 55d73ca, then 130dee2 for the
-  provider tools, 2026-11-04, each with the owner's yes); `dev` = day-to-day work. Promote later changes only with an explicit yes.
+- GitHub: `Here001/Almightypumps` (private). `main` = LIVE (fast-forwarded to dev 55d73ca, then 130dee2 provider tools, cdd5cf6 eSIMs,
+  757c38f login security, 2026-11-04, each with the owner's yes); `dev` = day-to-day work. Promote later changes only with an explicit yes.
 - Neon: project **almighty-pumps** (`jolly-dust-18900048`, AWS eu-central-1).
   - `main` branch (`br-bitter-feather-ba9z9jv8`): PRODUCTION. Set up 2026-11-04 with owner's yes: 0000–0016
     applied (schema identical to dev), platform wallet created. Config copied from dev: Owlet provider (markup 60%),
