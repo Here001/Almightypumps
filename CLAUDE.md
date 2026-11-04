@@ -182,6 +182,17 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   `waiting_funds` column; `sendGiftOrder` / `sendTopup` / `sendTravelOrder` re-send from the existing sweeps; customers see
   "In the queue… only charged once delivered". TextVerified (can't wait): customer gets "temporarily unavailable" and admins
   are emailed. Admin Home shows "Top up <supplier>: N orders waiting" (`waitingBySupplier`), badge key `waitingFunds`.
+- SELL GIFT CARDS & CRYPTO (2026-11-04, owner's request; manual review desk, migration 0024 `trade_ins` + `trade_in_images`
+  (bytea photos), `src/server/sellDesk.ts`, customer tile "Sell Gift Cards & Crypto" (#sell, `SellDesk.tsx`, chips "Sell gift
+  cards" / "Sell crypto"), admin /admin/sell (`AdminSell.tsx`, menu "Gift cards & crypto bought", badge `sell`), /api/sell,
+  /api/admin/sell, /api/admin/sell/images/[id] (admin-only)). Config app_settings `sell_desk` {enabled (default OFF),
+  dailyLimitKobo per customer per 24h, cards[{name, currency, physicalRateKobo, ecodeRateKobo (₦ per 1 unit; 0 = not
+  bought), min, max, note}], coins[{coin, network, address, rateKobo per $1, min $}]}. Customer submits value + e-code /
+  photos (shrunk in-browser, ≤4, magic-byte checked) or crypto tx hash; duplicate code/hash refused; max 5 pending.
+  Admins emailed; "Approve & pay" (amount editable) = creditWallet kind `tradein:giftcard|crypto`, idempotency
+  `tradein:<id>`; reject with reason; customer emailed. Terms default has a "Selling us gift cards or crypto" section.
+  Owner was told: crypto buying needs SEC registration in Nigeria (ARIP, draft rules Aug 2026) → automate later via a
+  licensed partner (Breet or Busha API) and get legal advice; gift cards carry fraud risk (KYC, limits).
 - Legal pages (2026-11-04): /privacy and /terms (`app/privacy`, `app/terms`, shared `src/components/LegalPage.tsx`,
   CSS `.legal-doc` (NOT `.legal`: that class is the homepage footer's mono copyright line)). Plain-English drafts,
   NDPA 2023, list every processor (Flutterwave, SMM providers, TextVerified, eSIM supplier, Cloudflare Turnstile with
@@ -270,7 +281,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
     usd auto, Instagram Likes/Live viewers 100% rules. NOT copied: dev's P2P category renamed "Accounts"
     (account sales are blocked); live keeps "Digital products". Re-star 3 TikTok follower services
     (Owlet ids 8277, 24221, 8619) after the first live sync. No users yet (owner signs up, then promote to admin).
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0023 applied (main too, 2026-11-04 with owner's yes). Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0024 applied (main: 0000–0023). Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

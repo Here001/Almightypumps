@@ -10,6 +10,7 @@ const DASHBOARD_ANCHORS: Record<string, string> = {
   esim: "eSIMs",
   giftcards: "Gift cards",
   airtime: "Airtime & data",
+  sell: "Sell gift cards & crypto",
   orders: "My orders",
   trades: "P2P Marketplace",
   wallet: "Wallet",

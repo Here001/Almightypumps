@@ -11,6 +11,7 @@ const nairaWhole = (kobo: number) => "₦" + Math.round(kobo / 100).toLocaleStri
 /** Things waiting for the owner, in the order they usually matter (money first). */
 const TODO: { key: keyof AdminCounts; href: string; one: string; many: string; hint: string }[] = [
   { key: "payments", href: "/admin/payments", one: "payment to confirm", many: "payments to confirm", hint: "Customers say they paid by bank transfer or crypto" },
+  { key: "sell", href: "/admin/sell", one: "gift card / crypto sale to check", many: "gift card / crypto sales to check", hint: "Check the card or that the crypto arrived, then pay or reject" },
   { key: "withdrawals", href: "/admin/withdrawals", one: "withdrawal to pay", many: "withdrawals to pay", hint: "Send the bank transfer, then mark it paid" },
   { key: "disputes", href: "/admin/disputes", one: "P2P dispute", many: "P2P disputes", hint: "Decide: refund the buyer or pay the seller" },
   { key: "esim", href: "/admin/esim", one: "US eSIM to deliver", many: "US eSIMs to deliver", hint: "Customers are waiting for their QR code" },
@@ -24,6 +25,7 @@ const TODO: { key: keyof AdminCounts; href: string; one: string; many: string; h
 const ABOUT: Record<string, string> = {
   "/admin/payments": "Bank transfer & crypto top-ups",
   "/admin/withdrawals": "Customers' cash-outs to their bank",
+  "/admin/sell": "Cards and coins customers sell you, your rates",
   "/admin/money": "Your platform wallet and what you earned",
   "/admin/insights": "Visitors, sign-ups and top sellers",
   "/admin/instant": "Markups, balances, stuck orders",

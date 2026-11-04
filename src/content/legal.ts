@@ -100,6 +100,10 @@ const TERMS = `These terms are the agreement between you and Almighty Pumps (“
 - If you keep an existing number, your details must be correct and the number must be yours. Number transfers can be refused by your old carrier; if we can't complete your order, we refund you.
 - Plans run for the length you bought. Network coverage, speeds and availability are provided by the network operator and can change.
 
+### Selling us gift cards or crypto
+- You can only sell gift cards you lawfully own and that haven't been used. Crypto must come from a wallet you control. We pay into your wallet after we've checked the card or seen the crypto arrive, at the rate shown when you submitted. If a card turns out to be invalid or used, or the crypto doesn't arrive, we don't pay. Crypto sent on the wrong network can't be recovered.
+- We may limit how much you can sell, ask for ID, refuse a trade, and report fraud to the authorities. Selling stolen or fraudulently obtained cards or crypto gets your account closed.
+
 ### Shop items and gift cards
 - Codes delivered instantly can't be refunded once shown to you, unless the code doesn't work and the supplier confirms it.
 

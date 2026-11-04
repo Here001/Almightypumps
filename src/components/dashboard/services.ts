@@ -42,6 +42,13 @@ export const HUB_SERVICES: HubService[] = [
     status: "live",
   },
   {
+    id: "sell",
+    title: "Sell Gift Cards & Crypto",
+    description: "Turn your gift cards, Bitcoin or USDT into Naira, paid into your wallet.",
+    icon: "M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6",
+    status: "live",
+  },
+  {
     id: "verify",
     title: "Get Verification Code",
     description: "Receive one-time SMS codes on a virtual number.",

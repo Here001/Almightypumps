@@ -9,6 +9,7 @@ export const ADMIN_GROUPS: { title: string; items: Item[] }[] = [
     items: [
       { href: "/admin/payments", label: "Payments to confirm", count: "payments" },
       { href: "/admin/withdrawals", label: "Withdrawals to pay", count: "withdrawals" },
+      { href: "/admin/sell", label: "Gift cards & crypto bought", count: "sell" },
       { href: "/admin/money", label: "Earnings & balances" },
       { href: "/admin/insights", label: "Visitors & sales" },
     ],

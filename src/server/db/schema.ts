@@ -569,3 +569,35 @@ export const manualDeposits = pgTable("manual_deposits", {
   decidedAt: ts("decided_at"),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
+
+/* ---------- Sell gift cards & crypto (migration 0024) ---------- */
+
+export const tradeIns = pgTable("trade_ins", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  publicId: serial("public_id").unique(),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  kind: text("kind").$type<"giftcard" | "crypto">().notNull(),
+  itemId: text("item_id").notNull(),
+  itemLabel: text("item_label").notNull(),
+  cardForm: text("card_form").$type<"ecode" | "physical" | null>(),
+  value: text("value").notNull(),
+  currency: text("currency").notNull(),
+  rateKobo: money("rate_kobo").notNull(),
+  payoutKobo: money("payout_kobo").notNull(),
+  proof: text("proof").notNull().default(""),
+  note: text("note").notNull().default(""),
+  status: text("status").$type<"pending" | "paid" | "rejected">().notNull().default("pending"),
+  paidKobo: money("paid_kobo"),
+  adminNote: text("admin_note"),
+  decidedBy: uuid("decided_by").references(() => users.id),
+  decidedAt: ts("decided_at"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+
+export const tradeInImages = pgTable("trade_in_images", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tradeInId: uuid("trade_in_id").notNull().references(() => tradeIns.id, { onDelete: "cascade" }),
+  contentType: text("content_type").notNull(),
+  data: bytea("data").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
