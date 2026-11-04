@@ -16,36 +16,36 @@ declare global { interface Window { turnstile?: Turnstile } }
 const EMAIL_KEY = "ap_login_email";
 const SCRIPT = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
 
-/** Cloudflare Turnstile "I'm not a robot" box. Calls onToken with a fresh token (or "" when it expires). */
+/**
+ * Cloudflare Turnstile "I'm not a robot" check. Starts as soon as the page opens so it finishes while the
+ * person types; the box only shows if Cloudflare needs a click ("interaction-only").
+ */
 function Captcha({ siteKey, onToken, resetKey }: { siteKey: string; onToken: (t: string) => void; resetKey: number }) {
   const box = useRef<HTMLDivElement>(null);
   const id = useRef<string | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
     let cancelled = false;
+    let tries = 0;
     const mount = () => {
-      if (cancelled || !box.current || !window.turnstile || id.current) return;
+      if (cancelled || !box.current || id.current) return;
+      if (!window.turnstile) {
+        // The script tag below is loading; check again shortly (gives up after ~20s).
+        if (++tries > 200) { setFailed(true); return; }
+        setTimeout(mount, 100);
+        return;
+      }
       id.current = window.turnstile.render(box.current, {
         sitekey: siteKey,
+        appearance: "interaction-only",
+        "refresh-expired": "auto",
         theme: document.documentElement.dataset.theme === "light" ? "light" : "dark",
         callback: (t: string) => { setFailed(false); onToken(t); },
         "expired-callback": () => onToken(""),
         "error-callback": () => { setFailed(true); onToken(""); },
       });
     };
-    if (window.turnstile) mount();
-    else {
-      let s = document.querySelector<HTMLScriptElement>(`script[src="${SCRIPT}"]`);
-      if (!s) {
-        s = document.createElement("script");
-        s.src = SCRIPT;
-        s.async = true;
-        s.defer = true;
-        document.head.appendChild(s);
-      }
-      s.addEventListener("load", mount);
-      s.addEventListener("error", () => setFailed(true));
-    }
+    mount();
     return () => {
       cancelled = true;
       if (id.current && window.turnstile) window.turnstile.remove(id.current);
@@ -60,6 +60,9 @@ function Captcha({ siteKey, onToken, resetKey }: { siteKey: string; onToken: (t:
   }, [resetKey]);
   return (
     <div className="captcha">
+      {/* Hoisted to <head> by React and fetched straight away, in parallel with the page. */}
+      <link rel="preconnect" href="https://challenges.cloudflare.com" />
+      <script src={SCRIPT} async />
       <div ref={box} />
       {failed && <span className="muted" style={{ fontSize: 13 }}>The robot check couldn&apos;t load. Check your connection and refresh the page.</span>}
     </div>
@@ -73,8 +76,19 @@ export default function AuthForm({ mode, captchaSiteKey }: { mode: "signup" | "l
   const [token, setToken] = useState("");
   const [resetKey, setResetKey] = useState(0);
   const [email, setEmail] = useState("");
+  const [waiting, setWaiting] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
   const [remember, setRemember] = useState(false);
   const signup = mode === "signup";
+
+  useEffect(() => {
+    if (waiting && token) { setWaiting(false); formRef.current?.requestSubmit(); }
+  }, [waiting, token]);
+  useEffect(() => {
+    if (!waiting) return;
+    const t = setTimeout(() => { setWaiting(false); setError("The robot check is taking too long. If a box appeared, tick it, then try again."); }, 20000);
+    return () => clearTimeout(t);
+  }, [waiting]);
 
   // "Remember me" also remembers the email on this device (never the password).
   useEffect(() => {
@@ -88,7 +102,8 @@ export default function AuthForm({ mode, captchaSiteKey }: { mode: "signup" | "l
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    if (captchaSiteKey && !token) { setError("Please complete the “I'm not a robot” check first."); return; }
+    // Tapped Log in before the robot check finished: wait for it, then continue automatically.
+    if (captchaSiteKey && !token) { setWaiting(true); return; }
     setBusy(true);
     const f = Object.fromEntries(new FormData(e.currentTarget).entries()) as Record<string, string>;
     try {
@@ -111,7 +126,7 @@ export default function AuthForm({ mode, captchaSiteKey }: { mode: "signup" | "l
   return (
     <main className="app-shell auth-wrap">
       <div className="app-bg" aria-hidden="true" />
-      <form className="auth-card glass" onSubmit={onSubmit} noValidate>
+      <form ref={formRef} className="auth-card glass" onSubmit={onSubmit} noValidate>
         <Link href="/" className="logo" style={{ color: "var(--fg)" }}>
           <span className="logo-mark">AP</span>ALMIGHTY PUMPS
         </Link>
@@ -147,8 +162,8 @@ export default function AuthForm({ mode, captchaSiteKey }: { mode: "signup" | "l
           </label>
         )}
         {captchaSiteKey && <Captcha siteKey={captchaSiteKey} onToken={setToken} resetKey={resetKey} />}
-        <button type="submit" className="btn btn-primary" disabled={busy}>
-          {busy ? "Please wait…" : signup ? "Create account" : "Log in"}
+        <button type="submit" className="btn btn-primary" disabled={busy || waiting}>
+          {waiting ? "Checking you're human…" : busy ? "Please wait…" : signup ? "Create account" : "Log in"}
         </button>
         {!signup && <p className="muted" style={{ fontSize: 12 }}>Don&apos;t tick “Remember me” on a shared or public phone or computer.</p>}
         <p className="muted" style={{ fontSize: 14 }}>

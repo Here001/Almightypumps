@@ -149,7 +149,9 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   password change / log-out-others keep the current choice); remembered email in localStorage `ap_login_email`
   (never the password). Cloudflare Turnstile on log in + sign up (`src/server/captcha.ts`; env TURNSTILE_SITE_KEY +
   TURNSTILE_SECRET_KEY, off until both set (owner to create the Cloudflare widget for almightypumps.com + the dev preview host and add both keys to Vercel Production+Preview, then redeploy); verified before the password is checked; fails open only if Cloudflare is
-  unreachable). Weak/common passwords refused (`weakPassword`). `middleware.ts` blocks cross-site POST/PUT/PATCH/
+  unreachable). The Turnstile script + preconnect are rendered in the page (React hoists them to <head>) so the check runs
+  while the user types; appearance "interaction-only" (box shows only if a click is needed); tapping Log in early waits
+  ("Checking you're human…", 20s cap) and auto-submits when the token arrives. Weak/common passwords refused (`weakPassword`). `middleware.ts` blocks cross-site POST/PUT/PATCH/
   DELETE to /api/* (Origin/Sec-Fetch-Site), except /api/v2, /api/webhooks/, /api/cron/. next.config.mjs adds HSTS,
   CSP (scripts self+inline+challenges.cloudflare.com, fonts.googleapis/gstatic, img data:/blob:, frame-ancestors none,
   form-action self; upgrade-insecure-requests only on Vercel) and COOP. Generic "email and password don't match"

@@ -282,4 +282,4 @@ img.mk-avatar { object-fit: cover; background: var(--surface-2); }
 .pw-wrap .input { flex: 1; padding-right: 52px; }
 .pw-eye { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 12px; background: none; color: var(--muted); cursor: pointer; }
 .pw-eye:hover { color: var(--fg); background: rgb(var(--ov) / .08); }
-.captcha { min-height: 65px; display: flex; flex-direction: column; gap: 6px; }
+.captcha { display: flex; flex-direction: column; gap: 6px; }
