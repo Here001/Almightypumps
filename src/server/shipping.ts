@@ -238,39 +238,65 @@ export async function bookShipment(db: Db, userId: string, quoteId: string, rate
     return { s, rate, holdId };
   });
 
-  // 2) Arrange the pickup with the carrier.
+  // 2) Arrange the pickup with the carrier (and take the money, or keep it on hold if our Terminal wallet is empty).
+  const r = await arrangePickup(db, held.s.id, rateId, held.holdId, held.rate.priceKobo, held.rate.carrier, held.s.fromAddress);
+  if (r === "waiting") return { code: held.s.code, waiting: true };
+  return { code: held.s.code, waiting: false };
+}
+
+/**
+ * Book the pickup for a paid shipment. Booked → capture the customer's money. Terminal wallet empty → keep the money on
+ * hold, mark 'waiting_funds' and email the admins (nothing is refunded; "Retry all now" or the cron books it later).
+ * Any other refusal → refund and mark 'failed'.
+ */
+async function arrangePickup(db: Db, id: string, rateId: string, holdId: string, priceKobo: number, carrier: string, from: Record<string, string>): Promise<"booked" | "waiting"> {
   let pickup: TPickup;
   try {
     pickup = await terminal<TPickup>("/shipments/pickup", { method: "POST", body: { rate_id: rateId, purchase_insurance: false } });
   } catch (e) {
     const msg = (e as Error).message;
-    await db.transaction(async (tx) => {
-      await settleHold(tx, held.holdId, 0, [], { refType: "shipment", refId: held.s.id, idempotencyKey: `shipment:${held.s.id}:settle` });
-      await tx.update(shipments).set({ status: "failed", error: msg.slice(0, 300), updatedAt: new Date() }).where(eq(shipments.id, held.s.id));
-    });
     if (isOutOfFunds(msg)) {
-      await alertSupplierFunds(db, "Terminal Africa (shipping)", { amountKobo: held.rate.costKobo, adminPath: "/admin/shipping" }).catch(() => {});
-      throw badRequest("Package booking is temporarily unavailable. Your money is back in your wallet. Please try again in a little while.");
+      await db.update(shipments).set({ status: "waiting_funds", error: "Waiting for Terminal Africa balance", updatedAt: new Date() }).where(eq(shipments.id, id));
+      await alertSupplierFunds(db, "Terminal Africa (shipping)", { amountKobo: priceKobo, adminPath: "/admin/shipping" }).catch(() => {});
+      return "waiting";
     }
+    await db.transaction(async (tx) => {
+      await settleHold(tx, holdId, 0, [], { refType: "shipment", refId: id, idempotencyKey: `shipment:${id}:settle` });
+      await tx.update(shipments).set({ status: "failed", error: msg.slice(0, 300), updatedAt: new Date() }).where(eq(shipments.id, id));
+    });
     console.error("[shipping] pickup failed", msg);
     throw badRequest("The courier couldn't accept this booking. Your money is back in your wallet. Please get new prices and try again.");
   }
-
-  // 3) Capture the payment and save the tracking details.
   const x = pickup.extras ?? {};
   await db.transaction(async (tx) => {
-    await settleHold(tx, held.holdId, held.rate.priceKobo, [{ walletId: await platformWalletId(tx), amount: held.rate.priceKobo, kind: "revenue:shipping" }],
-      { refType: "shipment", refId: held.s.id, idempotencyKey: `shipment:${held.s.id}:settle` });
+    await settleHold(tx, holdId, priceKobo, [{ walletId: await platformWalletId(tx), amount: priceKobo, kind: "revenue:shipping" }],
+      { refType: "shipment", refId: id, idempotencyKey: `shipment:${id}:settle` });
     await tx.update(shipments).set({
-      status: "booked", providerShipmentId: pickup.shipment_id ?? pickup.id ?? null,
+      status: "booked", error: null, providerShipmentId: pickup.shipment_id ?? pickup.id ?? null,
       carrierTracking: x.tracking_number ?? pickup.carrier_tracking_number ?? null,
       trackingUrl: x.carrier_tracking_url ?? x.tracking_url ?? pickup.tracking_url ?? null,
       labelUrl: x.shipping_label_url ?? x.shipping_label ?? x.label_url ?? null,
-      events: [{ at: new Date().toISOString(), text: `Booked with ${held.rate.carrier}. Waiting for pickup.`, location: `${held.s.fromAddress.city}, ${held.s.fromAddress.state}` }],
+      events: [{ at: new Date().toISOString(), text: `Booked with ${carrier}. Waiting for pickup.`, location: `${from.city}, ${from.state}` }],
       updatedAt: new Date(),
-    }).where(eq(shipments.id, held.s.id));
+    }).where(eq(shipments.id, id));
   });
-  return { code: held.s.code };
+  return "booked";
+}
+
+/** Book every package that was waiting for the Terminal Africa balance (admin "Retry all now" and the cron). */
+export async function retryWaitingShipments(db: Db) {
+  if (!keySet()) return { waiting: 0, sent: 0, failed: 0 };
+  const rows = await db.select().from(shipments).where(eq(shipments.status, "waiting_funds")).orderBy(shipments.createdAt).limit(30);
+  let sent = 0, failed = 0;
+  for (const s of rows) {
+    if (!s.rateId || !s.holdId || !s.priceKobo) continue;
+    try {
+      const r = await arrangePickup(db, s.id, s.rateId, s.holdId, s.priceKobo, s.carrier ?? "the courier", s.fromAddress);
+      if (r === "waiting") break; // still no money: stop for now
+      sent++;
+    } catch { failed++; } // refused for another reason (e.g. price expired): refunded inside arrangePickup
+  }
+  return { waiting: rows.length, sent, failed };
 }
 
 /* ---------------- tracking ---------------- */
@@ -308,6 +334,7 @@ export async function sweepShipments(db: Db) {
     .where(and(inArray(shipments.status, [...ACTIVE]), or(sql`${shipments.lastTrackedAt} IS NULL`, lt(shipments.lastTrackedAt, new Date(Date.now() - 30 * 60_000)))))
     .orderBy(shipments.lastTrackedAt).limit(25);
   for (const s of due) await refresh(db, s).catch((e) => console.error("[shipping] track", s.code, (e as Error).message));
+  await retryWaitingShipments(db).catch((e) => console.error("[shipping] retry waiting", (e as Error).message));
   // Quotes nobody booked are just noise after a day.
   await db.delete(shipments).where(and(eq(shipments.status, "quoted"), lt(shipments.createdAt, new Date(Date.now() - 24 * 3600_000))));
   return { checked: due.length };
@@ -330,7 +357,7 @@ export async function trackPublic(db: Db, raw: string) {
   const q = raw.trim().toUpperCase().replace(/\s+/g, "");
   if (q.length < 6 || q.length > 40) throw badRequest("Enter the tracking number you were given.");
   const [s] = await db.select().from(shipments)
-    .where(and(or(eq(shipments.code, q), sql`upper(${shipments.carrierTracking}) = ${q}`), inArray(shipments.status, ["booked", "in_transit", "delivered", "cancelled"])))
+    .where(and(or(eq(shipments.code, q), sql`upper(${shipments.carrierTracking}) = ${q}`), inArray(shipments.status, ["waiting_funds", "booked", "in_transit", "delivered", "cancelled"])))
     .limit(1);
   if (!s) throw notFound("Shipment with that tracking number");
   const fresh = ACTIVE.includes(s.status as (typeof ACTIVE)[number]) && (!s.lastTrackedAt || Date.now() - s.lastTrackedAt.getTime() > 10 * 60_000)
@@ -356,6 +383,17 @@ export async function cancelShipment(db: Db, shipmentId: string, by: { userId?: 
   const [s] = await db.select().from(shipments).where(eq(shipments.id, shipmentId));
   if (!s || (!by.admin && s.userId !== by.userId)) throw notFound("Shipment");
   if (s.status === "cancelled") throw badRequest("This package was already cancelled and refunded.");
+  // Still waiting for our courier balance: only an admin can cancel it (the money is just released from hold).
+  if (s.status === "waiting_funds") {
+    if (!by.admin) throw badRequest("This package is waiting to be booked with the courier. Contact support if you want to cancel it.");
+    await db.transaction(async (tx) => {
+      const [locked] = await tx.select({ status: shipments.status }).from(shipments).where(eq(shipments.id, s.id)).for("update");
+      if (locked.status !== "waiting_funds") return;
+      if (s.holdId) await settleHold(tx, s.holdId, 0, [], { refType: "shipment", refId: s.id, idempotencyKey: `shipment:${s.id}:settle` });
+      await tx.update(shipments).set({ status: "cancelled", error: "Cancelled by admin while waiting for courier balance", updatedAt: new Date() }).where(eq(shipments.id, s.id));
+    });
+    return { ok: true };
+  }
   if (s.status !== "booked") throw badRequest("This package has already been picked up, so it can't be cancelled here. Contact support.");
   if (s.providerShipmentId) {
     try { await terminal("/shipments/cancel", { method: "POST", body: { shipment_id: s.providerShipmentId } }); }

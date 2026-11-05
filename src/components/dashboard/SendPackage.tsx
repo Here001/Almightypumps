@@ -16,7 +16,7 @@ type Info = { enabled: boolean; states: string[]; countries: Country[]; shipment
 
 const blank = (country: string): Addr => ({ name: "", phone: "", email: "", line1: "", line2: "", city: "", state: "", zip: "", country });
 export const SHIP_STATUS: Record<string, { label: string; tone: string }> = {
-  booked: { label: "Waiting for pickup", tone: "info" }, in_transit: { label: "On the way", tone: "info" }, delivered: { label: "Delivered", tone: "ok" }, cancelled: { label: "Cancelled, refunded", tone: "bad" },
+  waiting_funds: { label: "Booking with courier…", tone: "warn" }, booked: { label: "Waiting for pickup", tone: "info" }, in_transit: { label: "On the way", tone: "info" }, delivered: { label: "Delivered", tone: "ok" }, cancelled: { label: "Cancelled, refunded", tone: "bad" },
 };
 const POSTCODE: Record<string, string> = { US: "ZIP code", GB: "Postcode", CA: "Postal code" };
 
@@ -76,6 +76,7 @@ export function SendPackage({ balance, onAddMoney }: { balance: number; onAddMon
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [done, setDone] = useState<string | null>(null);
+  const [doneWaiting, setDoneWaiting] = useState(false);
   const load = () => api<Info>("/api/shipping").then(setInfo).catch((e) => setMsg({ ok: false, text: (e as Error).message }));
   useEffect(() => { void load(); }, []);
 
@@ -96,8 +97,8 @@ export function SendPackage({ balance, onAddMoney }: { balance: number; onAddMon
     if (!quote || !rate) return;
     setBusy(true); setMsg(null);
     try {
-      const r = await api<{ code: string }>("/api/shipping", { action: "book", quoteId: quote.quoteId, rateId: rate.rateId });
-      setDone(r.code); setQuote(null); router.refresh(); await load();
+      const r = await api<{ code: string; waiting?: boolean }>("/api/shipping", { action: "book", quoteId: quote.quoteId, rateId: rate.rateId });
+      setDone(r.code); setDoneWaiting(!!r.waiting); setQuote(null); router.refresh(); await load();
     } catch (e) { setMsg({ ok: false, text: (e as Error).message }); }
     finally { setBusy(false); }
   }
@@ -113,7 +114,9 @@ export function SendPackage({ balance, onAddMoney }: { balance: number; onAddMon
         <section className="card glass"><div className="empty">Package delivery opens soon. Check back shortly.</div></section>
       ) : done ? (
         <section className="card glass">
-          <div className="form-ok" role="status">Booked! The courier will contact the sender to arrange pickup.</div>
+          {doneWaiting
+            ? <div className="form-ok" role="status">Order received and pending: we&apos;re confirming the pickup with the courier. Your payment is on hold and you&apos;ll see &ldquo;Waiting for pickup&rdquo; below once it&apos;s booked.</div>
+            : <div className="form-ok" role="status">Booked! The courier will contact the sender to arrange pickup.</div>}
           <p style={{ margin: 0 }}>Tracking number: <code className="ap-code bt-num">{done}</code> <Copy text={done} /></p>
           <p className="muted" style={{ fontSize: 13, margin: 0 }}>Share it with the receiver. Anyone can follow the package at <Link href={`/track?code=${done}`}>almightypumps.com/track</Link>.</p>
           <button type="button" className="btn btn-ghost" onClick={() => { setDone(null); setPkg({ description: "", weight: "1", weightUnit: "kg", value: "", quantity: "1" }); }}>Send another package</button>

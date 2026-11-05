@@ -12,7 +12,7 @@ import { travelEsimOrders, travelPackages, users } from "./db/schema";
 import { AppError, badRequest, notFound } from "./errors";
 import { EsimAccess, esimAccessConfigured, type EaPackage } from "./esimaccess";
 import { getUsdRateKobo } from "./pricing";
-import { alertSupplierFunds, isOutOfFunds, WAIT_LIMIT_MS } from "./supplierFunds";
+import { alertSupplierFunds, isOutOfFunds } from "./supplierFunds";
 import { linkHold, placeHold, platformWalletId, settleHold, walletIdForUser } from "./wallet";
 
 export type TravelConfig = { markupBps: number; enabled: boolean; syncedAt: string | null };
@@ -185,7 +185,6 @@ export async function refreshTravelOrder(db: Db, id: string) {
   const [o] = await db.select().from(travelEsimOrders).where(eq(travelEsimOrders.id, id));
   if (!o || o.status !== "pending") return o;
   if (o.waitingFunds && !o.providerOrderNo) {
-    if (Date.now() - o.createdAt.getTime() > WAIT_LIMIT_MS) return closeTravel(db, id, "refunded", { error: "Refunded: supplier balance wasn't topped up in time" });
     await sendTravelOrder(db, id);
     return (await db.select().from(travelEsimOrders).where(eq(travelEsimOrders.id, id)))[0];
   }

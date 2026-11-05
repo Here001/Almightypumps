@@ -5,7 +5,7 @@ import { api, naira } from "./api";
 
 type Row = { id: string; code: string; status: string; carrier: string | null; priceKobo: number | null; costKobo: number | null; error: string | null; createdAt: string; route: string; customer: { name: string; email: string }; carrierTracking: string | null; labelUrl: string | null };
 type Data = { config: { enabled: boolean; markupBps: number }; keySet: boolean; sandbox: boolean; totals: { booked: number; profitKobo: number }; shipments: Row[] };
-const LABEL: Record<string, string> = { booking: "Booking…", booked: "Waiting for pickup", in_transit: "On the way", delivered: "Delivered", cancelled: "Cancelled (refunded)", failed: "Failed (refunded)" };
+const LABEL: Record<string, string> = { waiting_funds: "Waiting: top up Terminal Africa", booking: "Booking…", booked: "Waiting for pickup", in_transit: "On the way", delivered: "Delivered", cancelled: "Cancelled (refunded)", failed: "Failed (refunded)" };
 
 export function AdminShipping() {
   const [d, setD] = useState<Data | null>(null);
@@ -54,7 +54,7 @@ export function AdminShipping() {
                   {s.error && <span className="muted" style={{ fontSize: 13 }}>Reason: {s.error}</span>}
                   <a className="ap-link" style={{ fontSize: 13 }} href={`/track?code=${s.code}`} target="_blank" rel="noopener noreferrer">Track</a>
                   {s.labelUrl && <a className="ap-link" style={{ fontSize: 13 }} href={s.labelUrl} target="_blank" rel="noopener noreferrer">Label</a>}
-                  {s.status === "booked" && <button type="button" className="btn btn-ghost ap-mini" disabled={busy} onClick={() => { if (window.confirm(`Cancel ${s.code} and refund the customer?`)) void act({ action: "cancel", id: s.id }, "Cancelled and refunded."); }}>Cancel & refund</button>}
+                  {(s.status === "booked" || s.status === "waiting_funds") && <button type="button" className="btn btn-ghost ap-mini" disabled={busy} onClick={() => { if (window.confirm(`Cancel ${s.code} and refund the customer?`)) void act({ action: "cancel", id: s.id }, "Cancelled and refunded."); }}>Cancel & refund</button>}
                 </div>
               </li>
             ))}

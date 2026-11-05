@@ -16,7 +16,7 @@ import { getMinOrderKobo, getUsdRateKobo, reprice } from "./pricing";
 import { keyHint, open, seal } from "./secretBox";
 import { smmOrders, smmProviders, smmServices } from "./db/schema";
 import { AppError, badRequest, notFound } from "./errors";
-import { isOutOfFunds, alertSupplierFunds, WAIT_LIMIT_MS } from "./supplierFunds";
+import { isOutOfFunds, alertSupplierFunds } from "./supplierFunds";
 import { linkHold, placeHold, platformWalletId, settleHold, walletIdForUser } from "./wallet";
 
 type Provider = typeof smmProviders.$inferSelect;
@@ -374,7 +374,6 @@ export async function retryQueuedOrders(db: Db) {
   const broke = new Set<string>();
   let sent = 0, refunded = 0;
   for (const { o, svc, p } of queued) {
-    if (Date.now() - o.createdAt.getTime() > WAIT_LIMIT_MS) { await failQueued(db, o.id, `Refunded: ${p.name} balance wasn't topped up within 72 hours`); refunded++; continue; }
     if (broke.has(p.id) || !p.active) continue;
     try {
       const providerOrderId = parseAdd(await call(p, { action: "add", service: svc.providerServiceId, link: o.link, quantity: String(o.quantity) }));

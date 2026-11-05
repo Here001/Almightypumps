@@ -7,7 +7,7 @@ type Track = {
   code: string; status: string; carrier: string | null; carrierLogo: string | null; carrierTracking: string | null; trackingUrl: string | null;
   from: string; to: string; deliveryTime: string | null; events: { at: string; text: string; location: string | null }[]; bookedAt: string; deliveredAt: string | null;
 };
-const LABEL: Record<string, string> = { booked: "Waiting for pickup", in_transit: "On the way", delivered: "Delivered", cancelled: "Cancelled" };
+const LABEL: Record<string, string> = { waiting_funds: "Being booked with the courier", booked: "Waiting for pickup", in_transit: "On the way", delivered: "Delivered", cancelled: "Cancelled" };
 const STEPS = ["booked", "in_transit", "delivered"];
 const when = (d: string) => { const t = new Date(d); return Number.isNaN(t.getTime()) ? d : t.toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" }); };
 

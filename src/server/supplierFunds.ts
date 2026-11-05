@@ -14,9 +14,6 @@ export function isOutOfFunds(message: string | null | undefined): boolean {
   return /not enough (funds|money|balance)|insufficient\s*(wallet\s*)?(funds|balance|account balance|credit)|INSUFFICIENT_BALANCE|balance (is )?(too low|insufficient|not enough)|low balance|top ?up your (account|balance|wallet)|no (enough )?balance|余额不足/i.test(String(message ?? ""));
 }
 
-/** Hold refund deadline for waiting orders. */
-export const WAIT_LIMIT_MS = 72 * 3600_000;
-
 export async function alertSupplierFunds(db: Db, supplier: string, detail: { waiting?: number; amountKobo?: number; customerFacing?: string; adminPath?: string }) {
   console.warn(`[supplier] ${supplier} has no balance${detail.waiting ? `; ${detail.waiting} order(s) waiting` : ""}`);
   const sent = await readSetting<Record<string, string>>(db, "supplier_alerts", {});
@@ -27,7 +24,7 @@ export async function alertSupplierFunds(db: Db, supplier: string, detail: { wai
   const money = detail.amountKobo ? ` worth ₦${Math.round(detail.amountKobo / 100).toLocaleString("en-NG")}` : "";
   await sendNotice(admins.map((a) => a.email), `Top up ${supplier}: orders are waiting`, [
     `Your ${supplier} account has run out of money, so it couldn't fulfil a customer's order.`,
-    detail.customerFacing ?? `${detail.waiting ?? 1} order(s)${money} are waiting. Customers' money is held, not taken.`,
-    `Add funds to your ${supplier} account. Waiting orders are sent automatically within 5 minutes after that. Anything still waiting after 72 hours is refunded.`,
-  ], { href: `${env().APP_URL.replace(/\/+$/, "")}${detail.adminPath ?? "/admin"}`, label: "Open admin" }).catch((e) => console.error("[supplier] alert email", e));
+    detail.customerFacing ?? `${detail.waiting ?? 1} order(s)${money} are waiting. The customers' money is on hold and they see "pending". Nothing is refunded automatically.`,
+    `Add funds to your ${supplier} account, then open your admin and tap "Retry all now" (waiting orders are also retried automatically every few minutes).`,
+  ], { href: `${env().APP_URL.replace(/\/+$/, "")}/admin`, label: "Open admin to retry" }).catch((e) => console.error("[supplier] alert email", e));
 }

@@ -657,7 +657,7 @@ export const shipments = pgTable("shipments", {
   id: uuid("id").primaryKey().defaultRandom(),
   code: text("code").notNull().unique(),
   userId: uuid("user_id").notNull().references(() => users.id),
-  status: text("status").$type<"quoted" | "booking" | "booked" | "in_transit" | "delivered" | "cancelled" | "failed">().notNull().default("quoted"),
+  status: text("status").$type<"quoted" | "booking" | "waiting_funds" | "booked" | "in_transit" | "delivered" | "cancelled" | "failed">().notNull().default("quoted"),
   fromAddress: jsonb("from_address").$type<Record<string, string>>().notNull(),
   toAddress: jsonb("to_address").$type<Record<string, string>>().notNull(),
   parcel: jsonb("parcel").$type<Record<string, unknown>>().notNull(),

@@ -10,7 +10,7 @@ import { topupOrders, users } from "./db/schema";
 import { AppError, badRequest, notFound } from "./errors";
 import { getUsdRateKobo } from "./pricing";
 import { ReloadlyTopup, adminReason, reloadlyConfigured, reloadlyMode, type RlOperator, type RlTopup } from "./reloadly";
-import { alertSupplierFunds, isOutOfFunds, WAIT_LIMIT_MS } from "./supplierFunds";
+import { alertSupplierFunds, isOutOfFunds } from "./supplierFunds";
 import { linkHold, placeHold, platformWalletId, settleHold, walletIdForUser } from "./wallet";
 
 export type AirtimeConfig = { airtimeMarkupBps: number; dataMarkupBps: number; enabled: boolean };
@@ -232,8 +232,7 @@ export async function refreshTopup(db: Db, id: string) {
   const [o] = await db.select().from(topupOrders).where(eq(topupOrders.id, id));
   if (!o || o.status !== "pending") return o;
   if (o.waitingFunds) {
-    if (Date.now() - o.createdAt.getTime() > WAIT_LIMIT_MS) await closeTopup(db, id, "refunded", "Refunded: supplier balance wasn't topped up in time");
-    else await sendTopup(db, id);
+    await sendTopup(db, id);
   } else if (o.providerTx) {
     const s = await ReloadlyTopup.status(o.providerTx);
     await applyResult(db, id, { ...(s.transaction ?? {}), status: s.status ?? s.transaction?.status, transactionId: Number(o.providerTx) });

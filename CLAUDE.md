@@ -176,9 +176,13 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   shows "US phone line" first (default), then "Travel data · instant" (owner's request).
 - SUPPLIER OUT OF MONEY (2026-11-04, owner's request, migration 0023): `src/server/supplierFunds.ts` (`isOutOfFunds` regex on
   supplier errors, `alertSupplierFunds` emails all admins at most once an hour per supplier via app_settings
-  `supplier_alerts`, `WAIT_LIMIT_MS` = 72h). Boost: `placeOrder` keeps the hold and sets smm_orders.status `QUEUED`
+  `supplier_alerts`). NO AUTOMATIC REFUND while waiting (owner's rule 2026-11-05: hold the money, show pending, email the
+  admins, admin tops up then taps "I've topped up: retry all now" on Admin Home → POST /api/admin/retry-waiting, which runs
+  retryQueuedOrders + gift/topup/travel sweeps + `retryWaitingShipments`; the crons also retry every few minutes). Only a real
+  (non-balance) refusal refunds. Boost: `placeOrder` keeps the hold and sets smm_orders.status `QUEUED`
   ("In queue" for customers; /api/v2 shows Pending); `retryQueuedOrders` in the sync-orders cron re-sends oldest first,
-  stops per provider while still broke, refunds after 72h or on a real refusal. Gift cards / airtime / travel eSIMs:
+  stops per provider while still broke. Packages: migration 0031 adds shipments status `waiting_funds` (booking kept on hold;
+  `arrangePickup` shared by book + retry; admin can cancel & release from /admin/shipping; customers can't cancel it). Gift cards / airtime / travel eSIMs:
   `waiting_funds` column; `sendGiftOrder` / `sendTopup` / `sendTravelOrder` re-send from the existing sweeps; customers see
   "In the queue… only charged once delivered". TextVerified (can't wait): customer gets "temporarily unavailable" and admins
   are emailed. Admin Home shows "Top up <supplier>: N orders waiting" (`waitingBySupplier`), badge key `waitingFunds`.
@@ -379,7 +383,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
     usd auto, Instagram Likes/Live viewers 100% rules. NOT copied: dev's P2P category renamed "Accounts"
     (account sales are blocked); live keeps "Digital products". Re-star 3 TikTok follower services
     (Owlet ids 8277, 24221, 8619) after the first live sync. No users yet (owner signs up, then promote to admin).
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0030 applied (main too: 0027–0030 applied 2026-11-05 with owner's yes). Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0031 applied (main has 0000–0030; 0031 needs the owner's yes). Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

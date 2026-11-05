@@ -26,7 +26,8 @@ export async function adminCounts(db: Db): Promise<AdminCounts> {
     ((select count(*) from smm_orders where status = 'QUEUED')
       + (select count(*) from gift_orders where status = 'pending' and waiting_funds)
       + (select count(*) from topup_orders where status = 'pending' and waiting_funds)
-      + (select count(*) from travel_esim_orders where status = 'pending' and waiting_funds))::int as "waitingFunds"`);
+      + (select count(*) from travel_esim_orders where status = 'pending' and waiting_funds)
+      + (select count(*) from shipments where status = 'waiting_funds'))::int as "waitingFunds"`);
   return r;
 }
 
@@ -59,6 +60,8 @@ export async function waitingBySupplier(db: Db) {
       select price_kobo from gift_orders where status = 'pending' and waiting_funds
       union all select price_kobo from topup_orders where status = 'pending' and waiting_funds) r having count(*) > 0
     union all
-    select 'eSIM Access', count(*)::int, sum(price_kobo)::bigint, '/admin/instant' from travel_esim_orders where status = 'pending' and waiting_funds having count(*) > 0`)) as unknown as { rows: { supplier: string; orders: number; kobo: string; href: string }[] };
+    select 'eSIM Access', count(*)::int, sum(price_kobo)::bigint, '/admin/instant' from travel_esim_orders where status = 'pending' and waiting_funds having count(*) > 0
+    union all
+    select 'Terminal Africa (packages)', count(*)::int, sum(price_kobo)::bigint, '/admin/shipping' from shipments where status = 'waiting_funds' having count(*) > 0`)) as unknown as { rows: { supplier: string; orders: number; kobo: string; href: string }[] };
   return res.rows.map((r) => ({ ...r, kobo: Number(r.kobo) }));
 }

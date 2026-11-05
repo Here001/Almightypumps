@@ -12,7 +12,7 @@ import { AppError, badRequest, notFound } from "./errors";
 import { getUsdRateKobo } from "./pricing";
 import { ReloadlyGift, adminReason, reloadlyConfigured, reloadlyMode, type RlCard } from "./reloadly";
 import { open, seal } from "./secretBox";
-import { alertSupplierFunds, isOutOfFunds, WAIT_LIMIT_MS } from "./supplierFunds";
+import { alertSupplierFunds, isOutOfFunds } from "./supplierFunds";
 import { linkHold, placeHold, platformWalletId, settleHold, walletIdForUser } from "./wallet";
 
 export type GiftConfig = { markupBps: number; enabled: boolean; countries: string[]; syncedAt: string | null };
@@ -201,7 +201,6 @@ export async function refreshGiftOrder(db: Db, id: string) {
   const [o] = await db.select().from(giftOrders).where(eq(giftOrders.id, id));
   if (!o || o.status !== "pending") return o;
   if (o.waitingFunds) {
-    if (Date.now() - o.createdAt.getTime() > WAIT_LIMIT_MS) return closeGift(db, id, "refunded", { error: "Refunded: supplier balance wasn't topped up in time" });
     await sendGiftOrder(db, id);
     return (await db.select().from(giftOrders).where(eq(giftOrders.id, id)))[0];
   }
