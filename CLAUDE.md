@@ -301,6 +301,20 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   accounts) look up GET /transactions?tx_ref=. app_settings `bank_transfer` {enabled default OFF, permanent}. FLUTTERWAVE_BASE_URL
   env for local mocks. Flutterwave's transfer fee is the owner's (customer gets the full amount). Field names follow Flutterwave v3
   docs from memory: check `[webhook] flutterwave` logs on the first real transfer.
+- SEND A PACKAGE (2026-11-05, owner's request; owner first asked for a "mock-up consignment" generator with fake tracking +
+  editable status: DECLINED (fake-tracking/consignment scam tool) and built real courier delivery instead). Terminal Africa
+  T-Ship API (`src/server/shipping.ts`, `src/core/shipping.ts` tested, migration 0029 `shipments` + holds purpose 'shipping').
+  Within Nigeria and USA → Nigeria (`SHIP_FROM` NG/US, `SHIP_TO` NG). Flow: POST /addresses ×2 + GET /packaging/default/terminal
+  + POST /parcels → GET /rates/shipment?pickup_address&delivery_address&parcel_id&currency=NGN → offers stored on a 'quoted' row
+  (price = cost × (1 + markup) rounded up to ₦50) → book: hold → POST /shipments/pickup {rate_id} → capture `revenue:shipping`
+  (or release; out-of-funds → `alertSupplierFunds`). Tracking GET /shipments/track/{id} (sync-orders cron every 30 min per
+  shipment + on public view after 10 min); cancel while 'booked' → POST /shipments/cancel + `refund:shipping`. Our tracking code
+  `AP` + 8 chars. Public page /track (`TrackParcel.tsx`, API /api/parcels/track: NOT /api/track, which is the analytics beacon)
+  shows only cities, carrier, events. Customer tile #ship (`SendPackage.tsx`), admin /admin/shipping (`AdminShipping.tsx`,
+  markup default 15%, pause, cancel & refund, profit). app_settings `shipping` {enabled, markupBps}. Env
+  TERMINAL_AFRICA_SECRET_KEY (sk_test_… → sandbox.terminal.africa, sk_live_… → api.terminal.africa), TERMINAL_AFRICA_BASE_URL for
+  mocks. Field names from Terminal's public OpenAPI spec (jentic/jentic-public-apis) + open-source clients; docs site is blocked
+  from the sandbox, so check `[terminal]` logs on the first real calls. CSP img-src now allows any https image (courier logos).
 - Insights: `src/components/Tracker.tsx` beacons each page and dashboard #section to
   `/api/track` → `site_events` (anonymous cookie id, no IP/UA stored). Section names come
   from `src/core/analytics.ts` (add new pages there). Queries in `src/server/insights.ts`.
@@ -343,7 +357,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
     usd auto, Instagram Likes/Live viewers 100% rules. NOT copied: dev's P2P category renamed "Accounts"
     (account sales are blocked); live keeps "Digital products". Re-star 3 TikTok follower services
     (Owlet ids 8277, 24221, 8619) after the first live sync. No users yet (owner signs up, then promote to admin).
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0028 applied (main has 0000–0026; 0027–0028 need the owner's yes). Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0029 applied (main has 0000–0026; 0027–0029 need the owner's yes). Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

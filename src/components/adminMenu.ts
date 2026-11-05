@@ -20,6 +20,7 @@ export const ADMIN_GROUPS: { title: string; items: Item[] }[] = [
       { href: "/admin/instant", label: "Gift cards · Airtime · Travel eSIMs", count: "instantStuck" },
       { href: "/admin/esim", label: "US eSIMs", count: "esim" },
       { href: "/admin/verify", label: "Verification codes" },
+      { href: "/admin/shipping", label: "Package delivery" },
       { href: "/admin/shop", label: "Shop", count: "shop" },
       { href: "/admin/services", label: "Boost: services" },
       { href: "/admin/pricing", label: "Boost: prices" },

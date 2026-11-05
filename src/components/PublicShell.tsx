@@ -27,6 +27,7 @@ export function PublicShell({ children }: { children: ReactNode }) {
           ))}
           <nav aria-label="Company">
             <strong>Company</strong>
+            <Link href="/track">Track a package</Link>
             <Link href="/terms">Terms</Link>
             <Link href="/privacy">Privacy</Link>
             <a href="mailto:support@almightypumps.com">support@almightypumps.com</a>

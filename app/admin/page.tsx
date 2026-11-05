@@ -31,6 +31,7 @@ const ABOUT: Record<string, string> = {
   "/admin/instant": "Markups, balances, stuck orders",
   "/admin/esim": "Plans, prices and orders to deliver",
   "/admin/verify": "Markup and per-app prices",
+  "/admin/shipping": "Courier markup, packages sent, cancel/refund",
   "/admin/shop": "Your own products and codes",
   "/admin/services": "Hide, star or check services",
   "/admin/pricing": "Markups per platform, dollar rate",

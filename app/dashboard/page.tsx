@@ -60,13 +60,14 @@ export default async function DashboardPage() {
 function kindLabel(kind: string) {
   const [verb, what] = kind.split(":");
   const thing: Record<string, string> = {
-    smm_order: "Boost order", escrow: "P2P purchase", withdrawal: "Withdrawal", shop_order: "Shop order", sms_verify: "Verification code", esim_order: "eSIM order", gift_card: "Gift card", airtime: "Airtime/data", travel_esim: "Travel eSIM",
+    smm_order: "Boost order", escrow: "P2P purchase", withdrawal: "Withdrawal", shop_order: "Shop order", sms_verify: "Verification code", esim_order: "eSIM order", gift_card: "Gift card", airtime: "Airtime/data", travel_esim: "Travel eSIM", shipping: "Package delivery",
   };
   const t = thing[what ?? ""] ?? what ?? "";
   if (kind === "deposit") return "Wallet top-up";
   if (kind === "tradein:giftcard") return "Gift card sold";
   if (kind === "tradein:crypto") return "Crypto sold";
   if (kind === "bonus:referral") return "Invite bonus";
+  if (kind === "refund:shipping") return "Package delivery: refunded";
   if (kind === "escrow:payout") return "P2P sale paid to you";
   if (verb === "capture") return what === "withdrawal" ? "Withdrawal paid to your bank" : `${t}: charged`;
   if (verb === "release") return what === "withdrawal" ? "Withdrawal returned to wallet" : `${t}: refunded`;

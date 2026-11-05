@@ -13,6 +13,7 @@ const DASHBOARD_ANCHORS: Record<string, string> = {
   sell: "Sell gift cards & crypto",
   invite: "Invite friends",
   docs: "Business documents",
+  ship: "Send a package",
   orders: "My orders",
   trades: "P2P Marketplace",
   wallet: "Wallet",
@@ -30,6 +31,7 @@ const PREFIXES: [string, string][] = [
   ["/login", "Log in"],
   ["/privacy", "Privacy & terms"],
   ["/terms", "Privacy & terms"],
+  ["/track", "Package tracking"],
 ];
 
 export function sectionFor(path: string, hash = ""): string | null {

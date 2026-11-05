@@ -42,7 +42,7 @@ export const holds = pgTable("holds", {
   amount: money("amount").notNull(),
   settled: money("settled").notNull().default(0),
   status: text("status").$type<"active" | "captured" | "released" | "partial">().notNull().default("active"),
-  purpose: text("purpose").$type<"smm_order" | "escrow" | "withdrawal" | "shop_order" | "sms_verify" | "esim_order" | "gift_card" | "airtime" | "travel_esim">().notNull(),
+  purpose: text("purpose").$type<"smm_order" | "escrow" | "withdrawal" | "shop_order" | "sms_verify" | "esim_order" | "gift_card" | "airtime" | "travel_esim" | "shipping">().notNull(),
   refId: uuid("ref_id"),
   createdAt: ts("created_at").notNull().defaultNow(),
   closedAt: ts("closed_at"),
@@ -648,3 +648,37 @@ export const virtualAccounts = pgTable("virtual_accounts", {
   status: text("status").$type<"active" | "paid" | "expired">().notNull().default("active"),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
+
+/** "Send a Package" shipments via Terminal Africa (migration 0029). */
+export const shipments = pgTable("shipments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  code: text("code").notNull().unique(),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  status: text("status").$type<"quoted" | "booking" | "booked" | "in_transit" | "delivered" | "cancelled" | "failed">().notNull().default("quoted"),
+  fromAddress: jsonb("from_address").$type<Record<string, string>>().notNull(),
+  toAddress: jsonb("to_address").$type<Record<string, string>>().notNull(),
+  parcel: jsonb("parcel").$type<Record<string, unknown>>().notNull(),
+  providerFromId: text("provider_from_id"),
+  providerToId: text("provider_to_id"),
+  providerParcelId: text("provider_parcel_id"),
+  rates: jsonb("rates").$type<ShipRate[]>().notNull().default([]),
+  rateId: text("rate_id"),
+  carrier: text("carrier"),
+  carrierLogo: text("carrier_logo"),
+  deliveryTime: text("delivery_time"),
+  priceKobo: money("price_kobo"),
+  costKobo: money("cost_kobo"),
+  holdId: uuid("hold_id").references(() => holds.id),
+  providerShipmentId: text("provider_shipment_id"),
+  carrierTracking: text("carrier_tracking"),
+  trackingUrl: text("tracking_url"),
+  labelUrl: text("label_url"),
+  events: jsonb("events").$type<ShipEvent[]>().notNull().default([]),
+  lastTrackedAt: ts("last_tracked_at"),
+  error: text("error"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+  deliveredAt: ts("delivered_at"),
+});
+export type ShipRate = { rateId: string; carrier: string; logo: string | null; service: string | null; costKobo: number; priceKobo: number; deliveryTime: string | null; pickupTime: string | null };
+export type ShipEvent = { at: string; text: string; location: string | null };

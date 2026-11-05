@@ -5,7 +5,7 @@ const CSP = [
   "frame-src 'none'",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:",
-  "img-src 'self' data: blob: https://*.reloadly.com https://*.public.blob.vercel-storage.com",
+  "img-src 'self' data: blob: https://*.reloadly.com https://*.public.blob.vercel-storage.com https:",
   "connect-src 'self'",
   "worker-src 'self' blob:",
   "object-src 'none'",

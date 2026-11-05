@@ -11,7 +11,7 @@ import { env } from "./env";
 
 /** Supplier error text that means "your balance is too low". */
 export function isOutOfFunds(message: string | null | undefined): boolean {
-  return /not enough (funds|money|balance)|insufficient\s*(funds|balance|account balance|credit)|INSUFFICIENT_BALANCE|balance (is )?(too low|insufficient|not enough)|low balance|top ?up your (account|balance)|no (enough )?balance|余额不足/i.test(String(message ?? ""));
+  return /not enough (funds|money|balance)|insufficient\s*(wallet\s*)?(funds|balance|account balance|credit)|INSUFFICIENT_BALANCE|balance (is )?(too low|insufficient|not enough)|low balance|top ?up your (account|balance|wallet)|no (enough )?balance|余额不足/i.test(String(message ?? ""));
 }
 
 /** Hold refund deadline for waiting orders. */

@@ -43,6 +43,9 @@ const schema = z.object({
   RESEND_BASE_URL: z.string().url().optional().default("https://api.resend.com"), // local tests only
   // Vercel Blob file storage (ad photos). Set automatically by Vercel when the store is linked; empty = photos stay in the database.
   BLOB_READ_WRITE_TOKEN: z.string().optional().default(""),
+  // Terminal Africa (T-Ship) for "Send a Package". Test keys use the sandbox automatically; TERMINAL_AFRICA_BASE_URL overrides (mocks).
+  TERMINAL_AFRICA_SECRET_KEY: z.string().optional().default(""),
+  TERMINAL_AFRICA_BASE_URL: z.string().optional().default(""),
   CRON_SECRET: z.string().min(16, "CRON_SECRET must be at least 16 characters"),
   MIN_FUNDING_KOBO: z.coerce.number().int().positive().default(100_000), // ₦1,000
   MIN_WITHDRAWAL_KOBO: z.coerce.number().int().positive().default(200_000), // ₦2,000

@@ -274,6 +274,18 @@ button.ad-photo-cover { background: rgb(0 0 0 / 0.7); color: #fff; cursor: point
 .bt-num { font-size: 18px; letter-spacing: 0.04em; white-space: nowrap; }
 .bt-form { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
 
+/* Send a package + tracking */
+.ship-rates { list-style: none; margin: 6px 0 10px; padding: 0; display: grid; gap: 8px; }
+.ship-rate { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); cursor: pointer; background: rgb(var(--ov) / 0.03); }
+.ship-rate.on { border-color: var(--accent); background: rgb(var(--ov) / 0.07); }
+.ship-rate input { accent-color: var(--accent); }
+.ship-rate img, .ship-rate-logo { width: 36px; height: 36px; border-radius: 8px; object-fit: contain; background: #fff; flex: none; display: grid; place-items: center; color: #111; font-weight: 800; }
+.ship-rate-main { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 14px; }
+.ship-rate-main .muted { font-size: 12px; }
+.trk-events { list-style: none; margin: 0; padding: 0 0 0 14px; border-left: 2px solid var(--line); display: grid; gap: 10px; font-size: 14px; }
+.trk-events li { display: flex; flex-direction: column; gap: 2px; }
+.trk-events li .muted { font-size: 12px; }
+
 /* P2P trade room */
 .tr-summary { display: flex; gap: 10px; flex-wrap: wrap; }
 .tr-summary > div { flex: 1 1 90px; display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 12px; background: rgb(var(--ov) / 0.05); font-size: 13px; }

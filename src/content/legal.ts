@@ -39,6 +39,7 @@ We share only what each service needs to do its job:
 - **TextVerified**: provides the numbers for verification codes; receives which app the code is for.
 - **Our eSIM supplier**: receives the IMEI and, if you keep your number, the transfer details needed to set up your line.
 - **Resend**: sends our emails, such as the 6-digit codes for signing up and logging in on a new device; receives your email address and first name.
+- **Terminal Africa and its courier partners** (e.g. DHL, FedEx, UPS and Nigerian couriers): arrange and deliver packages you send; receive the sender's and receiver's names, phone numbers, emails and addresses and the package details.
 - **Reloadly**: delivers gift cards and airtime/data; receives the phone number you top up (not your name or email).
 - **eSIM Access**: provides travel eSIMs; receives which data package you bought (not your name or email).
 - **Hosting and email**: Vercel (website hosting), Neon (database, located in the EU) and Zoho (our email).
@@ -103,6 +104,11 @@ const TERMS = `These terms are the agreement between you and Almighty Pumps (“
 ### Selling us gift cards or crypto
 - You can only sell gift cards you lawfully own and that haven't been used. Crypto must come from a wallet you control. We pay into your wallet after we've checked the card or seen the crypto arrive, at the rate shown when you submitted. If a card turns out to be invalid or used, or the crypto doesn't arrive, we don't pay. Crypto sent on the wrong network can't be recovered.
 - We may limit how much you can sell, ask for ID, refuse a trade, and report fraud to the authorities. Selling stolen or fraudulently obtained cards or crypto gets your account closed.
+
+### Sending packages
+- Packages are collected and delivered by the courier you choose (through our partner Terminal Africa). The price shown is what you pay; it is charged when you book. You can cancel for a full refund until the courier has picked the package up.
+- You must describe the contents and value honestly. Don't send cash, weapons, drugs, counterfeit or stolen goods, or anything illegal to send. Couriers may refuse, hold or return a package that breaks their rules or the law, and international parcels go through customs (import duty may be collected on delivery).
+- Delivery times are the courier's estimates. Lost or damaged packages are handled through the courier's claims process; we'll help you file a claim.
 
 ### Invite friends (referral bonuses)
 - When a friend signs up with your invite link and spends the minimum shown on the Invite screen on paid orders, we pay the bonus shown there into your wallet (and theirs, if a friend bonus is shown). Bonus amounts, the minimum and the limits can change at any time; the amounts at the moment the friend qualifies apply.

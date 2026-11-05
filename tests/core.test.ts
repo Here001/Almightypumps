@@ -471,3 +471,17 @@ test("instant: travel eSIM labels", () => {
   assert.equal(durationLabel(1, "DAY"), "1 day");
   assert.equal(durationLabel(30, "DAY"), "30 days");
 });
+
+test("shipping: price, phone, tracking code", async () => {
+  const { shippingPrice, intlPhone, shipmentCode } = await import("../src/core/shipping.ts");
+  assert.equal(shippingPrice(400_000, 1500), 460_000); // ₦4,000 + 15% = ₦4,600
+  assert.equal(shippingPrice(400_100, 1500), 465_000); // rounds up to the next ₦50
+  assert.equal(shippingPrice(100_000, 0), 100_000);
+  assert.throws(() => shippingPrice(0, 1500));
+  assert.equal(intlPhone("0803 123 4567", "NG"), "+2348031234567");
+  assert.equal(intlPhone("2125551234", "US"), "+12125551234");
+  assert.equal(intlPhone("+447700900123", "GB"), "+447700900123");
+  const c = shipmentCode(new Uint8Array([0, 1, 2, 3, 4, 5, 6, 30]));
+  assert.match(c, /^AP[A-Z2-9]{8}$/);
+  assert.ok(!/[01OIL]/.test(c.slice(2)));
+});
