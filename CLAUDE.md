@@ -304,7 +304,10 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 - SEND/RECEIVE A PACKAGE (tile renamed 2026-11-05 at owner's request; built 2026-11-05, owner's request; owner first asked for a "mock-up consignment" generator with fake tracking +
   editable status: DECLINED (fake-tracking/consignment scam tool) and built real courier delivery instead). Terminal Africa
   T-Ship API (`src/server/shipping.ts`, `src/core/shipping.ts` tested, migration 0029 `shipments` + holds purpose 'shipping').
-  Within Nigeria and USA → Nigeria (`SHIP_FROM` NG/US, `SHIP_TO` NG). Flow: POST /addresses ×2 + GET /packaging/default/terminal
+  ANY country → ANY country from Terminal's GET /countries (cached daily in app_settings `shipping_countries`, Nigeria first;
+  fallback list if the API fails); states per country GET /states?country_code (Nigeria = our `NG_STATES`; empty = free text);
+  US ZIP / GB / CA postcode required; local phones get the country's dial code (`intlPhone(phone, cc, dial)`). Weight in g or kg
+  (`weight` + `weightUnit`, converted to kg; 10 g–70 kg). Item value currency NGN only for Nigeria→Nigeria, else USD. Flow: POST /addresses ×2 + GET /packaging/default/terminal
   + POST /parcels → GET /rates/shipment?pickup_address&delivery_address&parcel_id&currency=NGN → offers stored on a 'quoted' row
   (price = cost × (1 + markup) rounded up to ₦50) → book: hold → POST /shipments/pickup {rate_id} → capture `revenue:shipping`
   (or release; out-of-funds → `alertSupplierFunds`). Tracking GET /shipments/track/{id} (sync-orders cron every 30 min per

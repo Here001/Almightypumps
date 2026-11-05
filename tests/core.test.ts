@@ -481,6 +481,8 @@ test("shipping: price, phone, tracking code", async () => {
   assert.equal(intlPhone("0803 123 4567", "NG"), "+2348031234567");
   assert.equal(intlPhone("2125551234", "US"), "+12125551234");
   assert.equal(intlPhone("+447700900123", "GB"), "+447700900123");
+  assert.equal(intlPhone("07700 900123", "GB", "44"), "+447700900123");
+  assert.equal(intlPhone("0241234567", "GH", "233"), "+233241234567");
   const c = shipmentCode(new Uint8Array([0, 1, 2, 3, 4, 5, 6, 30]));
   assert.match(c, /^AP[A-Z2-9]{8}$/);
   assert.ok(!/[01OIL]/.test(c.slice(2)));

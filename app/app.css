@@ -290,6 +290,9 @@ button.ad-photo-cover { background: rgb(0 0 0 / 0.7); color: #fff; cursor: point
 .adm-danger { color: #fca5a5; border-color: rgb(248 113 113 / 0.45); }
 
 /* Send a package + tracking */
+.pk-weight { display: flex; gap: 8px; align-items: center; }
+.pk-weight .input { flex: 1; min-width: 0; }
+.pk-weight .ap-chips { flex: none; flex-wrap: nowrap; }
 .ship-rates { list-style: none; margin: 6px 0 10px; padding: 0; display: grid; gap: 8px; }
 .ship-rate { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); cursor: pointer; background: rgb(var(--ov) / 0.03); }
 .ship-rate.on { border-color: var(--accent); background: rgb(var(--ov) / 0.07); }

@@ -6,10 +6,6 @@ export const NG_STATES = [
   "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara",
 ] as const;
 
-/** Countries a parcel can be sent from / to (owner's choice: within Nigeria and USA → Nigeria). */
-export const SHIP_FROM = ["NG", "US"] as const;
-export const SHIP_TO = ["NG"] as const;
-
 /** Customer price in kobo: carrier cost + markup, rounded UP to the next ₦50. */
 export function shippingPrice(costKobo: number, markupBps: number, roundToKobo = 5_000): number {
   if (!Number.isFinite(costKobo) || costKobo <= 0) throw new Error("Bad carrier price");
@@ -18,14 +14,17 @@ export function shippingPrice(costKobo: number, markupBps: number, roundToKobo =
 }
 
 /** Nigerian phone to international format (+234…); other numbers are kept, with a leading + if missing. */
-export function intlPhone(phone: string, country: string): string {
+export function intlPhone(phone: string, country: string, dial?: string | null): string {
   const p = phone.replace(/[\s()-]/g, "");
   if (country === "NG") {
     if (/^0[789]\d{9}$/.test(p)) return "+234" + p.slice(1);
     if (/^234[789]\d{9}$/.test(p)) return "+" + p;
   }
   if (country === "US" && /^\d{10}$/.test(p)) return "+1" + p;
-  return p.startsWith("+") ? p : "+" + p;
+  if (p.startsWith("+")) return p;
+  // A local number (often starting with 0) in another country: add that country's dialling code.
+  if (dial && !p.startsWith(dial)) return "+" + dial + p.replace(/^0+/, "");
+  return "+" + p;
 }
 
 /** Our own tracking number: "AP" + 8 characters with no look-alikes (0/O, 1/I/L). */

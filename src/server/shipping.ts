@@ -55,6 +55,47 @@ async function terminal<T>(path: string, init?: { method?: string; body?: unknow
   return json.data;
 }
 
+/* ---------------- countries & states (from Terminal, cached) ---------------- */
+
+export type Country = { code: string; name: string; dial: string | null };
+const FALLBACK_COUNTRIES: Country[] = [
+  { code: "NG", name: "Nigeria", dial: "234" }, { code: "US", name: "United States", dial: "1" }, { code: "GB", name: "United Kingdom", dial: "44" },
+  { code: "CA", name: "Canada", dial: "1" }, { code: "GH", name: "Ghana", dial: "233" },
+];
+type TCountry = { name?: string; isoCode?: string; iso_code?: string; code?: string; phonecode?: string; phone_code?: string };
+type TState = { name?: string; isoCode?: string; iso_code?: string; code?: string };
+
+/** Every country Terminal Africa can ship to/from, refreshed once a day. */
+export async function shippingCountries(db: Db): Promise<Country[]> {
+  const cached = await readSetting<{ at: number; list: Country[] }>(db, "shipping_countries", { at: 0, list: [] });
+  if (cached.list.length && Date.now() - cached.at < 24 * 3600_000) return cached.list;
+  try {
+    const raw = await terminal<TCountry[]>("/countries");
+    const list = (Array.isArray(raw) ? raw : [])
+      .map((c) => ({ code: String(c.isoCode ?? c.iso_code ?? c.code ?? "").toUpperCase(), name: String(c.name ?? "").trim(), dial: (c.phonecode ?? c.phone_code ?? null) ? String(c.phonecode ?? c.phone_code).replace(/[^\d]/g, "") || null : null }))
+      .filter((c) => /^[A-Z]{2}$/.test(c.code) && c.name)
+      .sort((a, b) => (a.code === "NG" ? -1 : b.code === "NG" ? 1 : a.name.localeCompare(b.name)));
+    if (list.length) { await writeSetting(db, "shipping_countries", { at: Date.now(), list }); return list; }
+  } catch (e) { console.error("[shipping] countries", (e as Error).message); }
+  return cached.list.length ? cached.list : FALLBACK_COUNTRIES;
+}
+
+const stateCache = new Map<string, { at: number; list: string[] }>();
+/** States/regions of one country (Nigeria uses our own list). Empty list = type it in. */
+export async function shippingStates(country: string): Promise<string[]> {
+  const cc = country.toUpperCase();
+  if (cc === "NG") return [...NG_STATES];
+  if (!/^[A-Z]{2}$/.test(cc) || !keySet()) return [];
+  const hit = stateCache.get(cc);
+  if (hit && Date.now() - hit.at < 24 * 3600_000) return hit.list;
+  try {
+    const raw = await terminal<TState[]>(`/states?country_code=${cc}`);
+    const list = (Array.isArray(raw) ? raw : []).map((st) => String(st.name ?? "").trim()).filter(Boolean).sort((a, b) => a.localeCompare(b));
+    stateCache.set(cc, { at: Date.now(), list });
+    return list;
+  } catch { return []; }
+}
+
 /* ---------------- quotes ---------------- */
 
 const addressSchema = z.object({
@@ -66,20 +107,27 @@ const addressSchema = z.object({
   city: z.string().trim().min(2, "Enter the city").max(60),
   state: z.string().trim().min(2, "Enter the state").max(60),
   zip: z.string().trim().max(12).optional().or(z.literal("")),
-  country: z.enum(["NG", "US"]),
+  country: z.string().trim().toUpperCase().regex(/^[A-Z]{2}$/, "Choose a country"),
 });
 export const quoteSchema = z.object({
   from: addressSchema,
-  to: addressSchema.extend({ country: z.literal("NG") }),
+  to: addressSchema,
   description: z.string().trim().min(3, "Say what's in the package").max(120),
-  weightKg: z.coerce.number().positive("Enter the weight").max(70, "Max 70 kg per package"),
+  weight: z.coerce.number().positive("Enter the weight"),
+  weightUnit: z.enum(["g", "kg"]).default("kg"),
   value: z.coerce.number().positive("Enter the value").max(50_000_000),
   quantity: z.coerce.number().int().min(1).max(100).default(1),
-}).superRefine((v, ctx) => {
-  if (v.from.country === "NG" && !(NG_STATES as readonly string[]).includes(v.from.state)) ctx.addIssue({ code: "custom", path: ["from", "state"], message: "Choose a Nigerian state" });
-  if (!(NG_STATES as readonly string[]).includes(v.to.state)) ctx.addIssue({ code: "custom", path: ["to", "state"], message: "Choose a Nigerian state" });
-  if (v.from.country === "US" && !/^\d{5}(-\d{4})?$/.test(v.from.zip ?? "")) ctx.addIssue({ code: "custom", path: ["from", "zip"], message: "Enter the 5-digit US ZIP code" });
-});
+}).transform((v) => ({ ...v, weightKg: v.weightUnit === "g" ? v.weight / 1000 : v.weight }))
+  .superRefine((v, ctx) => {
+    if (v.weightKg < 0.01) ctx.addIssue({ code: "custom", path: ["weight"], message: "The lightest package we can send is 10 g." });
+    if (v.weightKg > 70) ctx.addIssue({ code: "custom", path: ["weight"], message: "Max 70 kg per package." });
+    for (const side of ["from", "to"] as const) {
+      const a = v[side];
+      if (a.country === "NG" && !(NG_STATES as readonly string[]).includes(a.state)) ctx.addIssue({ code: "custom", path: [side, "state"], message: "Choose a Nigerian state" });
+      if (a.country === "US" && !/^\d{5}(-\d{4})?$/.test(a.zip ?? "")) ctx.addIssue({ code: "custom", path: [side, "zip"], message: "Enter the 5-digit US ZIP code" });
+      if (a.country !== "NG" && !(a.zip ?? "").trim() && ["US", "GB", "CA"].includes(a.country)) ctx.addIssue({ code: "custom", path: [side, "zip"], message: "Enter the postcode" });
+    }
+  });
 export type QuoteInput = z.infer<typeof quoteSchema>;
 
 type TAddress = { address_id?: string; id?: string };
@@ -87,12 +135,12 @@ type TParcel = { parcel_id?: string; id?: string };
 type TPackaging = { packaging_id?: string; id?: string };
 type TRate = { rate_id?: string; id?: string; amount: number; currency?: string; carrier_name?: string; carrier_logo?: string; carrier_rate_description?: string; delivery_time?: string; pickup_time?: string };
 
-async function createAddress(a: z.infer<typeof addressSchema>) {
+async function createAddress(a: z.infer<typeof addressSchema>, dial: string | null) {
   const [first, ...rest] = a.name.split(/\s+/);
   const r = await terminal<TAddress>("/addresses", {
     method: "POST",
     body: {
-      first_name: first, last_name: rest.join(" ") || first, email: a.email, phone: intlPhone(a.phone, a.country),
+      first_name: first, last_name: rest.join(" ") || first, email: a.email, phone: intlPhone(a.phone, a.country, dial),
       line1: a.line1, line2: a.line2 || undefined, city: a.city, state: a.state, zip: a.zip || undefined, country: a.country, is_residential: true,
     },
   });
@@ -117,9 +165,13 @@ export async function quoteShipment(db: Db, userId: string, input: QuoteInput) {
   const cfg = await getShippingConfig(db);
   if (!cfg.enabled || !keySet()) throw badRequest("Sending packages isn't available right now. Please try again later.");
   const international = input.from.country !== input.to.country;
+  const known = new Set((await shippingCountries(db)).map((c) => c.code));
+  for (const c of [input.from.country, input.to.country]) if (known.size && !known.has(c)) throw badRequest("We can't send to or from that country.");
   try {
-    const [fromId, toId, pkg] = await Promise.all([createAddress(input.from), createAddress(input.to), defaultPackaging()]);
-    const currency = international ? "USD" : "NGN";
+    const list = await shippingCountries(db);
+    const dialOf = (cc: string) => list.find((c) => c.code === cc)?.dial ?? null;
+    const [fromId, toId, pkg] = await Promise.all([createAddress(input.from, dialOf(input.from.country)), createAddress(input.to, dialOf(input.to.country)), defaultPackaging()]);
+    const currency = !international && input.from.country === "NG" ? "NGN" : "USD";
     const parcel = await terminal<TParcel>("/parcels", {
       method: "POST",
       body: {
@@ -141,10 +193,14 @@ export async function quoteShipment(db: Db, userId: string, input: QuoteInput) {
       })
       .sort((a, b) => a.priceKobo - b.priceKobo)
       .slice(0, 12);
+    const all = await shippingCountries(db);
+    const nameOf = (code: string) => all.find((c) => c.code === code)?.name ?? code;
     if (!rates.length) throw badRequest("No courier can take this package on this route right now. Check the addresses and weight, or try again later.");
     const [row] = await db.insert(shipments).values({
-      code: newCode(), userId, fromAddress: input.from as Record<string, string>, toAddress: input.to as Record<string, string>,
-      parcel: { description: input.description, weightKg: input.weightKg, value: input.value, valueCurrency: currency, quantity: input.quantity },
+      code: newCode(), userId,
+      fromAddress: { ...input.from, countryName: nameOf(input.from.country) } as Record<string, string>,
+      toAddress: { ...input.to, countryName: nameOf(input.to.country) } as Record<string, string>,
+      parcel: { description: input.description, weightKg: input.weightKg, weightUnit: input.weightUnit, value: input.value, valueCurrency: currency, quantity: input.quantity },
       providerFromId: fromId, providerToId: toId, providerParcelId: parcelId, rates,
     }).returning({ id: shipments.id });
     return { quoteId: row.id, international, rates: rates.map(({ costKobo: _c, ...r }) => (void _c, r)) };
@@ -257,12 +313,14 @@ export async function sweepShipments(db: Db) {
   return { checked: due.length };
 }
 
+const place = (a: Record<string, string>) => `${a.city}, ${a.state}${a.country && a.country !== "NG" ? `, ${a.countryName || a.country}` : ""}`;
+
 /** What anyone with the tracking number can see: no names, phones or street addresses. */
 function publicView(s: typeof shipments.$inferSelect) {
   return {
     code: s.code, status: s.status, carrier: s.carrier, carrierLogo: s.carrierLogo, carrierTracking: s.carrierTracking, trackingUrl: s.trackingUrl,
-    from: `${s.fromAddress.city}, ${s.fromAddress.state}${s.fromAddress.country === "US" ? ", USA" : ""}`,
-    to: `${s.toAddress.city}, ${s.toAddress.state}`,
+    from: place(s.fromAddress),
+    to: place(s.toAddress),
     deliveryTime: s.deliveryTime, events: s.events, bookedAt: s.createdAt, deliveredAt: s.deliveredAt,
   };
 }
@@ -290,7 +348,7 @@ export async function myShipments(db: Db, userId: string) {
 
 export async function shippingInfo(db: Db) {
   const cfg = await getShippingConfig(db);
-  return { enabled: cfg.enabled && keySet(), states: NG_STATES };
+  return { enabled: cfg.enabled && keySet(), states: NG_STATES, countries: keySet() ? await shippingCountries(db).catch(() => FALLBACK_COUNTRIES) : FALLBACK_COUNTRIES };
 }
 
 /** Cancel before pickup: ask the carrier, then refund the customer in full. */

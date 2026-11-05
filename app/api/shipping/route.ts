@@ -3,15 +3,18 @@ import { getDb } from "@/server/db";
 import { requireUser } from "@/server/auth";
 import { body, route } from "@/server/http";
 import { rateLimit } from "@/server/rateLimit";
-import { bookShipment, cancelShipment, myShipments, quoteSchema, quoteShipment, shippingInfo } from "@/server/shipping";
+import { bookShipment, cancelShipment, myShipments, quoteSchema, quoteShipment, shippingInfo, shippingStates } from "@/server/shipping";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /** "Send a Package": availability, Nigerian states and my shipments. */
-export const GET = route(async () => {
+export const GET = route(async (req: Request) => {
   const me = await requireUser();
   const db = getDb();
+  // ?states=GB → that country's states/regions (empty = type it in).
+  const cc = new URL(req.url).searchParams.get("states");
+  if (cc) return { states: await shippingStates(cc) };
   const [info, list] = await Promise.all([shippingInfo(db), myShipments(db, me.id)]);
   return { ...info, shipments: list };
 });
