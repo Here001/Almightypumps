@@ -14,6 +14,7 @@ export type Rule = { max: number; windowSec: number };
 
 /** Limits per action. Tuned so normal customers never see them. */
 export const LIMITS = {
+  identity: { max: 12, windowSec: 60 * 60 },
   loginIp: { max: 30, windowSec: 15 * 60 },
   loginEmail: { max: 10, windowSec: 15 * 60 },
   registerIp: { max: 6, windowSec: 60 * 60 },

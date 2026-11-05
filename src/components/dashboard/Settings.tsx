@@ -8,6 +8,7 @@ import { useCurrency } from "./Currency";
 import { ID_TYPES, NG_BANKS } from "@/core/banks";
 import { ShopPhoto } from "./ShopPhoto";
 import { PasswordInput } from "../PasswordInput";
+import { IdentityCheck, NameChange, useIdentity } from "./IdentityCheck";
 
 type Me = { name: string; email: string; phone: string | null; sellerStatus: string; isAdmin: boolean };
 type Msg = { ok: boolean; text: string } | null;
@@ -18,6 +19,7 @@ export function Settings({ me, onOpenSellerPanel }: { me: Me; onOpenSellerPanel:
   return (
     <>
       <Profile me={me} />
+      <IdentitySection />
       <Appearance />
       <Notifications />
       <Security />
@@ -58,13 +60,19 @@ function Notifications() {
   );
 }
 
+function IdentitySection() {
+  const { data, reload } = useIdentity();
+  return <IdentityCheck data={data} reload={reload} />;
+}
+
 function Profile({ me }: { me: Me }) {
   const router = useRouter();
-  const [name, setName] = useState(me.name);
+  const { data: idData, reload } = useIdentity();
+  const name = me.name;
   const [phone, setPhone] = useState(me.phone ?? "");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<Msg>(null);
-  const changed = name.trim() !== me.name || phone.trim() !== (me.phone ?? "");
+  const changed = phone.trim() !== (me.phone ?? "");
   return (
     <section className="card glass">
       <h2>Profile</h2>
@@ -83,7 +91,8 @@ function Profile({ me }: { me: Me }) {
         }
       }}>
         <div className="field"><label htmlFor="st-name">Name</label>
-          <input id="st-name" className="input" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" required /></div>
+          <input id="st-name" className="input" value={name} readOnly aria-readonly="true" style={{ opacity: 0.7 }} />
+          <NameChange data={idData} reload={() => { reload(); router.refresh(); }} /></div>
         <div className="field"><label htmlFor="st-phone">Phone (optional)</label>
           <input id="st-phone" className="input" value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" autoComplete="tel" placeholder="0803 123 4567" /></div>
         <div className="field"><label htmlFor="st-email">Email</label>

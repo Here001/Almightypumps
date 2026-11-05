@@ -497,3 +497,15 @@ test("services: tile order", async () => {
   assert.ok(hiddenTiles(["esim_us", "esim_travel"]).has("esim"));
   assert.ok(!hiddenTiles(["esim_us"]).has("esim"));
 });
+
+import { namesMatch } from "../src/core/identity.ts";
+test("withdrawal name matching", () => {
+  assert.ok(namesMatch("Bayo Adeyemi", "ADEYEMI BAYO"));
+  assert.ok(namesMatch("Bayo Adeyemi", "ADEYEMI OLUWABAYO BAYO"));
+  assert.ok(namesMatch("Mr. Bayo T. Adeyemi", "ADEYEMI BAYO TUNDE"));
+  assert.ok(namesMatch("Chika Eze-Obi", "EZE OBI CHIKA"));
+  assert.ok(!namesMatch("Bayo Adeyemi", "ADEYEMI CHUKWUDI"));
+  assert.ok(!namesMatch("Bayo Adeyemi", "BAYO"));
+  assert.ok(!namesMatch("Bayo Adeyemi", "OKAFOR JOHN PETER"));
+  assert.ok(!namesMatch("", "ADEYEMI BAYO"));
+});

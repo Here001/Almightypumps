@@ -15,6 +15,35 @@ import { AppError, badRequest, notFound } from "./errors";
 import { creditWallet, placeHold, settleHold, walletIdForUser } from "./wallet";
 import { handleTransferWebhook } from "./bankTransfer";
 import { alertCustomer, alertNaira } from "./customerAlerts";
+import { assertIdentityVerified } from "./identity";
+import { namesMatch } from "@/core/identity";
+
+/**
+ * Ask the bank (through Flutterwave) whose name an account is in. Returns the name, "invalid" when the bank says the
+ * account doesn't exist, or null when the lookup couldn't be done (no key, Flutterwave down, unsupported bank).
+ */
+export async function lookupAccountName(bankCode: string, accountNumber: string): Promise<string | "invalid" | null> {
+  const secret = env().FLUTTERWAVE_SECRET_KEY;
+  if (!secret) return null;
+  try {
+    const res = await fetch(`${env().FLUTTERWAVE_BASE_URL.replace(/\/+$/, "")}/accounts/resolve`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${secret}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ account_number: accountNumber, account_bank: bankCode }),
+      signal: AbortSignal.timeout(15_000), cache: "no-store",
+    });
+    const json = (await res.json().catch(() => ({}))) as { status?: string; message?: string; data?: { account_name?: string } };
+    const name = json.data?.account_name?.trim();
+    if (res.ok && json.status === "success" && name) return name;
+    console.warn("[withdraw] account lookup", res.status, json.message);
+    // Only treat a clear "this account doesn't exist" as final; anything else (bank not supported, outage) → check by hand.
+    if (res.status >= 400 && res.status < 500 && /account/i.test(json.message ?? "") && !/bank|code|unauthori|key/i.test(json.message ?? "")) return "invalid";
+    return null;
+  } catch (e) {
+    console.warn("[withdraw] account lookup failed", e);
+    return null;
+  }
+}
 
 /** Call Flutterwave's v3 API (also used by bankTransfer.ts). */
 export async function flutterwave<T>(path: string, init?: RequestInit): Promise<T> {
@@ -135,6 +164,16 @@ export async function requestWithdrawal(
   if (!/^\d{10}$/.test(input.accountNumber)) throw badRequest("Account number must be 10 digits.");
   if (!NG_BANKS.some((b) => b.code === input.bankCode)) throw badRequest("Choose your bank.");
   if (input.accountName.trim().length < 3) throw badRequest("Enter the account name.");
+  // Security: identity verified first, and the money can only go to an account in the customer's own (verified) name.
+  const me = await assertIdentityVerified(db, userId);
+  const bankName = await lookupAccountName(input.bankCode, input.accountNumber);
+  if (bankName === "invalid") throw badRequest("Your bank says that account number doesn't exist. Please check the number and the bank.");
+  const checkedName = bankName ?? input.accountName.trim();
+  if (!namesMatch(checkedName, me.name)) {
+    throw badRequest(bankName
+      ? `This account is in the name “${bankName}”, which doesn't match your verified name (${me.name}). You can only withdraw to an account in your own name.`
+      : `The account name must match your verified name (${me.name}). You can only withdraw to an account in your own name.`);
+  }
   const w = await db.transaction(async (tx) => {
     const walletId = await walletIdForUser(tx, userId);
     const [open] = await tx.select({ n: sql<number>`count(*)::int` }).from(withdrawals).where(and(eq(withdrawals.userId, userId), eq(withdrawals.status, "requested")));
@@ -146,13 +185,17 @@ export async function requestWithdrawal(
     const holdId = await placeHold(tx, walletId, input.amount, "withdrawal", { memo: "Withdrawal request" });
     const [w] = await tx
       .insert(withdrawals)
-      .values({ userId, amount: input.amount, holdId, bankCode: input.bankCode, accountNumber: input.accountNumber, accountName: input.accountName.trim() })
+      .values({
+        userId, amount: input.amount, holdId, bankCode: input.bankCode, accountNumber: input.accountNumber,
+        accountName: bankName ?? input.accountName.trim(), bankAccountName: bankName, nameCheck: bankName ? "match" : "unchecked",
+      })
       .returning();
     return w;
   });
   alertAdmins(db, `Withdrawal to pay: ${"₦" + (input.amount / 100).toLocaleString("en-NG")}`, [
     "A customer asked to withdraw money to their bank account.",
-    `Pay to: ${input.accountName.trim()} · ${NG_BANKS.find((b) => b.code === input.bankCode)?.name ?? input.bankCode} · ${input.accountNumber}`,
+    `Pay to: ${w.accountName} · ${NG_BANKS.find((b) => b.code === input.bankCode)?.name ?? input.bankCode} · ${input.accountNumber}`,
+    w.nameCheck === "match" ? "The bank confirmed this account is in the customer's verified name." : "⚠ The bank name couldn't be checked automatically: confirm the account name matches the customer before paying.",
     "Send the transfer, then tap “Mark paid” (or reject it with a reason).",
   ], "/admin/withdrawals", { customerId: userId });
   return w;
@@ -183,7 +226,10 @@ export async function myWithdrawals(db: Db, userId: string) {
   const last = list[0];
   const bank = sp ?? (last ? { bankCode: last.bankCode, accountNumber: last.accountNumber, accountName: last.accountName } : null);
   const name = (code: string) => NG_BANKS.find((b) => b.code === code)?.name ?? code;
+  const [me] = await db.select({ identityStatus: users.identityStatus, name: users.name }).from(users).where(eq(users.id, userId));
   return {
+    identityStatus: me?.identityStatus ?? "none",
+    profileName: me?.name ?? "",
     minKobo: env().MIN_WITHDRAWAL_KOBO,
     bank,
     withdrawals: list.map((w) => ({ ...w, bankName: name(w.bankCode) })),

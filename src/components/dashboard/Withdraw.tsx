@@ -5,12 +5,13 @@ import { useCallback, useEffect, useState } from "react";
 import { NG_BANKS } from "@/core/banks";
 import { api } from "../api";
 import { useCurrency } from "./Currency";
+import { IdentityCheck, useIdentity } from "./IdentityCheck";
 
 type W = {
   id: string; amount: number; status: "requested" | "paid" | "rejected"; note: string | null; bankName: string;
   accountNumber: string; accountName: string; createdAt: string; decidedAt: string | null;
 };
-type Data = { minKobo: number; bank: { bankCode: string; accountNumber: string; accountName: string } | null; withdrawals: W[] };
+type Data = { identityStatus: string; profileName: string; minKobo: number; bank: { bankCode: string; accountNumber: string; accountName: string } | null; withdrawals: W[] };
 
 const STATUS: Record<W["status"], { text: string; ok?: boolean }> = {
   requested: { text: "Waiting to be paid" },
@@ -27,6 +28,7 @@ export function Withdraw({ available, hidden }: { available: number; hidden: boo
   const [f, setF] = useState({ amount: "", bankCode: "", accountNumber: "", accountName: "" });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const identity = useIdentity();
 
   const load = useCallback(async () => {
     const d = await api<Data>("/api/wallet/withdraw");
@@ -45,7 +47,13 @@ export function Withdraw({ available, hidden }: { available: number; hidden: boo
         {!open && <button type="button" className="btn btn-primary ap-mini" onClick={() => { setOpen(true); setMsg(null); }}>Withdraw</button>}
       </div>
       {!open && msg && <div className={msg.ok ? "form-ok" : "form-error"} role={msg.ok ? "status" : "alert"}>{msg.text}</div>}
-      {open && (
+      {open && data && data.identityStatus !== "verified" && (
+        <>
+          <IdentityCheck compact data={identity.data} reload={() => { void identity.reload(); void load(); }} />
+          <button type="button" className="btn btn-ghost ap-mini" style={{ alignSelf: "flex-start" }} onClick={() => setOpen(false)}>Close</button>
+        </>
+      )}
+      {open && data?.identityStatus === "verified" && (
         <form style={{ display: "flex", flexDirection: "column", gap: 12 }} onSubmit={async (e) => {
           e.preventDefault();
           setBusy(true);
@@ -86,7 +94,7 @@ export function Withdraw({ available, hidden }: { available: number; hidden: boo
             <label htmlFor="wd-name">Account name</label>
             <input id="wd-name" className="input" value={f.accountName} onChange={set("accountName")} placeholder="Name on the bank account" required />
           </div>
-          <p className="muted" style={{ fontSize: 13 }}>The money is set aside from your wallet now and sent to this account by our team, usually within 24 hours. Use an account in your own name.</p>
+          <p className="muted" style={{ fontSize: 13 }}>The account must be in your own name (<strong className="selectable">{data.profileName}</strong>): we check the name with your bank. The money is set aside from your wallet now and sent by our team, usually within 24 hours.</p>
           {msg && <div className={msg.ok ? "form-ok" : "form-error"} role={msg.ok ? "status" : "alert"}>{msg.text}</div>}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button className="btn btn-primary" disabled={busy || amountKobo <= 0}>{busy ? "Sending request…" : amountKobo > 0 ? `Withdraw ${charge(amountKobo)}` : "Withdraw"}</button>

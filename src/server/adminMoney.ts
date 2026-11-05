@@ -17,7 +17,7 @@ export async function withdrawalsForAdmin(db: Db, status: "requested" | "paid" |
   const rows = await db
     .select({
       id: withdrawals.id, amount: withdrawals.amount, status: withdrawals.status, note: withdrawals.note,
-      bankCode: withdrawals.bankCode, accountNumber: withdrawals.accountNumber, accountName: withdrawals.accountName,
+      bankCode: withdrawals.bankCode, accountNumber: withdrawals.accountNumber, accountName: withdrawals.accountName, nameCheck: withdrawals.nameCheck,
       createdAt: withdrawals.createdAt, decidedAt: withdrawals.decidedAt,
       userId: users.id, name: users.name, email: users.email, phone: users.phone, joinedAt: users.createdAt, sellerStatus: users.sellerStatus,
       sellerAccountNumber: sellerProfiles.accountNumber, sellerAccountName: sellerProfiles.accountName, sellerBankCode: sellerProfiles.bankCode,
@@ -60,7 +60,7 @@ export async function withdrawalsForAdmin(db: Db, status: "requested" | "paid" |
     }
     return {
       id: r.id, amount: r.amount, status: r.status, note: r.note, createdAt: r.createdAt, decidedAt: r.decidedAt,
-      bankName: bankName(r.bankCode), accountNumber: r.accountNumber, accountName: r.accountName,
+      bankName: bankName(r.bankCode), accountNumber: r.accountNumber, accountName: r.accountName, nameCheck: r.nameCheck,
       user: { id: r.userId, name: r.name, email: r.email, phone: r.phone, joinedAt: r.joinedAt, seller: r.sellerStatus === "verified" },
       money: { deposits, sales, spent, available: Number(s?.available ?? 0) },
       flags,

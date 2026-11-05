@@ -5,6 +5,8 @@
 import { pgTable, uuid, text, boolean, timestamp, bigint, bigserial, integer, serial, jsonb, customType } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => "bytea" });
+
 const money = (name: string) => bigint(name, { mode: "number" });
 const ts = (name: string) => timestamp(name, { withTimezone: true, mode: "date" });
 
@@ -30,6 +32,8 @@ export const users = pgTable("users", {
   suspendReason: text("suspend_reason"),
   /** Email me when my orders are delivered, refunded or pending (migration 0032). */
   notifyOrders: boolean("notify_orders").notNull().default(true),
+  identityStatus: text("identity_status").$type<"none" | "pending" | "info_needed" | "verified" | "rejected">().notNull().default("none"),
+  identityVerifiedAt: ts("identity_verified_at"),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 
@@ -90,8 +94,51 @@ export const withdrawals = pgTable("withdrawals", {
   accountName: text("account_name").notNull(),
   status: text("status").$type<"requested" | "paid" | "rejected">().notNull().default("requested"),
   note: text("note"),
+  bankAccountName: text("bank_account_name"),
+  nameCheck: text("name_check").$type<"match" | "unchecked">(),
   createdAt: ts("created_at").notNull().defaultNow(),
   decidedAt: ts("decided_at"),
+});
+
+export const identityChecks = pgTable("identity_checks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  idType: text("id_type").notNull(),
+  idNumberEnc: text("id_number_enc").notNull(),
+  idLast4: text("id_last4").notNull(),
+  idHash: text("id_hash").notNull(),
+  nameOnId: text("name_on_id").notNull(),
+  status: text("status").$type<"pending" | "info_needed" | "verified" | "rejected">().notNull().default("pending"),
+  adminNote: text("admin_note"),
+  customerReply: text("customer_reply"),
+  submittedAt: ts("submitted_at").notNull().defaultNow(),
+  decidedAt: ts("decided_at"),
+  decidedBy: uuid("decided_by").references(() => users.id),
+});
+
+export const nameChangeRequests = pgTable("name_change_requests", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  oldName: text("old_name").notNull(),
+  newName: text("new_name").notNull(),
+  reason: text("reason").notNull(),
+  status: text("status").$type<"pending" | "info_needed" | "approved" | "rejected" | "cancelled">().notNull().default("pending"),
+  adminNote: text("admin_note"),
+  customerReply: text("customer_reply"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  decidedAt: ts("decided_at"),
+  decidedBy: uuid("decided_by").references(() => users.id),
+});
+
+export const kycFiles = pgTable("kyc_files", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  refType: text("ref_type").$type<"identity" | "name_change">().notNull(),
+  refId: uuid("ref_id").notNull(),
+  kind: text("kind").$type<"id_front" | "id_back" | "selfie" | "extra">().notNull(),
+  contentType: text("content_type").notNull(),
+  data: bytea("data").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
 });
 
 export const smmProviders = pgTable("smm_providers", {
@@ -338,7 +385,6 @@ export const sellerProfiles = pgTable("seller_profiles", {
 });
 
 /** Seller shop picture (drizzle/0012_seller_avatars.sql). Bytes are served by /api/sellers/[id]/avatar. */
-const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => "bytea" });
 export const sellerAvatars = pgTable("seller_avatars", {
   userId: uuid("user_id").primaryKey().references(() => users.id),
   contentType: text("content_type").notNull(),

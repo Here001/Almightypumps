@@ -358,6 +358,18 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   email per newly stuck batch; app_settings `stuck_alerted` {upTo}). Payments, sell desk, support, supplier top-ups have their own emails.
   BADGES CLEAR AT ONCE: `api()` in src/components/api.ts fires window event `ap:admin-counts` after any admin POST (or opening a
   support conversation); AdminShell refetches counts then, every 30 s and when the tab becomes visible.
+- IDENTITY + NAME CHANGES + WITHDRAWAL NAME MATCH (2026-11-05, owner's request; migration 0033): `src/server/identity.ts`,
+  `src/core/identity.ts` (`namesMatch`: order-free, titles ignored, ≥2 full words shared and every word of the shorter name in the
+  longer; tested), customer `IdentityCheck.tsx` (Settings card + inside Withdraw until verified; `NameChange` under Profile name,
+  which is now read-only), /api/me/identity {submit|reply|name|name_reply|name_cancel} (rate limit `identity`), admin /admin/identity
+  `AdminIdentity.tsx` (tabs Identity checks / Name changes; Approve / Ask for more info / Reject, all email the customer; photos via
+  admin-only /api/admin/identity/files/[id]; warns when an ID number is on other accounts via `id_hash`), badge `identity`,
+  Admin Home todo, alertAdmins on every submit/reply. users.identity_status none|pending|info_needed|verified|rejected. ID number
+  secretBox-encrypted; photos bytea in `kyc_files` (private). `updateProfile` refuses name changes (phone only). Withdrawals:
+  `assertIdentityVerified` → `lookupAccountName` (Flutterwave POST /accounts/resolve; "invalid" only on a clear 4xx account error;
+  null = couldn't check) → bank name (or typed name if unchecked) must `namesMatch` the profile name; stored in
+  withdrawals.bank_account_name / name_check (match|unchecked; admin queue tags it). Privacy + Terms defaults updated (only shown
+  if the owner hasn't edited those pages in /admin/legal). `decodeImage` moved to src/server/images.ts; `shrink` to dashboard/photos.ts.
 - Insights: `src/components/Tracker.tsx` beacons each page and dashboard #section to
   `/api/track` → `site_events` (anonymous cookie id, no IP/UA stored). Section names come
   from `src/core/analytics.ts` (add new pages there). Queries in `src/server/insights.ts`.
@@ -400,7 +412,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
     usd auto, Instagram Likes/Live viewers 100% rules. NOT copied: dev's P2P category renamed "Accounts"
     (account sales are blocked); live keeps "Digital products". Re-star 3 TikTok follower services
     (Owlet ids 8277, 24221, 8619) after the first live sync. No users yet (owner signs up, then promote to admin).
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0032 applied (main too: 0032 applied 2026-11-05 with owner's yes). Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0033 applied (main: 0000–0032; 0032 applied 2026-11-05 with owner's yes). Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

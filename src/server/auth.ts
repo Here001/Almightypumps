@@ -156,7 +156,13 @@ export const profileSchema = z.object({
 });
 
 export async function updateProfile(db: Db, userId: string, input: z.infer<typeof profileSchema>) {
-  const [u] = await db.update(users).set({ name: input.name, phone: input.phone || null }).where(eq(users.id, userId))
+  // Names can only change through an admin-approved request (identity.ts): stops people renaming themselves to match
+  // someone else's bank account before withdrawing.
+  const [cur] = await db.select({ name: users.name }).from(users).where(eq(users.id, userId));
+  if (cur && input.name && input.name.trim().replace(/\s+/g, " ") !== cur.name) {
+    throw badRequest("Name changes need our approval. Use “Change my name” to send a request.");
+  }
+  const [u] = await db.update(users).set({ phone: input.phone || null }).where(eq(users.id, userId))
     .returning({ name: users.name, phone: users.phone });
   return u;
 }

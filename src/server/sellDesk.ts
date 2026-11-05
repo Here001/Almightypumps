@@ -11,6 +11,7 @@ import { readSetting, writeSetting } from "./appSettings";
 import type { Db } from "./db";
 import { tradeInImages, tradeIns, users } from "./db/schema";
 import { sendNotice } from "./email";
+import { decodeImage } from "./images";
 import { env } from "./env";
 import { badRequest, notFound } from "./errors";
 import { creditWallet, walletIdForUser } from "./wallet";
@@ -94,14 +95,6 @@ export const submitSchema = z.discriminatedUnion("kind", [
   }),
 ]);
 
-function decodeImage(dataUrl: string) {
-  const m = /^data:(image\/(?:jpeg|png|webp));base64,(.+)$/.exec(dataUrl)!;
-  const buf = Buffer.from(m[2], "base64");
-  const magic = buf.subarray(0, 12).toString("hex");
-  const ok = m[1] === "image/jpeg" ? magic.startsWith("ffd8ff") : m[1] === "image/png" ? magic.startsWith("89504e47") : buf.subarray(8, 12).toString() === "WEBP";
-  if (!ok || buf.length > 520_000) throw badRequest("One of the pictures couldn't be read. Please take it again.");
-  return { contentType: m[1], data: buf };
-}
 
 export async function submitTradeIn(db: Db, user: { id: string; name: string; email: string }, input: z.output<typeof submitSchema>) {
   const cfg = await getSellConfig(db);
@@ -138,7 +131,7 @@ export async function submitTradeIn(db: Db, user: { id: string; name: string; em
       .where(and(eq(tradeIns.userId, user.id), inArray(tradeIns.status, ["pending", "paid"]), gte(tradeIns.createdAt, new Date(Date.now() - 86_400_000))));
     if (Number(today.k) + amount > cfg.dailyLimitKobo) throw badRequest(`You can sell up to ${fmt(cfg.dailyLimitKobo)} in 24 hours. Try a smaller amount or come back later.`);
   }
-  const images = input.kind === "giftcard" ? input.images.map(decodeImage) : [];
+  const images = input.kind === "giftcard" ? input.images.map((d) => decodeImage(d)) : [];
   const t = await db.transaction(async (tx) => {
     const [row] = await tx.insert(tradeIns).values({
       userId: user.id, kind: input.kind, itemId: input.itemId, itemLabel: label, cardForm: form, value: String(input.value), currency,

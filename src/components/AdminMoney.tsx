@@ -83,7 +83,7 @@ export function AdminWallet() {
 
 type Withdrawal = {
   id: string; amount: number; status: string; note: string | null; createdAt: string; decidedAt: string | null;
-  bankName: string; accountNumber: string; accountName: string;
+  bankName: string; accountNumber: string; accountName: string; nameCheck: "match" | "unchecked" | null;
   user: { id: string; name: string; email: string; phone: string | null; joinedAt: string; seller: boolean };
   money: { deposits: number; sales: number; spent: number; available: number };
   flags: string[];
@@ -142,7 +142,10 @@ export function AdminWithdrawals() {
             <dt>Pay to</dt>
             <dd>
               <strong>{w.accountName}</strong><br />{w.bankName}<br />
-              <span style={{ fontFamily: "var(--mono)", fontSize: 18, letterSpacing: ".05em" }}>{w.accountNumber}</span> <CopyBtn text={w.accountNumber} />
+              <span style={{ fontFamily: "var(--mono)", fontSize: 18, letterSpacing: ".05em" }}>{w.accountNumber}</span> <CopyBtn text={w.accountNumber} /><br />
+              {w.nameCheck === "match" ? <span className="ap-tag ok">Bank confirmed: account is in the customer&apos;s verified name</span>
+                : w.nameCheck === "unchecked" ? <span className="ap-tag">⚠ Bank name not checked automatically: confirm it matches {w.user.name} in your banking app before paying</span>
+                : <span className="ap-tag">Requested before name checks started</span>}
             </dd>
             <dt>Customer</dt>
             <dd>{w.user.name}{w.user.seller ? " (verified seller)" : ""}<br /><span className="muted">{w.user.email}{w.user.phone ? ` · ${w.user.phone}` : ""} · joined {new Date(w.user.joinedAt).toLocaleDateString("en-NG")}</span></dd>

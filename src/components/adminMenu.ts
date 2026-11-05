@@ -4,7 +4,7 @@ import type { AdminCounts } from "@/server/adminHome";
 type Item = { href: string; label: string; count?: keyof AdminCounts };
 export const ADMIN_GROUPS: { title: string; items: Item[] }[] = [
   { title: "", items: [{ href: "/admin", label: "Home" }] },
-  { title: "Customers", items: [{ href: "/admin/support", label: "Support chat", count: "support" }, { href: "/admin/users", label: "Users" }] },
+  { title: "Customers", items: [{ href: "/admin/support", label: "Support chat", count: "support" }, { href: "/admin/identity", label: "Identity & name checks", count: "identity" }, { href: "/admin/users", label: "Users" }] },
   {
     title: "Money",
     items: [
