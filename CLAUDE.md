@@ -334,6 +334,9 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   still works), /api/market/listings and /listings/[id]/buy (p2p). Dashboard gets `off` prop: tiles hidden, opening a hidden
   screen by link shows "unavailable"; P2P tab hidden unless the customer has trades (open trades carry on). Admin
   /admin/switches (`AdminSwitches.tsx`, /api/admin/switches) = toggle per service. Shop categories still paused via /admin/shop.
+  TILE ORDER (owner's request 2026-11-05): same page, "Order on the Services page" (position menu 1st/2nd… + ↑/↓, saves at once)
+  → app_settings `services_order` {order: [tile ids incl. `shop-<slug>`]} (`tileOrder`/`saveTileOrder`); dashboard sorts live +
+  shop tiles with `sortByOrder` (unplaced tiles keep default order after placed ones; "coming soon" tiles always last).
 - Insights: `src/components/Tracker.tsx` beacons each page and dashboard #section to
   `/api/track` → `site_events` (anonymous cookie id, no IP/UA stored). Section names come
   from `src/core/analytics.ts` (add new pages there). Queries in `src/server/insights.ts`.

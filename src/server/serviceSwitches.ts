@@ -23,3 +23,13 @@ export async function assertServiceOn(db: DbOrTx, id: SwitchId) {
     throw new AppError(503, "SERVICE_OFF", `${label} is unavailable right now. Please check back later.`);
   }
 }
+
+/** The admin's tile order for the customer Services page (ids like "boost" or "shop-<slug>"). */
+export async function tileOrder(db: DbOrTx): Promise<string[]> {
+  const s = await readSetting<{ order: string[] }>(db, "services_order", { order: [] });
+  return (Array.isArray(s.order) ? s.order : []).filter((x) => typeof x === "string" && /^[a-z0-9_-]{1,80}$/.test(x)).slice(0, 100);
+}
+export async function saveTileOrder(db: DbOrTx, order: string[]) {
+  await writeSetting(db, "services_order", { order: [...new Set(order)].slice(0, 100) });
+  return { order };
+}

@@ -6,7 +6,7 @@ import { FundWallet, LogoutButton, PaymentReturn } from "../DashboardActions";
 import { Boost, type CatalogPlatform } from "./Boost";
 import { CurrencyProvider, CurrencySwitch, useCurrency } from "./Currency";
 import { HUB_SERVICES } from "./services";
-import { hiddenTiles } from "@/core/switches";
+import { hiddenTiles, sortByOrder } from "@/core/switches";
 import { VerifyCode } from "./VerifyCode";
 import { Esim } from "./Esim";
 import { TravelEsim } from "./TravelEsim";
@@ -63,6 +63,8 @@ type Props = {
   me: { name: string; email: string; phone: string | null; sellerStatus: string };
   /** Services the admin has switched off (Admin → Services on/off). */
   off: string[];
+  /** Admin's order for the Services tiles. */
+  tileOrder: string[];
   shopCategories: { slug: string; name: string; description: string; icon: string; products: number }[];
   shopOrders: { id: number; product: string; amount: number; status: string; content: string | null; note: string | null; when: string }[];
 };
@@ -110,11 +112,11 @@ function Dashboard(props: Props) {
   // (a shop category with the same name replaces its "coming soon" tile).
   const shopNames = new Set(props.shopCategories.map((c) => c.name.trim().toLowerCase()));
   const hubTiles = [
-    ...HUB_SERVICES.filter((s) => s.status === "live" && !hidden.has(s.id)).map((s) => ({ ...s, sub: s.id === "boost" ? `${props.catalog.length} platforms` : "Open" })),
+    ...sortByOrder([...HUB_SERVICES.filter((s) => s.status === "live" && !hidden.has(s.id)).map((s) => ({ ...s, sub: s.id === "boost" ? `${props.catalog.length} platforms` : "Open" })),
     ...props.shopCategories.map((c) => ({
       id: `shop-${c.slug}`, title: c.name, description: c.description, icon: SHOP_ICON_PATHS[c.icon] ?? SHOP_ICON_PATHS.bag,
       status: "live" as const, sub: `${c.products} product${c.products === 1 ? "" : "s"}`,
-    })),
+    }))], props.tileOrder),
     ...HUB_SERVICES.filter((s) => s.status === "soon" && !shopNames.has(s.title.trim().toLowerCase())).map((s) => ({ ...s, sub: "Coming soon" })),
   ];
   const shopSlug = tab.startsWith("shop-") ? tab.slice(5) : null;

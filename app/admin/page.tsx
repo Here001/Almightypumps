@@ -29,7 +29,7 @@ const ABOUT: Record<string, string> = {
   "/admin/sell": "Cards and coins customers sell you, your rates",
   "/admin/money": "Your platform wallet and what you earned",
   "/admin/insights": "Visitors, sign-ups and top sellers",
-  "/admin/switches": "Switch any service off or on for customers",
+  "/admin/switches": "Tile order (1st, 2nd…) and switch services off or on",
   "/admin/instant": "Markups, balances, stuck orders",
   "/admin/esim": "Plans, prices and orders to deliver",
   "/admin/verify": "Markup and per-app prices",

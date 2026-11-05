@@ -487,3 +487,13 @@ test("shipping: price, phone, tracking code", async () => {
   assert.match(c, /^AP[A-Z2-9]{8}$/);
   assert.ok(!/[01OIL]/.test(c.slice(2)));
 });
+
+test("services: tile order", async () => {
+  const { sortByOrder, hiddenTiles } = await import("../src/core/switches.ts");
+  const t = [{ id: "boost" }, { id: "esim" }, { id: "airtime" }, { id: "shop-new" }];
+  assert.deepEqual(sortByOrder(t, ["airtime", "boost"]).map((x) => x.id), ["airtime", "boost", "esim", "shop-new"]);
+  assert.deepEqual(sortByOrder(t, []).map((x) => x.id), ["boost", "esim", "airtime", "shop-new"]);
+  assert.deepEqual(sortByOrder(t, ["gone", "esim"]).map((x) => x.id), ["esim", "boost", "airtime", "shop-new"]);
+  assert.ok(hiddenTiles(["esim_us", "esim_travel"]).has("esim"));
+  assert.ok(!hiddenTiles(["esim_us"]).has("esim"));
+});

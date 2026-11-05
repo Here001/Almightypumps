@@ -18,7 +18,7 @@ export const ADMIN_GROUPS: { title: string; items: Item[] }[] = [
   {
     title: "What you sell",
     items: [
-      { href: "/admin/switches", label: "Services on/off" },
+      { href: "/admin/switches", label: "Services: order & on/off" },
       { href: "/admin/instant", label: "Gift cards · Airtime · Travel eSIMs", count: "instantStuck" },
       { href: "/admin/esim", label: "US eSIMs", count: "esim" },
       { href: "/admin/verify", label: "Verification codes" },

@@ -21,3 +21,15 @@ export function hiddenTiles(off: readonly string[]): Set<string> {
   if (off.includes("esim_us") && off.includes("esim_travel")) set.add("esim");
   return set;
 }
+
+/**
+ * Put Services-page tiles in the admin's chosen order (app_settings `services_order`). Tiles the admin hasn't placed
+ * yet (e.g. a new shop category) keep their default order after the placed ones.
+ */
+export function sortByOrder<T extends { id: string }>(tiles: T[], order: readonly string[]): T[] {
+  const pos = new Map(order.map((id, i) => [id, i]));
+  return tiles
+    .map((t, i) => ({ t, k: pos.has(t.id) ? pos.get(t.id)! : order.length + i }))
+    .sort((a, b) => a.k - b.k)
+    .map((x) => x.t);
+}
