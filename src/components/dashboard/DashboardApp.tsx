@@ -6,6 +6,7 @@ import { FundWallet, LogoutButton, PaymentReturn } from "../DashboardActions";
 import { Boost, type CatalogPlatform } from "./Boost";
 import { CurrencyProvider, CurrencySwitch, useCurrency } from "./Currency";
 import { HUB_SERVICES } from "./services";
+import { hiddenTiles } from "@/core/switches";
 import { VerifyCode } from "./VerifyCode";
 import { Esim } from "./Esim";
 import { TravelEsim } from "./TravelEsim";
@@ -60,6 +61,8 @@ type Props = {
   greeting: string; isAdmin: boolean; userId: string; wallet: { available: number; held: number }; minOrderKobo: number; usdRateKobo: number;
   catalog: CatalogPlatform[]; orders: Order[]; trades: Trade[]; history: Entry[];
   me: { name: string; email: string; phone: string | null; sellerStatus: string };
+  /** Services the admin has switched off (Admin → Services on/off). */
+  off: string[];
   shopCategories: { slug: string; name: string; description: string; icon: string; products: number }[];
   shopOrders: { id: number; product: string; amount: number; status: string; content: string | null; note: string | null; when: string }[];
 };
@@ -72,7 +75,10 @@ function Dashboard(props: Props) {
   const { money, currency, charge } = useCurrency();
   const [tab, setTab] = useState<Tab>("services");
   const [p2pView, setP2pView] = useState<"market" | "mine">("market");
-  const [esimKind, setEsimKind] = useState<"travel" | "us">("us");
+  const usOff = props.off.includes("esim_us"), travelOff = props.off.includes("esim_travel");
+  const [esimKind, setEsimKind] = useState<"travel" | "us">(usOff && !travelOff ? "travel" : "us");
+  const hidden = hiddenTiles(props.off);
+  const tabs = TABS.filter((t) => !(t.id === "trades" && hidden.has("p2p") && props.trades.length === 0));
   const [room, setRoom] = useState<string | null>(null);
   const router = useRouter();
 
@@ -104,7 +110,7 @@ function Dashboard(props: Props) {
   // (a shop category with the same name replaces its "coming soon" tile).
   const shopNames = new Set(props.shopCategories.map((c) => c.name.trim().toLowerCase()));
   const hubTiles = [
-    ...HUB_SERVICES.filter((s) => s.status === "live").map((s) => ({ ...s, sub: s.id === "boost" ? `${props.catalog.length} platforms` : "Open" })),
+    ...HUB_SERVICES.filter((s) => s.status === "live" && !hidden.has(s.id)).map((s) => ({ ...s, sub: s.id === "boost" ? `${props.catalog.length} platforms` : "Open" })),
     ...props.shopCategories.map((c) => ({
       id: `shop-${c.slug}`, title: c.name, description: c.description, icon: SHOP_ICON_PATHS[c.icon] ?? SHOP_ICON_PATHS.bag,
       status: "live" as const, sub: `${c.products} product${c.products === 1 ? "" : "s"}`,
@@ -123,7 +129,7 @@ function Dashboard(props: Props) {
         <aside className="ap-side glass">
           <Link href="/" className="logo" style={{ color: "var(--fg)", fontSize: 15 }}><span className="logo-mark">AP</span>ALMIGHTY PUMPS</Link>
           <nav className="ap-sidenav" aria-label="Dashboard">
-            {TABS.map((t) => (
+            {tabs.map((t) => (
               <a key={t.id} href={`#${t.id}`} aria-current={(SERVICE_SCREENS.has(tab) || tab.startsWith("shop-") ? "services" : tab) === t.id ? "page" : undefined} onClick={(e) => { e.preventDefault(); go(t.id); }}>
                 <Icon d={t.icon} />{t.label}
               </a>
@@ -158,6 +164,15 @@ function Dashboard(props: Props) {
           </header>
 
           <Suspense fallback={null}><PaymentReturn /></Suspense>
+          {hidden.has(tab) && (
+            <section className="card glass">
+              <div className="empty">This service is unavailable right now. Please check back later.</div>
+              <button type="button" className="btn btn-ghost" onClick={() => go("services")}>← All services</button>
+            </section>
+          )}
+          {tab === "trades" && hidden.has("p2p") && (
+            <section className="card glass"><div className="empty">The P2P marketplace is closed right now. Your open trades below carry on as normal.</div></section>
+          )}
 
           {tab === "services" && (
             <section className="card glass">
@@ -177,7 +192,7 @@ function Dashboard(props: Props) {
             </section>
           )}
 
-          {tab === "boost" && (
+          {tab === "boost" && !hidden.has("boost") && (
             <div className="ap-crumb">
               <button type="button" className="ap-link" onClick={() => go("services")}>← All services</button>
               <span className="muted">/</span>
@@ -194,23 +209,25 @@ function Dashboard(props: Props) {
               <ShopCategory key={shopSlug} slug={shopSlug} balance={props.wallet.available} onAddMoney={() => go("wallet")} onViewOrders={() => go("orders")} />
             </>
           )}
-          {tab === "esim" && (
+          {tab === "esim" && !hidden.has("esim") && (
             <>
               <div className="ap-crumb">
                 <button type="button" className="ap-link" onClick={() => go("services")}>← All services</button>
                 <span className="muted">/</span>
                 <strong>eSIMs</strong>
               </div>
-              <div className="ap-chips" role="group" aria-label="eSIM type">
-                <button type="button" className="ap-chip" aria-pressed={esimKind === "us"} onClick={() => setEsimKind("us")}>US phone line</button>
-                <button type="button" className="ap-chip" aria-pressed={esimKind === "travel"} onClick={() => setEsimKind("travel")}>Travel data · instant</button>
-              </div>
-              {esimKind === "travel"
+              {!usOff && !travelOff && (
+                <div className="ap-chips" role="group" aria-label="eSIM type">
+                  <button type="button" className="ap-chip" aria-pressed={esimKind === "us"} onClick={() => setEsimKind("us")}>US phone line</button>
+                  <button type="button" className="ap-chip" aria-pressed={esimKind === "travel"} onClick={() => setEsimKind("travel")}>Travel data · instant</button>
+                </div>
+              )}
+              {(esimKind === "travel" && !travelOff) || usOff
                 ? <TravelEsim balance={props.wallet.available} onAddMoney={() => go("wallet")} />
                 : <Esim balance={props.wallet.available} onAddMoney={() => go("wallet")} />}
             </>
           )}
-          {tab === "giftcards" && (
+          {tab === "giftcards" && !hidden.has("giftcards") && (
             <>
               <div className="ap-crumb">
                 <button type="button" className="ap-link" onClick={() => go("services")}>← All services</button>
@@ -220,7 +237,7 @@ function Dashboard(props: Props) {
               <GiftCards balance={props.wallet.available} onAddMoney={() => go("wallet")} />
             </>
           )}
-          {tab === "sell" && (
+          {tab === "sell" && !hidden.has("sell") && (
             <>
               <div className="ap-crumb">
                 <button type="button" className="ap-link" onClick={() => go("services")}>← All services</button>
@@ -230,7 +247,7 @@ function Dashboard(props: Props) {
               <SellDesk />
             </>
           )}
-          {tab === "ship" && (
+          {tab === "ship" && !hidden.has("ship") && (
             <>
               <div className="ap-crumb">
                 <button type="button" className="ap-link" onClick={() => go("services")}>← All services</button>
@@ -240,7 +257,7 @@ function Dashboard(props: Props) {
               <SendPackage balance={props.wallet.available} onAddMoney={() => go("wallet")} />
             </>
           )}
-          {tab === "docs" && (
+          {tab === "docs" && !hidden.has("docs") && (
             <>
               <div className="ap-crumb">
                 <button type="button" className="ap-link" onClick={() => go("services")}>← All services</button>
@@ -250,7 +267,7 @@ function Dashboard(props: Props) {
               <Documents />
             </>
           )}
-          {tab === "invite" && (
+          {tab === "invite" && !hidden.has("invite") && (
             <>
               <div className="ap-crumb">
                 <button type="button" className="ap-link" onClick={() => go("services")}>← All services</button>
@@ -260,7 +277,7 @@ function Dashboard(props: Props) {
               <Invite />
             </>
           )}
-          {tab === "airtime" && (
+          {tab === "airtime" && !hidden.has("airtime") && (
             <>
               <div className="ap-crumb">
                 <button type="button" className="ap-link" onClick={() => go("services")}>← All services</button>
@@ -270,7 +287,7 @@ function Dashboard(props: Props) {
               <Airtime balance={props.wallet.available} onAddMoney={() => go("wallet")} />
             </>
           )}
-          {tab === "verify" && (
+          {tab === "verify" && !hidden.has("verify") && (
             <>
               <div className="ap-crumb">
                 <button type="button" className="ap-link" onClick={() => go("services")}>← All services</button>
@@ -280,7 +297,7 @@ function Dashboard(props: Props) {
               <VerifyCode balance={props.wallet.available} onAddMoney={() => go("wallet")} />
             </>
           )}
-          {tab === "boost" && <Boost catalog={props.catalog} balance={props.wallet.available} minOrderKobo={props.minOrderKobo} onAddMoney={() => go("wallet")} onViewOrders={() => go("orders")} />}
+          {tab === "boost" && !hidden.has("boost") && <Boost catalog={props.catalog} balance={props.wallet.available} minOrderKobo={props.minOrderKobo} onAddMoney={() => go("wallet")} onViewOrders={() => go("orders")} />}
 
           {tab === "orders" && (
             <section className="card glass">
@@ -373,13 +390,13 @@ function Dashboard(props: Props) {
             </>
           )}
 
-          {tab === "trades" && props.me.sellerStatus === "verified" && (
+          {tab === "trades" && !hidden.has("p2p") && props.me.sellerStatus === "verified" && (
             <div className="ap-chips ap-chips-wrap" role="group" aria-label="P2P view">
               <button type="button" className="ap-chip" aria-pressed={p2pView === "market"} onClick={() => setP2pView("market")}>Marketplace</button>
               <button type="button" className="ap-chip" aria-pressed={p2pView === "mine"} onClick={() => setP2pView("mine")}>My ads & sales</button>
             </div>
           )}
-          {tab === "trades" && (p2pView === "mine" && props.me.sellerStatus === "verified"
+          {tab === "trades" && !hidden.has("p2p") && (p2pView === "mine" && props.me.sellerStatus === "verified"
             ? <SellerPanel />
             : <Marketplace myId={props.userId} balance={props.wallet.available} onAddMoney={() => go("wallet")} onViewTrades={() => document.getElementById("my-trades")?.scrollIntoView({ behavior: "smooth" })} />)}
 
@@ -410,7 +427,7 @@ function Dashboard(props: Props) {
       </div>
 
       <nav className="ap-tabbar" aria-label="Dashboard">
-        {TABS.map((t) => (
+        {tabs.map((t) => (
           <a key={t.id} href={`#${t.id}`} aria-current={(SERVICE_SCREENS.has(tab) || tab.startsWith("shop-") ? "services" : tab) === t.id ? "page" : undefined} onClick={(e) => { e.preventDefault(); go(t.id); }}>
             <Icon d={t.icon} /><span>{t.label}</span>
           </a>

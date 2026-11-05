@@ -4,6 +4,7 @@ import { requireUser } from "@/server/auth";
 import { body, route } from "@/server/http";
 import { rateLimit } from "@/server/rateLimit";
 import { buyTravelEsim, travelDestinations, travelPackagesFor } from "@/server/travelEsim";
+import { assertServiceOn } from "@/server/serviceSwitches";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -18,6 +19,7 @@ export const GET = route(async (req: Request) => {
 /** Buy: { code, priceKobo }. */
 export const POST = route(async (req: Request) => {
   const user = await requireUser();
+  await assertServiceOn(getDb(), "esim_travel");
   await rateLimit(getDb(), "buy", user.id);
   const input = await body(req, z.object({ code: z.string().min(1).max(80), priceKobo: z.number().int().positive() }));
   return buyTravelEsim(getDb(), user.id, input.code, input.priceKobo);

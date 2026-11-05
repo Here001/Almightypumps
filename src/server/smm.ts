@@ -2,6 +2,7 @@
  * Social growth orders. We resell services from one or more upstream panels
  * that speak the standard panel API (services / add / status / balance).
  */
+import { assertServiceOn } from "./serviceSwitches";
 import { and, desc, eq, inArray, notInArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { readSetting, writeSetting } from "./appSettings";
@@ -279,6 +280,7 @@ export async function placeOrder(
   userId: string,
   input: { servicePublicId: number; link: string; quantity: number; apiKeyId?: string },
 ) {
+  await assertServiceOn(db, "boost");
   const [chosen] = await db.select().from(smmServices).where(eq(smmServices.publicId, input.servicePublicId));
   if (!chosen) throw notFound("Service");
   // Route to the cheapest connected provider selling this same product (the customer's pick if it's still

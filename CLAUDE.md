@@ -326,6 +326,14 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   unsuspend, log out everywhere, make/remove admin (not self; keep ≥1 admin; needs confirmed email), mark email confirmed, edit
   name/phone, wallet add/remove (`adjust:credit` / `adjust:debit` via new `debitWallet`; reason shown to customer; idempotent per
   requestId; can't remove held money; never on your own wallet). Email/password can't be changed by admins.
+- SERVICES ON/OFF (2026-11-05, owner's request; no migration): app_settings `services_off` {off: [ids]} (everything else on).
+  Ids in `src/core/switches.ts` (`SWITCHES`: boost, verify, esim_us, esim_travel, giftcards, airtime, sell, ship, docs, invite, p2p;
+  `hiddenTiles` hides the eSIM tile only when both eSIM kinds are off). `src/server/serviceSwitches.ts` (`offServices`,
+  `setService`, `assertServiceOn` → 503 "X is unavailable right now"). Enforced in placeOrder (Boost web + /api/v2), POSTs of
+  /api/verify, /api/esim/orders, /api/travel-esim, /api/gift-cards, /api/airtime, /api/sell, /api/shipping (quote/book; cancel
+  still works), /api/market/listings and /listings/[id]/buy (p2p). Dashboard gets `off` prop: tiles hidden, opening a hidden
+  screen by link shows "unavailable"; P2P tab hidden unless the customer has trades (open trades carry on). Admin
+  /admin/switches (`AdminSwitches.tsx`, /api/admin/switches) = toggle per service. Shop categories still paused via /admin/shop.
 - Insights: `src/components/Tracker.tsx` beacons each page and dashboard #section to
   `/api/track` → `site_events` (anonymous cookie id, no IP/UA stored). Section names come
   from `src/core/analytics.ts` (add new pages there). Queries in `src/server/insights.ts`.

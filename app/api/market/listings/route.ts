@@ -5,6 +5,7 @@ import { requireUser } from "@/server/auth";
 import { body, route } from "@/server/http";
 import { browseListings, createListing } from "@/server/market";
 import { rateLimit } from "@/server/rateLimit";
+import { assertServiceOn } from "@/server/serviceSwitches";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,7 @@ const schema = z.object({
 
 export const POST = route(async (req: Request) => {
   const user = await requireUser();
+  await assertServiceOn(getDb(), "p2p");
   await rateLimit(getDb(), "listingWrite", user.id);
   const input = await body(req, schema);
   return createListing(getDb(), user.id, { ...input, priceKobo: nairaToKobo(input.price) });

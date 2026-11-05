@@ -4,6 +4,7 @@ import { requireUser } from "@/server/auth";
 import { body, route } from "@/server/http";
 import { rateLimit } from "@/server/rateLimit";
 import { bookShipment, cancelShipment, myShipments, quoteSchema, quoteShipment, shippingInfo, shippingStates } from "@/server/shipping";
+import { assertServiceOn } from "@/server/serviceSwitches";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -29,6 +30,7 @@ export const POST = route(async (req: Request) => {
   const me = await requireUser();
   const db = getDb();
   const input = await body(req, schema);
+  if (input.action !== "cancel") await assertServiceOn(db, "ship");
   if (input.action === "quote") {
     await rateLimit(db, "shipQuote", me.id);
     return quoteShipment(db, me.id, input.input);
