@@ -350,8 +350,12 @@ function Dashboard(props: Props) {
               <BankTransfer />
               <ManualPay />
               <Withdraw available={props.wallet.available} hidden={hideBal} />
-              <section className="card glass">
-                <h2>Wallet activity</h2>
+              <details className="card glass ap-collapse">
+                <summary>
+                  <h2>Wallet activity</h2>
+                  <span className="muted ap-collapse-hint">{props.history.length ? `${props.history.length} recent` : "None yet"}</span>
+                  <span className="ap-collapse-chev" aria-hidden="true">›</span>
+                </summary>
                 {props.history.length === 0 ? <div className="empty">Your top-ups, orders and refunds will appear here.</div> : (
                   <ul className="ap-list">
                     {props.history.map((h) => (
@@ -365,7 +369,7 @@ function Dashboard(props: Props) {
                     ))}
                   </ul>
                 )}
-              </section>
+              </details>
             </>
           )}
 
