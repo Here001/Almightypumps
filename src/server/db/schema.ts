@@ -25,6 +25,9 @@ export const users = pgTable("users", {
   referralCode: text("referral_code").unique(),
   /** Who invited this customer (users.id). */
   referredBy: uuid("referred_by"),
+  /** Set when an admin suspends the account (migration 0030): no login, no API. */
+  suspendedAt: ts("suspended_at"),
+  suspendReason: text("suspend_reason"),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 
@@ -682,3 +685,13 @@ export const shipments = pgTable("shipments", {
 });
 export type ShipRate = { rateId: string; carrier: string; logo: string | null; service: string | null; costKobo: number; priceKobo: number; deliveryTime: string | null; pickupTime: string | null };
 export type ShipEvent = { at: string; text: string; location: string | null };
+
+/** Log of admin actions on customer accounts (migration 0030). */
+export const adminActions = pgTable("admin_actions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  adminId: uuid("admin_id").notNull().references(() => users.id),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  action: text("action").notNull(),
+  detail: text("detail"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});

@@ -81,6 +81,7 @@ export async function login(db: Db, input: z.infer<typeof loginSchema>) {
   dummyHash ??= await bcrypt.hash("not-a-real-password", 12);
   const ok = await bcrypt.compare(input.password, u && !u.isSystem ? u.passwordHash : dummyHash);
   if (!u || !ok || u.isSystem) throw badRequest("That email and password don't match.");
+  if (u.suspendedAt) throw new AppError(403, "SUSPENDED", "This account is suspended. Contact support@almightypumps.com if you think this is a mistake.");
   return { id: u.id, name: u.name, email: u.email, role: u.role, verified: Boolean(u.emailVerifiedAt) };
 }
 
@@ -123,12 +124,12 @@ export async function currentUser(): Promise<SessionUser | null> {
     const { payload } = await jwtVerify(token, key());
     if (!payload.sub) return null;
     const [u] = await getDb()
-      .select({ id: users.id, name: users.name, email: users.email, phone: users.phone, role: users.role, sellerStatus: users.sellerStatus, v: users.sessionVersion })
+      .select({ id: users.id, name: users.name, email: users.email, phone: users.phone, role: users.role, sellerStatus: users.sellerStatus, v: users.sessionVersion, suspendedAt: users.suspendedAt })
       .from(users)
       .where(eq(users.id, payload.sub));
     // Sessions from before a password change or "log out everywhere" are no longer valid.
-    if (!u || (Number(payload.v ?? 0) !== u.v)) return null;
-    const { v: _v, ...user } = u;
+    if (!u || (Number(payload.v ?? 0) !== u.v) || u.suspendedAt) return null;
+    const { v: _v, suspendedAt: _s, ...user } = u;
     return user;
   } catch {
     return null;

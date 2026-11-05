@@ -23,6 +23,7 @@ const TODO: { key: keyof AdminCounts; href: string; one: string; many: string; h
 
 /** One line per menu item, so the owner knows where to go. */
 const ABOUT: Record<string, string> = {
+  "/admin/users": "Find any customer: wallet, activity, suspend, adjust",
   "/admin/payments": "Bank transfer & crypto top-ups",
   "/admin/withdrawals": "Customers' cash-outs to their bank",
   "/admin/sell": "Cards and coins customers sell you, your rates",

@@ -8,7 +8,7 @@ import { NextResponse } from "next/server";
 import { and, eq, isNull } from "drizzle-orm";
 import { hashApiKey } from "@/core/crypto";
 import { getDb } from "@/server/db";
-import { apiKeys, wallets } from "@/server/db/schema";
+import { apiKeys, users, wallets } from "@/server/db/schema";
 import { toAppError } from "@/server/errors";
 import { listServices, myOrders, placeOrder } from "@/server/smm";
 import { rateLimit } from "@/server/rateLimit";
@@ -40,6 +40,8 @@ export async function POST(req: Request) {
   const db = getDb();
   const [k] = await db.select().from(apiKeys).where(and(eq(apiKeys.keyHash, hashApiKey(p.key)), isNull(apiKeys.revokedAt)));
   if (!k) return fail("Invalid API key", 401);
+  const [owner] = await db.select({ suspendedAt: users.suspendedAt }).from(users).where(eq(users.id, k.userId));
+  if (!owner || owner.suspendedAt) return fail("This account is suspended", 403);
   if (!(await rateLimit(db, "resellerApi", k.id, { silent: true }))) return fail("Too many requests. Slow down to 120 per minute.", 429);
 
   try {

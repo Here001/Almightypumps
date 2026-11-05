@@ -208,7 +208,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   (legal pages, footer Support link); hello@ is only for supplier sign-ups.
 - ADMIN FRAME (redesign 2026-11-04, owner asked for "simple and easy"): `app/admin/layout.tsx` → `AdminShell` in
   `src/components/AdminNav.tsx` (sidebar on computers; on phones a sticky top bar with page title + "Menu" button that opens a
-  drawer). Menu groups live in `src/components/adminMenu.ts` (Home; Money; What you sell; P2P marketplace; Website) with red
+  drawer). Menu groups live in `src/components/adminMenu.ts` (Home; Customers; Money; What you sell; P2P marketplace; Website) with red
   count badges from `adminCounts` (`src/server/adminHome.ts`, refreshed via GET /api/admin/counts on every page change).
   /admin = Home: "Needs your attention" (payments to confirm, withdrawals, disputes, US eSIMs, shop orders, stuck instant
   orders >15 min, seller applications, ads to review), today's numbers (Lagos day: sales, top-ups, new customers, platform
@@ -315,6 +315,14 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   TERMINAL_AFRICA_SECRET_KEY (sk_test_… → sandbox.terminal.africa, sk_live_… → api.terminal.africa), TERMINAL_AFRICA_BASE_URL for
   mocks. Field names from Terminal's public OpenAPI spec (jentic/jentic-public-apis) + open-source clients; docs site is blocked
   from the sandbox, so check `[terminal]` logs on the first real calls. CSP img-src now allows any https image (courier logos).
+- ADMIN USERS (2026-11-05, owner asked for "all users with administrative functions"; migration 0030 `users.suspended_at/
+  suspend_reason` + `admin_actions` log; `src/server/adminUsers.ts`, /admin/users `AdminUsers.tsx` (search name/email/phone/invite
+  code, filters, 30 per page) → /admin/users/[id] `AdminUserDetail.tsx`; APIs /api/admin/users, /api/admin/users/[id]). Detail:
+  wallet, totals (topped up, spent, withdrawn, earned), counts, inviter, 40 latest ledger lines, admin history. Actions (each logged):
+  suspend (reason; bumps session_version + deletes trusted devices; `currentUser` returns null, login refused 403, /api/v2 refused),
+  unsuspend, log out everywhere, make/remove admin (not self; keep ≥1 admin; needs confirmed email), mark email confirmed, edit
+  name/phone, wallet add/remove (`adjust:credit` / `adjust:debit` via new `debitWallet`; reason shown to customer; idempotent per
+  requestId; can't remove held money; never on your own wallet). Email/password can't be changed by admins.
 - Insights: `src/components/Tracker.tsx` beacons each page and dashboard #section to
   `/api/track` → `site_events` (anonymous cookie id, no IP/UA stored). Section names come
   from `src/core/analytics.ts` (add new pages there). Queries in `src/server/insights.ts`.
@@ -357,7 +365,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
     usd auto, Instagram Likes/Live viewers 100% rules. NOT copied: dev's P2P category renamed "Accounts"
     (account sales are blocked); live keeps "Digital products". Re-star 3 TikTok follower services
     (Owlet ids 8277, 24221, 8619) after the first live sync. No users yet (owner signs up, then promote to admin).
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0029 applied (main has 0000–0026; 0027–0029 need the owner's yes). Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0030 applied (main has 0000–0026; 0027–0030 need the owner's yes). Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

@@ -66,6 +66,17 @@ export async function creditWallet(tx: Tx, walletId: string, amount: Kobo, kind:
   return true;
 }
 
+/** Take money out of a wallet's available balance (admin adjustments). Fails if the balance is too low. */
+export async function debitWallet(tx: Tx, walletId: string, amount: Kobo, kind: string, ref: Ref = {}): Promise<boolean> {
+  if (ref.idempotencyKey) {
+    const [seen] = await tx.select({ id: ledgerEntries.id }).from(ledgerEntries).where(eq(ledgerEntries.idempotencyKey, ref.idempotencyKey));
+    if (seen) return false;
+  }
+  const w = (await lockWallets(tx, [walletId])).get(walletId)!;
+  await write(tx, w, L.debit(w, amount), kind, ref);
+  return true;
+}
+
 /** Set money aside. Returns the hold id. */
 export async function placeHold(
   tx: Tx,

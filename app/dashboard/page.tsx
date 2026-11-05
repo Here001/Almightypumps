@@ -68,6 +68,7 @@ function kindLabel(kind: string) {
   if (kind === "tradein:crypto") return "Crypto sold";
   if (kind === "bonus:referral") return "Invite bonus";
   if (kind === "refund:shipping") return "Package delivery: refunded";
+  if (kind === "adjust:credit" || kind === "adjust:debit") return "Adjustment by Almighty Pumps";
   if (kind === "escrow:payout") return "P2P sale paid to you";
   if (verb === "capture") return what === "withdrawal" ? "Withdrawal paid to your bank" : `${t}: charged`;
   if (verb === "release") return what === "withdrawal" ? "Withdrawal returned to wallet" : `${t}: refunded`;
