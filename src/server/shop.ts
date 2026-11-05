@@ -3,6 +3,7 @@
  * - 'code' products: the buyer instantly receives the next unused code (paid immediately).
  * - 'manual' products: the money is held; an admin delivers (charged) or refunds (released).
  */
+import { alertAdmins } from "./adminAlerts";
 import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
 import { blockedReasons } from "@/core/listingPolicy";
 import type { Kobo } from "@/core/money";
@@ -160,7 +161,7 @@ export async function categoryProducts(db: Db, slug: string) {
 }
 
 export async function buyProduct(db: Db, userId: string, productPublicId: number, customerInput?: string) {
-  return db.transaction(async (tx) => {
+  const res = await db.transaction(async (tx) => {
     const [p] = await tx.select().from(shopProducts).where(eq(shopProducts.publicId, productPublicId)).for("update");
     if (!p || !p.active) throw notFound("Product");
     const input = customerInput?.trim().slice(0, 500) || null;
@@ -198,8 +199,15 @@ export async function buyProduct(db: Db, userId: string, productPublicId: number
       await tx.update(shopOrders).set({ status: "delivered", deliveredContent: code.code, updatedAt: new Date() }).where(eq(shopOrders.id, order.id));
       return { id: order.publicId, status: "delivered" as const, content: code.code };
     }
-    return { id: order.publicId, status: "pending" as const, content: null };
+    return { id: order.publicId, status: "pending" as const, content: null, product: p.name, amount: p.price, input };
   });
+  if (res.status === "pending" && "product" in res) {
+    alertAdmins(db, `Shop order to deliver: ${res.product}`, [
+      `Order #${res.id}: ${res.product}.`, ...(res.input ? [`Customer's answer: ${res.input}`] : []),
+      "Deliver it from the Shop page (or refund).",
+    ], "/admin/shop", { customerId: userId, amountKobo: res.amount });
+  }
+  return { id: res.id, status: res.status, content: res.content };
 }
 
 export async function myShopOrders(db: Db, userId: string) {

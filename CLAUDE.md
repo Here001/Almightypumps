@@ -352,6 +352,12 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   out of money), completed/partial/refunded Boost (not for /api/v2 reseller orders), gift cards, airtime, travel eSIMs, US eSIM
   deliver/refund, shop manual orders, withdrawals paid/rejected, packages waiting/booked/delivered/cancelled. Customer can turn them off
   in Settings → Notifications (`users.notify_orders`, /api/me/settings type "alerts"). Needs RESEND_API_KEY to actually send.
+- ADMIN EMAILS FOR EVERY BADGE (2026-11-05, owner's request): `src/server/adminAlerts.ts` `alertAdmins` (fire-and-forget, all
+  admins, link to the admin page, adds customer name/email + amount): withdrawal requested, dispute opened, US eSIM order, shop manual
+  order, seller application, ad needing review (new, or edited into review). `alertStuckInstantOrders` in the sync-orders cron (one
+  email per newly stuck batch; app_settings `stuck_alerted` {upTo}). Payments, sell desk, support, supplier top-ups have their own emails.
+  BADGES CLEAR AT ONCE: `api()` in src/components/api.ts fires window event `ap:admin-counts` after any admin POST (or opening a
+  support conversation); AdminShell refetches counts then, every 30 s and when the tab becomes visible.
 - Insights: `src/components/Tracker.tsx` beacons each page and dashboard #section to
   `/api/track` → `site_events` (anonymous cookie id, no IP/UA stored). Section names come
   from `src/core/analytics.ts` (add new pages there). Queries in `src/server/insights.ts`.

@@ -11,6 +11,7 @@ import { payReferrals } from "@/server/referrals";
 import { sweepTransfers } from "@/server/bankTransfer";
 import { movePhotosToBlob } from "@/server/listingImages";
 import { sweepShipments } from "@/server/shipping";
+import { alertStuckInstantOrders } from "@/server/adminAlerts";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -40,5 +41,6 @@ export const GET = route(async (req: Request) => {
   const photos = await movePhotosToBlob(db).catch((e) => { console.error("[cron] photos", e); return null; });
   // Parcel tracking updates.
   const ships = await sweepShipments(db).catch((e) => { console.error("[cron] shipments", e); return null; });
+  await alertStuckInstantOrders(db).catch((e) => console.error("[cron] stuck alert", e));
   return { ...orders, shipmentsTracked: ships?.checked ?? 0, photosMoved: photos?.moved ?? 0, transfersChecked: transfers?.checked ?? 0, referralsPaid: referrals?.paid ?? 0, queuedSent: queued?.sent ?? 0, queuedWaiting: queued ? queued.queued - queued.sent - queued.refunded : 0, giftChecked: gift?.checked ?? 0, topupChecked: topup?.checked ?? 0, travelChecked: travel?.checked ?? 0, usdRateRefreshed: fx?.refreshed ?? false, verifyChecked: verify?.checked ?? 0 };
 });

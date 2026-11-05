@@ -4,6 +4,7 @@
  * the eSIM from the supplier and delivers the US number + activation code (or QR picture): the hold is
  * captured. Or the admin refunds with a reason: the hold is released.
  */
+import { alertAdmins } from "./adminAlerts";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import QRCode from "qrcode";
 import { z } from "zod";
@@ -147,7 +148,7 @@ export async function placeEsimOrder(db: Db, userId: string, input: z.output<typ
   const [busy] = await db.select({ n: sql<number>`count(*)::int` }).from(esimOrders)
     .where(and(eq(esimOrders.userId, userId), eq(esimOrders.status, "pending")));
   if (busy.n >= 3) throw badRequest("You already have 3 eSIM orders being prepared. Please wait for those first.");
-  return db.transaction(async (tx) => {
+  const placed = await db.transaction(async (tx) => {
     const wallet = await walletIdForUser(tx, userId);
     const label = `${row.plan.name} ${row.price.dataLabel} · ${monthsLabel(row.price.months)}`;
     const holdId = await placeHold(tx, wallet, amount, "esim_order", { memo: `eSIM: ${label}` });
@@ -158,6 +159,11 @@ export async function placeEsimOrder(db: Db, userId: string, input: z.output<typ
     await linkHold(tx, holdId, o.id);
     return { id: o.id, publicId: o.publicId, amount, label };
   });
+  alertAdmins(db, `New US eSIM order: ${placed.label}`, [
+    `Order #${placed.publicId}: ${placed.label}${input.numberMode === "keep" ? " (keep their number: port-in details in the admin)" : " (new number)"}.`,
+    "Set it up with your supplier, then deliver the number and activation code (or refund).",
+  ], "/admin/esim", { customerId: userId, amountKobo: placed.amount });
+  return placed;
 }
 
 /** QR picture for an activation code (SVG), or the uploaded one. */

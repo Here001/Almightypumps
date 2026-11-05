@@ -2,6 +2,7 @@
  * Seller applications and verification. Customers apply in Settings; admins approve or
  * reject in /admin/sellers. ID numbers are only ever shown to admins.
  */
+import { alertAdmins } from "./adminAlerts";
 import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { ID_TYPES, NG_BANKS } from "@/core/banks";
@@ -47,6 +48,10 @@ export async function applyToSell(db: Db, userId: string, input: z.infer<typeof 
     await tx.insert(sellerProfiles).values({ userId, ...values }).onConflictDoUpdate({ target: sellerProfiles.userId, set: values });
     await tx.update(users).set({ sellerStatus: "pending" }).where(eq(users.id, userId));
   });
+  alertAdmins(db, `Seller application: ${input.businessName}`, [
+    `${input.businessName} wants to sell on the P2P marketplace.`, `What they sell: ${input.whatTheySell}`,
+    "Check their ID and bank details, then approve or reject.",
+  ], "/admin/sellers", { customerId: userId });
   return { sellerStatus: "pending" as const };
 }
 

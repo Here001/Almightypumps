@@ -27,6 +27,10 @@ function NavList({ path, counts, onPick }: { path: string; counts: AdminCounts; 
   );
 }
 
+function refreshCounts(set: (c: AdminCounts) => void) {
+  fetch("/api/admin/counts", { cache: "no-store" }).then((r) => r.json()).then((j) => { if (j?.ok) set(j.data); }).catch(() => {});
+}
+
 /** Admin frame: sidebar on computers; top bar + slide-down menu on phones. Badges refresh on every page change. */
 export function AdminShell({ initial, children }: { initial: AdminCounts; children: ReactNode }) {
   const path = usePathname();
@@ -34,8 +38,17 @@ export function AdminShell({ initial, children }: { initial: AdminCounts; childr
   const [open, setOpen] = useState(false);
   useEffect(() => {
     setOpen(false);
-    fetch("/api/admin/counts", { cache: "no-store" }).then((r) => r.json()).then((j) => { if (j?.ok) setCounts(j.data); }).catch(() => {});
+    refreshCounts(setCounts);
   }, [path]);
+  // Badges clear as soon as you deal with something (approve, pay, reply…), and new ones appear within 30 seconds.
+  useEffect(() => {
+    const now = () => refreshCounts(setCounts);
+    const later = () => setTimeout(now, 400);
+    window.addEventListener("ap:admin-counts", later);
+    const t = setInterval(() => { if (document.visibilityState === "visible") now(); }, 30_000);
+    document.addEventListener("visibilitychange", now);
+    return () => { window.removeEventListener("ap:admin-counts", later); clearInterval(t); document.removeEventListener("visibilitychange", now); };
+  }, []);
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };

@@ -3,6 +3,7 @@
  * Funding is only credited after we verify the transaction with Flutterwave's
  * API, and each payment reference can credit a wallet once.
  */
+import { alertAdmins } from "./adminAlerts";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { NG_BANKS } from "@/core/banks";
 import { paymentReference, verifyFlutterwaveWebhook } from "@/core/crypto";
@@ -134,7 +135,7 @@ export async function requestWithdrawal(
   if (!/^\d{10}$/.test(input.accountNumber)) throw badRequest("Account number must be 10 digits.");
   if (!NG_BANKS.some((b) => b.code === input.bankCode)) throw badRequest("Choose your bank.");
   if (input.accountName.trim().length < 3) throw badRequest("Enter the account name.");
-  return db.transaction(async (tx) => {
+  const w = await db.transaction(async (tx) => {
     const walletId = await walletIdForUser(tx, userId);
     const [open] = await tx.select({ n: sql<number>`count(*)::int` }).from(withdrawals).where(and(eq(withdrawals.userId, userId), eq(withdrawals.status, "requested")));
     if (open.n >= 3) throw badRequest("You already have 3 withdrawals waiting. Please wait for those to be paid.");
@@ -149,6 +150,12 @@ export async function requestWithdrawal(
       .returning();
     return w;
   });
+  alertAdmins(db, `Withdrawal to pay: ${"₦" + (input.amount / 100).toLocaleString("en-NG")}`, [
+    "A customer asked to withdraw money to their bank account.",
+    `Pay to: ${input.accountName.trim()} · ${NG_BANKS.find((b) => b.code === input.bankCode)?.name ?? input.bankCode} · ${input.accountNumber}`,
+    "Send the transfer, then tap “Mark paid” (or reject it with a reason).",
+  ], "/admin/withdrawals", { customerId: userId });
+  return w;
 }
 
 export async function decideWithdrawal(db: Db, withdrawalId: string, decision: "paid" | "rejected", note?: string) {

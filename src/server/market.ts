@@ -2,6 +2,7 @@
  * P2P marketplace with escrow. The buyer's money is held from the moment a
  * trade is created and only moves when the escrow state machine says so.
  */
+import { alertAdmins } from "./adminAlerts";
 import { and, asc, desc, eq, inArray, lte, sql } from "drizzle-orm";
 import { checkListing, type ListingInput } from "@/core/listingPolicy";
 import { ESCROW_DEFAULTS, payoutSplit, shipDeadline, transition, type ActorRole, type TradeAction } from "@/core/escrow";
@@ -59,6 +60,7 @@ export async function createListing(db: Db, sellerId: string, input: ListingInpu
       reviewNote: check.review.length ? check.review.join(" ") : null,
     })
     .returning();
+  if (check.review.length) alertAdmins(db, `Ad to review: ${row.title}`, ["A seller posted an ad that needs your approval before it goes live.", `Why: ${check.review.join(" ")}`], "/admin/listings", { customerId: sellerId });
   return { ...row, message: check.review.length ? "Thanks! Your ad will go live once our team has checked it, usually within a few hours." : "Your ad is live." };
 }
 
@@ -180,6 +182,12 @@ export async function act(
   extra: { note?: string; deliveryProof?: string } = {},
 ) {
   const updated = await actTx(db, tradeId, action, actor, extra);
+  if (action === "DISPUTE") {
+    alertAdmins(db, `Dispute opened on P2P order #M-${updated.publicId}`, [
+      "The buyer says something is wrong with their order. The money stays in escrow until you decide.",
+      `Complaint: ${extra.note?.trim() || "No reason given"}`,
+    ], "/admin/disputes", { customerId: updated.buyerId, amountKobo: updated.amount });
+  }
   if (action === "SHIP") {
     void notifyTrade(db, updated.buyerId, `Order #M-${updated.publicId} was delivered: please check it`, [
       `The seller marked P2P order #M-${updated.publicId} as delivered.`,
@@ -386,6 +394,7 @@ export async function updateListing(db: Db, sellerId: string, listingId: string,
     })
     .where(eq(listings.id, l.id))
     .returning();
+  if (needsReview && l.status !== "pending") alertAdmins(db, `Ad to review: ${row.title}`, ["A seller edited an ad and it needs your approval again.", row.reviewNote ?? ""].filter(Boolean), "/admin/listings", { customerId: sellerId });
   return { ...row, message: needsReview ? "Saved. Your ad will go live again once our team has checked it." : "Saved." };
 }
 
