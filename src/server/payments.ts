@@ -13,6 +13,7 @@ import { env } from "./env";
 import { AppError, badRequest, notFound } from "./errors";
 import { creditWallet, placeHold, settleHold, walletIdForUser } from "./wallet";
 import { handleTransferWebhook } from "./bankTransfer";
+import { alertCustomer, alertNaira } from "./customerAlerts";
 
 /** Call Flutterwave's v3 API (also used by bankTransfer.ts). */
 export async function flutterwave<T>(path: string, init?: RequestInit): Promise<T> {
@@ -157,6 +158,8 @@ export async function decideWithdrawal(db: Db, withdrawalId: string, decision: "
     if (w.status !== "requested") throw badRequest("This withdrawal has already been decided.");
     await settleHold(tx, w.holdId, decision === "paid" ? w.amount : 0, [], { refType: "withdrawal", refId: w.id, idempotencyKey: `withdrawal:${w.id}` });
     const [u] = await tx.update(withdrawals).set({ status: decision, note, decidedAt: new Date() }).where(eq(withdrawals.id, w.id)).returning();
+    if (decision === "paid") alertCustomer(db, w.userId, `Withdrawal of ${alertNaira(w.amount)} sent`, [`We've sent ${alertNaira(w.amount)} to your bank account. Bank transfers usually arrive within minutes, sometimes a few hours.`], "wallet");
+    else alertCustomer(db, w.userId, `Withdrawal not sent`, [`Your withdrawal of ${alertNaira(w.amount)} wasn't sent, and the money is back in your wallet.${note?.trim() ? ` Reason: ${note.trim()}` : ""}`], "wallet");
     return u;
   });
 }

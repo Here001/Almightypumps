@@ -13,6 +13,7 @@ import { AppError, badRequest, notFound } from "./errors";
 import { EsimAccess, esimAccessConfigured, type EaPackage } from "./esimaccess";
 import { getUsdRateKobo } from "./pricing";
 import { alertSupplierFunds, isOutOfFunds } from "./supplierFunds";
+import { alertCustomer, alertNaira, PENDING_LINE } from "./customerAlerts";
 import { linkHold, placeHold, platformWalletId, settleHold, walletIdForUser } from "./wallet";
 
 export type TravelConfig = { markupBps: number; enabled: boolean; syncedAt: string | null };
@@ -149,6 +150,7 @@ async function sendTravelOrder(db: Db, id: string) {
     if (isOutOfFunds((e as Error).message)) {
       await db.update(travelEsimOrders).set({ waitingFunds: true, error: "Waiting for eSIM Access balance", updatedAt: new Date() }).where(eq(travelEsimOrders.id, order.id));
       await alertSupplierFunds(db, "eSIM Access", { adminPath: "/admin/instant" });
+      if (!order.waitingFunds) alertCustomer(db, order.userId, `Travel eSIM order #${order.publicId} is pending`, [`Your ${order.packageName} eSIM order has been received.`, PENDING_LINE]);
       return;
     }
     // eSIM Access answers with { success: false } for refusals (price changed, unavailable): definite failures.
@@ -165,7 +167,8 @@ async function sendTravelOrder(db: Db, id: string) {
 }
 
 async function closeTravel(db: Db, id: string, status: "delivered" | "refunded" | "failed", extra: { lpa?: string; iccid?: string; esimTranNo?: string; error?: string } = {}) {
-  return db.transaction(async (tx) => {
+  const changed = { v: false };
+  const res = await db.transaction(async (tx) => {
     const [o] = await tx.select().from(travelEsimOrders).where(eq(travelEsimOrders.id, id)).for("update");
     if (!o || o.status !== "pending") return o;
     const capture = status === "delivered" ? o.priceKobo : 0;
@@ -177,8 +180,14 @@ async function closeTravel(db: Db, id: string, status: "delivered" | "refunded" 
       status, lpa: extra.lpa ?? o.lpa, iccid: extra.iccid ?? o.iccid, esimTranNo: extra.esimTranNo ?? o.esimTranNo,
       error: status === "delivered" ? null : extra.error ?? o.error, updatedAt: new Date(),
     }).where(eq(travelEsimOrders.id, id)).returning();
+    changed.v = true;
     return u;
   });
+  if (changed.v && res) {
+    if (status === "delivered") alertCustomer(db, res.userId, `Your travel eSIM is ready`, [`Your ${res.packageName} eSIM (order #${res.publicId}) is ready to install. Open your account to scan the QR code.`, "Install it before you travel, while you have Wi-Fi."], "esim");
+    else alertCustomer(db, res.userId, `Travel eSIM order #${res.publicId} refunded`, [`We couldn't deliver your ${res.packageName} eSIM, so ${alertNaira(res.priceKobo)} is back in your wallet.`], "wallet");
+  }
+  return res;
 }
 
 export async function refreshTravelOrder(db: Db, id: string) {

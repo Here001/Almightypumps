@@ -341,6 +341,17 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   TILE ORDER (owner's request 2026-11-05): same page, "Order on the Services page" (position menu 1st/2nd… + ↑/↓, saves at once)
   → app_settings `services_order` {order: [tile ids incl. `shop-<slug>`]} (`tileOrder`/`saveTileOrder`); dashboard sorts live +
   shop tiles with `sortByOrder` (unplaced tiles keep default order after placed ones; "coming soon" tiles always last).
+- SUPPORT CHAT (2026-11-05, migration 0032 `support_threads` (one per customer, unread_admin/unread_customer, open/closed)
+  + `support_messages`; `src/server/support.ts`, `SupportChat.tsx` = floating "Help" button on the dashboard (dot when support
+  replied; `#support` opens it; polls 8 s while open, peeks every 60 s), /admin/support `AdminSupport.tsx` (unread first, Open/Solved/All,
+  search, reply, mark as solved, link to customer page; menu Customers, badge `support`, Admin Home todo). APIs /api/support
+  (GET, ?peek=1, POST {body}; rate limit `support` 40/h), /api/admin/support (GET inbox, POST {userId, body}), /api/admin/support/[id]
+  (reply|close|reopen). Emails: admins when a customer writes and the inbox for them was read; customer when an admin replies and
+  they had read the previous reply (no email storm).
+- ORDER ALERT EMAILS (2026-11-05, `src/server/customerAlerts.ts` `alertCustomer`, fire-and-forget via `sendNotice`): pending (supplier
+  out of money), completed/partial/refunded Boost (not for /api/v2 reseller orders), gift cards, airtime, travel eSIMs, US eSIM
+  deliver/refund, shop manual orders, withdrawals paid/rejected, packages waiting/booked/delivered/cancelled. Customer can turn them off
+  in Settings → Notifications (`users.notify_orders`, /api/me/settings type "alerts"). Needs RESEND_API_KEY to actually send.
 - Insights: `src/components/Tracker.tsx` beacons each page and dashboard #section to
   `/api/track` → `site_events` (anonymous cookie id, no IP/UA stored). Section names come
   from `src/core/analytics.ts` (add new pages there). Queries in `src/server/insights.ts`.
@@ -383,7 +394,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
     usd auto, Instagram Likes/Live viewers 100% rules. NOT copied: dev's P2P category renamed "Accounts"
     (account sales are blocked); live keeps "Digital products". Re-star 3 TikTok follower services
     (Owlet ids 8277, 24221, 8619) after the first live sync. No users yet (owner signs up, then promote to admin).
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0031 applied (main too: 0031 applied 2026-11-05 with owner's yes). Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0032 applied (main: 0000–0031; 0031 applied 2026-11-05 with owner's yes). Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

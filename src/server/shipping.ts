@@ -20,6 +20,7 @@ import { AppError, badRequest, notFound } from "./errors";
 import { readSetting, writeSetting } from "./appSettings";
 import { creditWallet, linkHold, placeHold, platformWalletId, settleHold, walletIdForUser } from "./wallet";
 import { alertSupplierFunds, isOutOfFunds } from "./supplierFunds";
+import { alertCustomer, alertNaira, PENDING_LINE } from "./customerAlerts";
 
 /* ---------------- settings ---------------- */
 
@@ -256,14 +257,18 @@ async function arrangePickup(db: Db, id: string, rateId: string, holdId: string,
   } catch (e) {
     const msg = (e as Error).message;
     if (isOutOfFunds(msg)) {
+      const [prev] = await db.select({ status: shipments.status, userId: shipments.userId, code: shipments.code }).from(shipments).where(eq(shipments.id, id));
       await db.update(shipments).set({ status: "waiting_funds", error: "Waiting for Terminal Africa balance", updatedAt: new Date() }).where(eq(shipments.id, id));
       await alertSupplierFunds(db, "Terminal Africa (shipping)", { amountKobo: priceKobo, adminPath: "/admin/shipping" }).catch(() => {});
+      if (prev && prev.status !== "waiting_funds") alertCustomer(db, prev.userId, `Package ${prev.code} is pending`, [`We've received your package booking (tracking number ${prev.code}) and are confirming the pickup with ${carrier}.`, PENDING_LINE], "ship");
       return "waiting";
     }
+    const [was] = await db.select({ status: shipments.status, userId: shipments.userId, code: shipments.code }).from(shipments).where(eq(shipments.id, id));
     await db.transaction(async (tx) => {
       await settleHold(tx, holdId, 0, [], { refType: "shipment", refId: id, idempotencyKey: `shipment:${id}:settle` });
       await tx.update(shipments).set({ status: "failed", error: msg.slice(0, 300), updatedAt: new Date() }).where(eq(shipments.id, id));
     });
+    if (was?.status === "waiting_funds") alertCustomer(db, was.userId, `Package ${was.code} refunded`, [`${carrier} couldn't accept your package booking ${was.code}, so ${alertNaira(priceKobo)} is back in your wallet.`, "Please get new prices and book again."], "wallet");
     console.error("[shipping] pickup failed", msg);
     throw badRequest("The courier couldn't accept this booking. Your money is back in your wallet. Please get new prices and try again.");
   }
@@ -280,6 +285,8 @@ async function arrangePickup(db: Db, id: string, rateId: string, holdId: string,
       updatedAt: new Date(),
     }).where(eq(shipments.id, id));
   });
+  const [b] = await db.select({ userId: shipments.userId, code: shipments.code }).from(shipments).where(eq(shipments.id, id));
+  if (b) alertCustomer(db, b.userId, `Package ${b.code} booked with ${carrier}`, [`Your package is booked with ${carrier}. ${alertNaira(priceKobo)} was charged.`, `Tracking number: ${b.code}. Share it with the receiver; anyone can follow the package at almightypumps.com/track.`, "The courier will contact the sender to arrange pickup."], "ship");
   return "booked";
 }
 
@@ -322,6 +329,7 @@ async function refresh(db: Db, s: typeof shipments.$inferSelect) {
     lastTrackedAt: new Date(), updatedAt: new Date(),
     deliveredAt: status === "delivered" && !s.deliveredAt ? new Date() : s.deliveredAt,
   }).where(eq(shipments.id, s.id)).returning();
+  if (status === "delivered" && s.status !== "delivered") alertCustomer(db, s.userId, `Package ${s.code} delivered`, [`Your package to ${s.toAddress.name} in ${s.toAddress.city} has been delivered.`], "ship");
   return row;
 }
 
@@ -392,6 +400,7 @@ export async function cancelShipment(db: Db, shipmentId: string, by: { userId?: 
       if (s.holdId) await settleHold(tx, s.holdId, 0, [], { refType: "shipment", refId: s.id, idempotencyKey: `shipment:${s.id}:settle` });
       await tx.update(shipments).set({ status: "cancelled", error: "Cancelled by admin while waiting for courier balance", updatedAt: new Date() }).where(eq(shipments.id, s.id));
     });
+    alertCustomer(db, s.userId, `Package ${s.code} cancelled`, [`Your package booking ${s.code} was cancelled and ${alertNaira(s.priceKobo ?? 0)} is back in your wallet.`], "wallet");
     return { ok: true };
   }
   if (s.status !== "booked") throw badRequest("This package has already been picked up, so it can't be cancelled here. Contact support.");
@@ -405,6 +414,7 @@ export async function cancelShipment(db: Db, shipmentId: string, by: { userId?: 
     if (s.priceKobo) await creditWallet(tx, await walletIdForUser(tx, s.userId), s.priceKobo, "refund:shipping", { refType: "shipment", refId: s.id, memo: `Refund: package ${s.code} cancelled`, idempotencyKey: `shipment:${s.id}:refund` });
     await tx.update(shipments).set({ status: "cancelled", updatedAt: new Date(), events: [{ at: new Date().toISOString(), text: "Cancelled and refunded", location: null }, ...s.events] }).where(eq(shipments.id, s.id));
   });
+  if (by.admin) alertCustomer(db, s.userId, `Package ${s.code} cancelled`, [`Your package booking ${s.code} was cancelled and ${alertNaira(s.priceKobo ?? 0)} is back in your wallet.`], "wallet");
   return { ok: true };
 }
 

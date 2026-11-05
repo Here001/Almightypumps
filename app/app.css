@@ -308,6 +308,18 @@ button.ad-photo-cover { background: rgb(0 0 0 / 0.7); color: #fff; cursor: point
 .ord-pos { flex: none; width: 76px; min-height: 36px; padding: 4px 8px; }
 .ord-btn { flex: none; width: 36px; padding: 0; justify-content: center; }
 
+/* Support chat bubble (above the phone tab bar) */
+.sup-fab { position: fixed; right: 18px; bottom: 22px; z-index: 45; display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; border-radius: 999px; border: 0; background: var(--accent); color: var(--accent-ink); font: inherit; font-weight: 800; font-size: 15px; box-shadow: 0 10px 30px rgb(0 0 0 / 0.35); cursor: pointer; }
+.sup-fab:focus-visible { outline: 3px solid var(--fg); outline-offset: 3px; }
+.sup-dot { position: absolute; top: 4px; right: 6px; width: 11px; height: 11px; border-radius: 999px; background: #ef4444; border: 2px solid var(--accent); }
+@media (max-width: 860px) { .sup-fab { bottom: calc(86px + env(safe-area-inset-bottom, 0px)); right: 14px; padding: 12px; } .sup-fab-label { display: none; } }
+.sup-msgs { max-height: min(52vh, 420px); min-height: 160px; }
+.tr-send textarea.input { flex: 1; min-width: 0; resize: none; }
+
+.sup-row { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 12px; background: none; border: 0; color: inherit; font: inherit; cursor: pointer; padding-left: 0; padding-right: 0; }
+.sup-row:hover .ap-row-title { color: var(--accent); }
+.sup-new { display: inline-block; margin-right: 8px; padding: 1px 8px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-size: 11px; font-weight: 800; vertical-align: 2px; }
+
 /* Admin users */
 .adm-user-row { display: flex; justify-content: space-between; gap: 12px; color: inherit; text-decoration: none; }
 .adm-user-row:hover .ap-row-title { color: var(--accent); }

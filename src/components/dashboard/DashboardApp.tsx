@@ -16,6 +16,7 @@ import { SellDesk } from "./SellDesk";
 import { Invite } from "./Invite";
 import { Documents } from "./Documents";
 import { SendPackage } from "./SendPackage";
+import { SupportChat } from "./SupportChat";
 import { Withdraw } from "./Withdraw";
 import { ManualPay } from "./ManualPay";
 import { BankTransfer } from "./BankTransfer";
@@ -424,6 +425,7 @@ function Dashboard(props: Props) {
               )}
             </section>
           )}
+          <SupportChat />
           {room && <TradeRoom tradeId={room} myId={props.userId} onClose={() => setRoom(null)} onChanged={() => router.refresh()} />}
         </main>
       </div>

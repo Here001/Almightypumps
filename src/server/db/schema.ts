@@ -28,6 +28,8 @@ export const users = pgTable("users", {
   /** Set when an admin suspends the account (migration 0030): no login, no API. */
   suspendedAt: ts("suspended_at"),
   suspendReason: text("suspend_reason"),
+  /** Email me when my orders are delivered, refunded or pending (migration 0032). */
+  notifyOrders: boolean("notify_orders").notNull().default(true),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 
@@ -693,5 +695,24 @@ export const adminActions = pgTable("admin_actions", {
   userId: uuid("user_id").notNull().references(() => users.id),
   action: text("action").notNull(),
   detail: text("detail"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+
+/** Support chat: one conversation per customer (migration 0032). */
+export const supportThreads = pgTable("support_threads", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().unique().references(() => users.id),
+  status: text("status").$type<"open" | "closed">().notNull().default("open"),
+  unreadAdmin: boolean("unread_admin").notNull().default(false),
+  unreadCustomer: boolean("unread_customer").notNull().default(false),
+  lastMessageAt: ts("last_message_at").notNull().defaultNow(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export const supportMessages = pgTable("support_messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  threadId: uuid("thread_id").notNull().references(() => supportThreads.id, { onDelete: "cascade" }),
+  sender: text("sender").$type<"customer" | "admin">().notNull(),
+  adminId: uuid("admin_id").references(() => users.id),
+  body: text("body").notNull(),
   createdAt: ts("created_at").notNull().defaultNow(),
 });

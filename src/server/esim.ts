@@ -13,6 +13,7 @@ import { esimOrders, esimPlans, esimPrices, users } from "./db/schema";
 import { badRequest, notFound } from "./errors";
 import { open, seal } from "./secretBox";
 import { linkHold, placeHold, platformWalletId, settleHold, walletIdForUser } from "./wallet";
+import { alertCustomer, alertNaira } from "./customerAlerts";
 
 /* ---------- Plans (admin) ---------- */
 
@@ -240,6 +241,7 @@ export async function deliverEsim(db: Db, id: string, input: z.output<typeof del
       status: "delivered", phoneNumber: phone, lpa, qrImage, qrType, customerNote: input.note || null,
       portEnc: null, updatedAt: new Date(),
     }).where(eq(esimOrders.id, id));
+    alertCustomer(db, o.userId, `Your US eSIM is ready`, [`Your ${o.planName} eSIM (${o.dataLabel}, order #${o.publicId}) is ready. Open your account to see your US number and install the eSIM.`], "esim");
     return { delivered: o.publicId };
   });
 }
@@ -252,6 +254,7 @@ export async function refundEsim(db: Db, id: string, reason: string) {
     if (o.status !== "pending") throw badRequest("This order has already been handled.");
     await settleHold(tx, o.holdId, 0, [], { refType: "esim_order", refId: o.id, idempotencyKey: `esim:${o.id}:settle` });
     await tx.update(esimOrders).set({ status: "refunded", adminNote: reason.trim(), portEnc: null, updatedAt: new Date() }).where(eq(esimOrders.id, id));
+    alertCustomer(db, o.userId, `US eSIM order #${o.publicId} refunded`, [`We couldn't deliver your ${o.planName} eSIM, so ${alertNaira(o.amount)} is back in your wallet.`, `Reason: ${reason.trim()}`], "wallet");
     return { refunded: o.publicId };
   });
 }

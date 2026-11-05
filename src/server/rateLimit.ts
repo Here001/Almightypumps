@@ -35,6 +35,7 @@ export const LIMITS = {
   shipQuote: { max: 30, windowSec: 60 * 60 },
   shipBook: { max: 20, windowSec: 60 * 60 },
   trackParcel: { max: 60, windowSec: 60 * 60 },
+  support: { max: 40, windowSec: 60 * 60 },
   apiKey: { max: 10, windowSec: 60 * 60 },
   resellerApi: { max: 120, windowSec: 60 },
   track: { max: 120, windowSec: 60 },

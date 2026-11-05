@@ -13,6 +13,7 @@ import { getUsdRateKobo } from "./pricing";
 import { ReloadlyGift, adminReason, reloadlyConfigured, reloadlyMode, type RlCard } from "./reloadly";
 import { open, seal } from "./secretBox";
 import { alertSupplierFunds, isOutOfFunds } from "./supplierFunds";
+import { alertCustomer, alertNaira, PENDING_LINE } from "./customerAlerts";
 import { linkHold, placeHold, platformWalletId, settleHold, walletIdForUser } from "./wallet";
 
 export type GiftConfig = { markupBps: number; enabled: boolean; countries: string[]; syncedAt: string | null };
@@ -165,6 +166,7 @@ async function sendGiftOrder(db: Db, id: string) {
     if (isOutOfFunds((e as Error).message)) {
       await db.update(giftOrders).set({ waitingFunds: true, error: "Waiting for Reloadly balance", updatedAt: new Date() }).where(eq(giftOrders.id, order.id));
       await alertSupplierFunds(db, "Reloadly", { adminPath: "/admin/instant" });
+      if (!order.waitingFunds) alertCustomer(db, order.userId, `Gift card order #${order.publicId} is pending`, [`Your ${order.productName} order has been received.`, PENDING_LINE]);
       return;
     }
     if (order.waitingFunds && status && status >= 500) return; // try again next run
@@ -181,7 +183,8 @@ async function sendGiftOrder(db: Db, id: string) {
 
 /** Capture (delivered) or release (refunded/failed). Safe to call twice. */
 async function closeGift(db: Db, id: string, status: "delivered" | "refunded" | "failed", extra: { codes?: RlCard[]; error?: string } = {}) {
-  return db.transaction(async (tx) => {
+  const changed = { v: false };
+  const res = await db.transaction(async (tx) => {
     const [o] = await tx.select().from(giftOrders).where(eq(giftOrders.id, id)).for("update");
     if (!o || o.status !== "pending") return o;
     const capture = status === "delivered" ? o.priceKobo : 0;
@@ -192,8 +195,14 @@ async function closeGift(db: Db, id: string, status: "delivered" | "refunded" | 
     const [u] = await tx.update(giftOrders).set({
       status, codesEnc: extra.codes ? seal(JSON.stringify(extra.codes)) : o.codesEnc, error: extra.error ?? (status === "delivered" ? null : o.error), updatedAt: new Date(),
     }).where(eq(giftOrders.id, id)).returning();
+    changed.v = true;
     return u;
   });
+  if (changed.v && res) {
+    if (status === "delivered") alertCustomer(db, res.userId, `Your ${res.productName} is ready`, [`Your gift card order #${res.publicId} (${res.productName}) has been delivered. Open your account to see the code.`, "Keep your code private: anyone who has it can use it."], "giftcards");
+    else alertCustomer(db, res.userId, `Gift card order #${res.publicId} refunded`, [`We couldn't deliver your ${res.productName}, so ${alertNaira(res.priceKobo)} is back in your wallet.`], "wallet");
+  }
+  return res;
 }
 
 /** Ask Reloadly about a pending order: deliver when codes are there, refund when it failed. */

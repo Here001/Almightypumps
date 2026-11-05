@@ -19,6 +19,7 @@ export function Settings({ me, onOpenSellerPanel }: { me: Me; onOpenSellerPanel:
     <>
       <Profile me={me} />
       <Appearance />
+      <Notifications />
       <Security />
       <Seller status={me.sellerStatus} onOpenPanel={onOpenSellerPanel} />
       <ApiKeys />
@@ -32,6 +33,28 @@ export function Settings({ me, onOpenSellerPanel }: { me: Me; onOpenSellerPanel:
         <p className="muted" style={{ fontSize: 13 }}>Need to change your email or close your account? Contact support and we&apos;ll help.</p>
       </section>
     </>
+  );
+}
+
+/** "Email me about my orders" (delivered, refunded, pending). */
+function Notifications() {
+  const [on, setOn] = useState<boolean | null>(null);
+  const [msg, setMsg] = useState<Msg>(null);
+  useEffect(() => { api<{ notifyOrders: boolean }>("/api/me/settings").then((r) => setOn(r.notifyOrders)).catch(() => setOn(true)); }, []);
+  async function toggle(v: boolean) {
+    setOn(v); setMsg(null);
+    try { await api("/api/me/settings", { type: "alerts", on: v }); setMsg({ ok: true, text: v ? "You'll get an email when your orders are delivered, refunded or pending." : "Order emails are off. You'll still see everything in your account." }); }
+    catch (e) { setOn(!v); setMsg({ ok: false, text: (e as Error).message }); }
+  }
+  return (
+    <section className="card glass">
+      <h2>Email notifications</h2>
+      <label style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 15 }}>
+        <input type="checkbox" checked={on ?? true} disabled={on === null} onChange={(e) => void toggle(e.target.checked)} style={{ marginTop: 4, width: 18, height: 18 }} />
+        <span>Email me about my orders<span className="muted" style={{ display: "block", fontSize: 13 }}>When an order is delivered, refunded or pending, and when a withdrawal is sent. Security emails (login codes) are always sent.</span></span>
+      </label>
+      <Note msg={msg} />
+    </section>
   );
 }
 

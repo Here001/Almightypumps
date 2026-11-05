@@ -17,6 +17,7 @@ import { keyHint, open, seal } from "./secretBox";
 import { smmOrders, smmProviders, smmServices } from "./db/schema";
 import { AppError, badRequest, notFound } from "./errors";
 import { isOutOfFunds, alertSupplierFunds } from "./supplierFunds";
+import { alertCustomer, alertNaira, PENDING_LINE } from "./customerAlerts";
 import { linkHold, placeHold, platformWalletId, settleHold, walletIdForUser } from "./wallet";
 
 type Provider = typeof smmProviders.$inferSelect;
@@ -338,6 +339,7 @@ export async function placeOrder(
     if (isOutOfFunds(message)) {
       const [o] = await db.update(smmOrders).set({ status: "QUEUED", error: `Waiting for ${p.name} balance`, updatedAt: new Date() }).where(eq(smmOrders.id, order.id)).returning();
       await alertQueued(db, p);
+      if (!o.apiKeyId) alertCustomer(db, o.userId, `Boost order #${o.publicId} is pending`, [`Your Boost order #${o.publicId} (${svc.displayName ?? svc.name}) has been received.`, PENDING_LINE]);
       return o;
     }
     // Provider refused or was unreachable: refund the hold and mark the order failed.
@@ -363,6 +365,7 @@ async function failQueued(db: Db, orderId: string, message: string) {
     if (!o || o.status !== "QUEUED") return;
     await settleHold(tx, o.holdId, 0, [], { refType: "smm_order", refId: o.id, idempotencyKey: `smm:${o.id}:settle` });
     await tx.update(smmOrders).set({ status: "FAILED", error: message.slice(0, 300), updatedAt: new Date() }).where(eq(smmOrders.id, o.id));
+    if (!o.apiKeyId) alertCustomer(db, o.userId, `Boost order #${o.publicId} refunded`, [`The service couldn't start your Boost order #${o.publicId}, so ${alertNaira(o.cost)} is back in your wallet.`, "You can try again or pick another service."], "wallet");
   });
 }
 
@@ -433,9 +436,9 @@ export async function syncOrders(db: Db) {
 }
 
 async function applyStatus(db: Db, orderId: string, status: OrderStatus, startCount: number | null, remains: number | null) {
-  await db.transaction(async (tx) => {
+  const d = await db.transaction(async (tx) => {
     const [o] = await tx.select().from(smmOrders).where(eq(smmOrders.id, orderId)).for("update");
-    if (!o || (o.status !== "PENDING" && o.status !== "PROCESSING")) return;
+    if (!o || (o.status !== "PENDING" && o.status !== "PROCESSING")) return null;
     const settle = settleOrder(o.cost, o.quantity, status, remains);
     if (settle) {
       const platform = await platformWalletId(tx);
@@ -451,7 +454,16 @@ async function applyStatus(db: Db, orderId: string, status: OrderStatus, startCo
       .update(smmOrders)
       .set({ status, startCount: startCount ?? o.startCount, remains: remains ?? o.remains, charged: settle ? settle.capture : o.charged, updatedAt: new Date() })
       .where(eq(smmOrders.id, o.id));
+    return settle && !o.apiKeyId ? { userId: o.userId, publicId: o.publicId, cost: o.cost, captured: settle.capture, quantity: o.quantity, remains: remains ?? o.remains, serviceId: o.serviceId } : null;
   });
+  // Email the customer once the order is finished (completed, partly delivered or refunded).
+  if (d) {
+    const [svc] = await db.select({ name: smmServices.name, displayName: smmServices.displayName }).from(smmServices).where(eq(smmServices.id, d.serviceId));
+    const what = `Boost order #${d.publicId}${svc ? ` (${svc.displayName ?? svc.name})` : ""}`;
+    if (d.captured === d.cost) alertCustomer(db, d.userId, `Boost order #${d.publicId} is complete`, [`Good news: your ${what} is complete. ${alertNaira(d.captured)} was charged.`]);
+    else if (d.captured > 0) alertCustomer(db, d.userId, `Boost order #${d.publicId} partly delivered`, [`Your ${what} was partly delivered${d.remains ? ` (${d.remains.toLocaleString("en-NG")} of ${d.quantity.toLocaleString("en-NG")} couldn't be sent)` : ""}.`, `You paid ${alertNaira(d.captured)} for what was delivered, and ${alertNaira(d.cost - d.captured)} is back in your wallet.`]);
+    else alertCustomer(db, d.userId, `Boost order #${d.publicId} refunded`, [`Your ${what} couldn't be completed, so ${alertNaira(d.cost)} is back in your wallet.`], "wallet");
+  }
 }
 
 export async function myOrders(db: Db, userId: string, ids?: number[]) {

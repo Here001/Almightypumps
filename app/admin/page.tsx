@@ -11,6 +11,7 @@ const nairaWhole = (kobo: number) => "₦" + Math.round(kobo / 100).toLocaleStri
 
 /** Things waiting for the owner, in the order they usually matter (money first). */
 const TODO: { key: keyof AdminCounts; href: string; one: string; many: string; hint: string }[] = [
+  { key: "support", href: "/admin/support", one: "support message to answer", many: "support messages to answer", hint: "Customers waiting for a reply in the chat" },
   { key: "payments", href: "/admin/payments", one: "payment to confirm", many: "payments to confirm", hint: "Customers say they paid by bank transfer or crypto" },
   { key: "sell", href: "/admin/sell", one: "gift card / crypto sale to check", many: "gift card / crypto sales to check", hint: "Check the card or that the crypto arrived, then pay or reject" },
   { key: "withdrawals", href: "/admin/withdrawals", one: "withdrawal to pay", many: "withdrawals to pay", hint: "Send the bank transfer, then mark it paid" },
@@ -24,6 +25,7 @@ const TODO: { key: keyof AdminCounts; href: string; one: string; many: string; h
 
 /** One line per menu item, so the owner knows where to go. */
 const ABOUT: Record<string, string> = {
+  "/admin/support": "Customers' messages: read and reply",
   "/admin/users": "Find any customer: wallet, activity, suspend, adjust",
   "/admin/payments": "Bank transfer & crypto top-ups",
   "/admin/withdrawals": "Customers' cash-outs to their bank",

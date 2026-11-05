@@ -10,6 +10,7 @@ import type { Db } from "./db";
 import { shopCategories, shopCodes, shopOrders, shopProducts, users } from "./db/schema";
 import { badRequest, notFound } from "./errors";
 import { placeHold, platformWalletId, settleHold, walletIdForUser } from "./wallet";
+import { alertCustomer, alertNaira } from "./customerAlerts";
 
 export const SHOP_ICONS = ["bag", "sim", "gift", "phone", "tv", "game", "wifi", "music", "star", "bolt", "card", "globe"] as const;
 export type ShopIcon = (typeof SHOP_ICONS)[number];
@@ -258,6 +259,8 @@ export async function settleShopOrder(db: Db, orderId: string, action: "deliver"
       })
       .where(eq(shopOrders.id, o.id))
       .returning({ id: shopOrders.publicId, status: shopOrders.status });
+    if (action === "deliver") alertCustomer(db, o.userId, `Shop order #${o.publicId} delivered`, [`Your shop order #${o.publicId} has been delivered. Open Orders in your account to see the details.`]);
+    else alertCustomer(db, o.userId, `Shop order #${o.publicId} refunded`, [`We couldn't deliver your shop order #${o.publicId}, so ${alertNaira(o.amount)} is back in your wallet.${note?.trim() ? ` Note: ${note.trim()}` : ""}`], "wallet");
     return u;
   });
 }

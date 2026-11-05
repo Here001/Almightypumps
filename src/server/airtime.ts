@@ -11,6 +11,7 @@ import { AppError, badRequest, notFound } from "./errors";
 import { getUsdRateKobo } from "./pricing";
 import { ReloadlyTopup, adminReason, reloadlyConfigured, reloadlyMode, type RlOperator, type RlTopup } from "./reloadly";
 import { alertSupplierFunds, isOutOfFunds } from "./supplierFunds";
+import { alertCustomer, alertNaira, PENDING_LINE } from "./customerAlerts";
 import { linkHold, placeHold, platformWalletId, settleHold, walletIdForUser } from "./wallet";
 
 export type AirtimeConfig = { airtimeMarkupBps: number; dataMarkupBps: number; enabled: boolean };
@@ -193,6 +194,7 @@ async function sendTopup(db: Db, id: string) {
     if (isOutOfFunds((e as Error).message)) {
       await db.update(topupOrders).set({ waitingFunds: true, error: "Waiting for Reloadly balance", updatedAt: new Date() }).where(eq(topupOrders.id, id));
       await alertSupplierFunds(db, "Reloadly", { adminPath: "/admin/instant" });
+      if (!order.waitingFunds) alertCustomer(db, order.userId, `${order.description} for ${order.phone} is pending`, [`Your ${order.description} for ${order.phone} has been received.`, PENDING_LINE]);
       return;
     }
     if (order.waitingFunds && status && status >= 500) return;
@@ -215,7 +217,8 @@ async function applyResult(db: Db, id: string, r: RlTopup | null) {
 }
 
 async function closeTopup(db: Db, id: string, status: "delivered" | "refunded" | "failed", error?: string) {
-  return db.transaction(async (tx) => {
+  const changed = { v: false };
+  const res = await db.transaction(async (tx) => {
     const [o] = await tx.select().from(topupOrders).where(eq(topupOrders.id, id)).for("update");
     if (!o || o.status !== "pending") return o;
     const capture = status === "delivered" ? o.priceKobo : 0;
@@ -224,8 +227,14 @@ async function closeTopup(db: Db, id: string, status: "delivered" | "refunded" |
       refType: "airtime", refId: o.id, idempotencyKey: `topup:${o.id}:settle`,
     });
     const [u] = await tx.update(topupOrders).set({ status, error: status === "delivered" ? null : error ?? o.error, updatedAt: new Date() }).where(eq(topupOrders.id, id)).returning();
+    changed.v = true;
     return u;
   });
+  if (changed.v && res) {
+    if (status === "delivered") alertCustomer(db, res.userId, `${res.description} sent to ${res.phone}`, [`Your ${res.description} for ${res.phone} has been delivered. ${alertNaira(res.priceKobo)} was charged.`], "airtime");
+    else alertCustomer(db, res.userId, `${res.description} refunded`, [`We couldn't deliver ${res.description} to ${res.phone}, so ${alertNaira(res.priceKobo)} is back in your wallet.`], "wallet");
+  }
+  return res;
 }
 
 export async function refreshTopup(db: Db, id: string) {
