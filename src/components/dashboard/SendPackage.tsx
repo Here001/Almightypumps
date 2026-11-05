@@ -105,7 +105,7 @@ export function SendPackage({ balance, onAddMoney }: { balance: number; onAddMon
         </section>
       ) : (
         <section className="card glass" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <h2>Send a package</h2>
+          <h2>Send/Receive a package</h2>
           <p className="muted" style={{ fontSize: 14, margin: 0 }}>Within Nigeria, or from the USA to Nigeria. A courier picks it up from the sender and delivers it to the receiver, with tracking the whole way.</p>
           <AddressFields prefix="sf" title="Pick up from (sender)" a={from} set={(a) => { setFrom(a); setQuote(null); }} states={info.states} />
           <AddressFields prefix="st" title="Deliver to (receiver, Nigeria)" a={to} set={(a) => { setTo(a); setQuote(null); }} states={info.states} lockCountry />

@@ -13,7 +13,7 @@ const DASHBOARD_ANCHORS: Record<string, string> = {
   sell: "Sell gift cards & crypto",
   invite: "Invite friends",
   docs: "Business documents",
-  ship: "Send a package",
+  ship: "Send/Receive a package",
   orders: "My orders",
   trades: "P2P Marketplace",
   wallet: "Wallet",

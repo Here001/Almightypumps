@@ -235,7 +235,7 @@ function Dashboard(props: Props) {
               <div className="ap-crumb">
                 <button type="button" className="ap-link" onClick={() => go("services")}>← All services</button>
                 <span className="muted">/</span>
-                <strong>Send a Package</strong>
+                <strong>Send/Receive a Package</strong>
               </div>
               <SendPackage balance={props.wallet.available} onAddMoney={() => go("wallet")} />
             </>

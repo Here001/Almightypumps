@@ -301,7 +301,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   accounts) look up GET /transactions?tx_ref=. app_settings `bank_transfer` {enabled default OFF, permanent}. FLUTTERWAVE_BASE_URL
   env for local mocks. Flutterwave's transfer fee is the owner's (customer gets the full amount). Field names follow Flutterwave v3
   docs from memory: check `[webhook] flutterwave` logs on the first real transfer.
-- SEND A PACKAGE (2026-11-05, owner's request; owner first asked for a "mock-up consignment" generator with fake tracking +
+- SEND/RECEIVE A PACKAGE (tile renamed 2026-11-05 at owner's request; built 2026-11-05, owner's request; owner first asked for a "mock-up consignment" generator with fake tracking +
   editable status: DECLINED (fake-tracking/consignment scam tool) and built real courier delivery instead). Terminal Africa
   T-Ship API (`src/server/shipping.ts`, `src/core/shipping.ts` tested, migration 0029 `shipments` + holds purpose 'shipping').
   Within Nigeria and USA → Nigeria (`SHIP_FROM` NG/US, `SHIP_TO` NG). Flow: POST /addresses ×2 + GET /packaging/default/terminal

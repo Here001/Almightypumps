@@ -50,8 +50,8 @@ export const HUB_SERVICES: HubService[] = [
   },
   {
     id: "ship",
-    title: "Send a Package",
-    description: "Courier pickup and delivery within Nigeria or from the USA to Nigeria. Compare prices, pay from your wallet, track it live.",
+    title: "Send/Receive a Package",
+    description: "Send or receive packages with courier pickup and delivery, within Nigeria or from the USA to Nigeria. Compare prices, pay from your wallet, track it live.",
     icon: "M3 7l9-4 9 4v10l-9 4-9-4zM3 7l9 4 9-4M12 11v10",
     status: "live",
   },
