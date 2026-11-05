@@ -13,6 +13,7 @@
     "db:seed": "node --env-file=.env scripts/seed.mjs"
   },
   "dependencies": {
+    "@vercel/blob": "2.4.0",
     "bcryptjs": "2.4.3",
     "drizzle-orm": "0.45.4",
     "gsap": "3.12.5",

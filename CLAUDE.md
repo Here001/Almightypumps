@@ -89,7 +89,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   (verified/pending) and the Seller panel; the browser crops to a 320px square WebP/JPEG before upload.
   `POST/DELETE /api/seller/avatar` (data URL, ≤300 KB, magic-byte check); served by
   `/api/sellers/[id]/avatar?v=…` only for verified sellers, cached immutable. Marketplace rows and the
-  buy sheet show it (initial letter as fallback). Ad photos still need proper file storage (Vercel Blob).
+  buy sheet show it (initial letter as fallback). Shop pictures stay in the database (one small file per seller).
 - Get Verification Code (#verify, migration 0013, `src/server/smsVerify.ts`, `src/server/textverified.ts`,
   `VerifyCode.tsx`, /admin/verify): TextVerified API v2 (auth POST /api/pub/v2/auth with X-API-KEY +
   X-API-USERNAME → bearer; env TEXTVERIFIED_API_KEY / TEXTVERIFIED_API_USERNAME, both set in Vercel
@@ -279,6 +279,13 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 - P2P ad photos (migration 0026 `listing_images`, bytea, max 6 per ad, ≤500 KB, magic-byte checked; `src/server/listingImages.ts`):
   seller form uploads after save (POST /api/seller/listings/[id]/images {add|remove|cover}); served by /api/listings/images/[id]
   (immutable cache, any ad not removed). `imageUrlsSql` adds `images` to browse/myListings/review; `AdGallery` in Marketplace.tsx.
+  FILE STORAGE (2026-11-05, migration 0028): Vercel Blob store `almightypumps-photos` (store_Qt2ieGp2NqoV6QGL, public, fra1,
+  linked to the project → env BLOB_READ_WRITE_TOKEN in all environments). `@vercel/blob` pinned 2.4.0 (2.4.1+ pulls a vulnerable
+  zod via @vercel/oidc). New photos upload to `<live|preview|local>/listing-photos/<photo uuid>.<ext>` (`listing_images.url`, data
+  NULL); the client reads the photo id from the file name. Older DB photos are moved by `movePhotosToBlob` (sync-orders cron, 20
+  per run); /api/listings/images/[id] 308-redirects to the Blob URL. Removing a photo deletes its file; removing an ad keeps the
+  files (dispute evidence). CSP img-src allows https://*.public.blob.vercel-storage.com. Trade-in (sell desk) photos stay in the
+  database on purpose (private: gift card codes). VERCEL_BLOB_API_URL points the library at a local mock in tests.
 - P2P trade room (`TradeRoom.tsx`, sheet from "My trades" and the seller panel): steps, live countdown, buyer/seller actions,
   chat (GET/POST /api/market/trades/[id]/messages, polls 8 s), delivery details, timeline. Emails (`notifyTrade` in market.ts):
   seller on new order, buyer when marked delivered, other party on a chat message if the sender was quiet for 30 min.
@@ -336,7 +343,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
     usd auto, Instagram Likes/Live viewers 100% rules. NOT copied: dev's P2P category renamed "Accounts"
     (account sales are blocked); live keeps "Digital products". Re-star 3 TikTok follower services
     (Owlet ids 8277, 24221, 8619) after the first live sync. No users yet (owner signs up, then promote to admin).
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0027 applied (main has 0000–0026; 0027 needs the owner's yes). Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0028 applied (main has 0000–0026; 0027–0028 need the owner's yes). Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

@@ -234,7 +234,7 @@ async function shrinkPhoto(file: File): Promise<string> {
 
 /** After the ad is saved: delete removed photos, upload new ones, then put the chosen cover first. Returns an error message or null. */
 async function savePhotos(listingId: string, before: string[], after: Photo[]): Promise<string | null> {
-  const idOf = (url: string) => url.split("/").pop() ?? "";
+  const idOf = (url: string) => (url.split("/").pop() ?? "").split(/[.?]/)[0];
   const path = `/api/seller/listings/${listingId}/images`;
   try {
     for (const url of before) if (!after.some((p) => p.url === url)) await api(path, { action: "remove", imageId: idOf(url) });

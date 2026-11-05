@@ -625,7 +625,10 @@ export const listingImages = pgTable("listing_images", {
   listingId: uuid("listing_id").notNull().references(() => listings.id, { onDelete: "cascade" }),
   position: integer("position").notNull().default(0),
   contentType: text("content_type").notNull(),
-  data: bytea("data").notNull(),
+  /** Photo bytes for older photos; NULL once the photo lives in Vercel Blob (migration 0028). */
+  data: bytea("data"),
+  /** Public Vercel Blob URL (migration 0028). */
+  url: text("url"),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 
