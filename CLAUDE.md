@@ -376,6 +376,12 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   choice (public docs at docs.busha.io), Quidax second). Owner is applying; build only after they confirm per-customer wallets/
   sub-accounts, BTC deposit+withdraw to outside wallets, and sandbox keys (in Vercel, never in chat). "Get paid in bitcoin to my own
   address" on gift card sales was offered; owner said wait for the partner wallet.
+- WEBSITE TEMPLATES (2026-11-08, owner's request): WordPress block themes in `website-templates/` (own generator, not part of the
+  Next app; `node website-templates/build.mjs --shots` → dist/<slug>.zip + screenshots; see its README). Owner chose 5: Startup (Ignite,
+  `ap-ignite`, done first), Small business, Restaurant, Real estate, Delivery company; plus a "We set it up for you" manual shop product.
+  theme.json v2 (WP 6.4+), patterns + full-page patterns, bundled OFL fonts, own SVG art. WordPress can't be run in this sandbox
+  (wordpress.org blocked; running WP from npm was refused by the safety check), so the owner tests zips at playground.wordpress.net.
+  Delivery template must NOT include fake tracking (same rule as the declined consignment tool).
 - Insights: `src/components/Tracker.tsx` beacons each page and dashboard #section to
   `/api/track` → `site_events` (anonymous cookie id, no IP/UA stored). Section names come
   from `src/core/analytics.ts` (add new pages there). Queries in `src/server/insights.ts`.
