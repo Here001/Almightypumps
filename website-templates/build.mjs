@@ -12,7 +12,7 @@ import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as b from "./lib/blocks.mjs";
-import { footerPart, functionsPhp, headerPart, patternPhp, readme, styleCss, templates, themeJson } from "./lib/theme.mjs";
+import { accountPatterns, footerPart, functionsPhp, headerPart, patternPhp, readme, styleCss, templates, themeJson } from "./lib/theme.mjs";
 import { previewHtml } from "./lib/preview.mjs";
 
 const root = dirname(fileURLToPath(import.meta.url));
@@ -24,6 +24,7 @@ const only = args.filter((a) => !a.startsWith("--"));
 const write = (file, content) => { mkdirSync(dirname(file), { recursive: true }); writeFileSync(file, content); };
 
 async function build(t) {
+  t = { ...t, patterns: [...t.patterns, ...accountPatterns(t)] };
   const out = join(dist, t.slug);
   rmSync(out, { recursive: true, force: true });
   rmSync(join(dist, `${t.slug}.zip`), { force: true });

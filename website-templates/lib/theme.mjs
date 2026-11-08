@@ -156,6 +156,51 @@ html { scroll-behavior: smooth; scroll-padding-top: 90px; }
 @media (max-width: 1000px) { .wp-block-group.is-layout-grid, .wp-block-post-template.is-layout-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
 @media (max-width: 640px) { .wp-block-group.is-layout-grid, .wp-block-post-template.is-layout-grid { grid-template-columns: 1fr !important; } }
 
+/* ---------- Customer area ---------- */
+.ap-account-link { display: inline-block; padding: .55rem 1.1rem; border-radius: 999px; border: 1.5px solid var(--wp--preset--color--border); color: var(--wp--preset--color--heading); text-decoration: none; font-weight: 600; font-size: var(--wp--preset--font-size--small); white-space: nowrap; }
+.ap-account-link:hover { border-color: var(--wp--preset--color--primary); color: var(--wp--preset--color--primary); }
+.ap-account-link.is-signed-in { background: var(--wp--preset--color--primary); border-color: var(--wp--preset--color--primary); color: var(--wp--preset--color--on-primary); }
+.ap-header-account p { margin: 0; }
+.ap-account { max-width: 460px; margin: 0 auto; background: var(--wp--preset--color--base); border: 1px solid var(--wp--preset--color--border); border-radius: var(--wp--custom--radius); padding: clamp(1.5rem, 4vw, 2.5rem); box-shadow: 0 30px 60px -40px rgb(0 0 0 / .35); }
+.ap-account > * + * { margin-top: .9rem; }
+.ap-account-title { font-size: var(--wp--preset--font-size--x-large); margin: 0 0 1rem; }
+.ap-account-muted { color: var(--wp--preset--color--muted); font-size: var(--wp--preset--font-size--small); }
+.ap-account-grid { display: grid; gap: .75rem; margin-top: 1.25rem; }
+.ap-account-tile { display: flex; flex-direction: column; padding: 1rem 1.2rem; border: 1px solid var(--wp--preset--color--border); border-radius: 14px; text-decoration: none; color: var(--wp--preset--color--heading); }
+.ap-account-tile span { color: var(--wp--preset--color--muted); font-size: var(--wp--preset--font-size--small); }
+.ap-account-tile:hover { border-color: var(--wp--preset--color--primary); }
+/* Log in form (WordPress) and all WooCommerce account forms */
+.ap-account form p, .woocommerce form .form-row { margin: 0 0 1rem; }
+.ap-account label, .woocommerce form .form-row label { display: block; font-weight: 600; font-size: var(--wp--preset--font-size--small); margin-bottom: .35rem; color: var(--wp--preset--color--heading); }
+.ap-account input[type=text], .ap-account input[type=password], .ap-account input[type=email],
+.woocommerce form .input-text, .woocommerce form select, .woocommerce-page form .input-text {
+  width: 100%; box-sizing: border-box; padding: .8rem 1rem; font: inherit; color: var(--wp--preset--color--heading);
+  background: var(--wp--preset--color--base); border: 1.5px solid var(--wp--preset--color--border); border-radius: 12px;
+}
+.ap-account input:focus, .woocommerce form .input-text:focus { outline: none; border-color: var(--wp--preset--color--primary); box-shadow: 0 0 0 3px var(--wp--preset--color--tint); }
+.ap-account .login-remember label { display: flex; gap: .5rem; align-items: center; font-weight: 500; }
+.ap-account input[type=submit], .woocommerce button.button, .woocommerce a.button, .woocommerce .woocommerce-Button {
+  background: var(--wp--preset--color--primary) !important; color: var(--wp--preset--color--on-primary) !important; border: 0 !important;
+  border-radius: 999px !important; padding: .85rem 1.6rem !important; font-family: var(--wp--preset--font-family--heading); font-weight: 650; cursor: pointer;
+}
+.ap-account input[type=submit] { width: 100%; }
+.ap-account input[type=submit]:hover, .woocommerce button.button:hover, .woocommerce a.button:hover { background: var(--wp--preset--color--primary-dark) !important; }
+/* WooCommerce My account */
+.woocommerce-account .woocommerce { display: grid; grid-template-columns: 240px 1fr; gap: clamp(1.5rem, 4vw, 3rem); align-items: start; }
+.woocommerce-account .woocommerce > .woocommerce-notices-wrapper, .woocommerce-account .woocommerce > .u-columns, .woocommerce-account .woocommerce > h2, .woocommerce-account .woocommerce > form { grid-column: 1 / -1; }
+.woocommerce-MyAccount-navigation ul { list-style: none; margin: 0; padding: .5rem; border: 1px solid var(--wp--preset--color--border); border-radius: var(--wp--custom--radius); background: var(--wp--preset--color--surface); }
+.woocommerce-MyAccount-navigation li a { display: block; padding: .7rem 1rem; border-radius: 10px; text-decoration: none; color: var(--wp--preset--color--heading); font-weight: 550; }
+.woocommerce-MyAccount-navigation li.is-active a, .woocommerce-MyAccount-navigation li a:hover { background: var(--wp--preset--color--base); color: var(--wp--preset--color--primary); box-shadow: 0 6px 16px -10px rgb(0 0 0 / .3); }
+.woocommerce-MyAccount-content { min-width: 0; }
+.woocommerce-account .u-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+.woocommerce-account .u-columns > div { float: none; width: auto; }
+.woocommerce-form-login, .woocommerce-form-register { border: 1px solid var(--wp--preset--color--border) !important; border-radius: var(--wp--custom--radius) !important; padding: clamp(1.25rem, 3vw, 2rem) !important; margin: 0 !important; }
+.woocommerce table.shop_table { border-radius: 14px; border-collapse: separate; overflow: hidden; }
+@media (max-width: 781px) {
+  .woocommerce-account .woocommerce, .woocommerce-account .u-columns { grid-template-columns: 1fr; }
+  .ap-header-account { display: none; }
+}
+
 /* Accessibility */
 :where(a, button, summary, input, select, textarea):focus-visible { outline: 2px solid var(--wp--preset--color--primary); outline-offset: 3px; border-radius: 4px; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
@@ -200,6 +245,127 @@ function ${fn}_register() {
 	register_block_style( 'core/image', array( 'name' => 'rounded-img', 'label' => __( 'Rounded corners', '${t.slug}' ) ) );
 }
 add_action( 'init', '${fn}_register' );
+
+/* ---------------- Customer area ----------------
+ * Works on its own (WordPress log in + "Anyone can register"), and uses WooCommerce's My account when WooCommerce is active.
+ * Pages: create "My account" (slug my-account) and "Sign up" (slug sign-up) from the "${t.name} full pages" designs.
+ */
+
+/** Where "My account" lives: WooCommerce's page, else a page with the slug my-account, else the profile screen. */
+function ${fn}_account_url() {
+	if ( function_exists( 'wc_get_page_permalink' ) ) {
+		return wc_get_page_permalink( 'myaccount' );
+	}
+	$page = get_page_by_path( 'my-account' );
+	return $page ? get_permalink( $page ) : admin_url( 'profile.php' );
+}
+
+/** Sign-up link: WooCommerce account page (it has the sign-up form), our sign-up page, or the WordPress one. */
+function ${fn}_signup_url() {
+	if ( function_exists( 'wc_get_page_permalink' ) ) {
+		return wc_get_page_permalink( 'myaccount' );
+	}
+	$page = get_page_by_path( 'sign-up' );
+	return $page ? get_permalink( $page ) : wp_registration_url();
+}
+
+/** [ap_account_link] header button: "Log in" for visitors, "My account" when signed in. */
+function ${fn}_account_link() {
+	if ( is_user_logged_in() ) {
+		return '<a class="ap-account-link is-signed-in" href="' . esc_url( ${fn}_account_url() ) . '">' . esc_html__( 'My account', '${t.slug}' ) . '</a>';
+	}
+	$url = ( function_exists( 'wc_get_page_permalink' ) || get_page_by_path( 'my-account' ) ) ? ${fn}_account_url() : wp_login_url( home_url( '/' ) );
+	return '<a class="ap-account-link" href="' . esc_url( $url ) . '">' . esc_html__( 'Log in', '${t.slug}' ) . '</a>';
+}
+
+/** [ap_account] the customer area: WooCommerce My account, or log in form / simple account panel. */
+function ${fn}_account() {
+	if ( shortcode_exists( 'woocommerce_my_account' ) ) {
+		return do_shortcode( '[woocommerce_my_account]' );
+	}
+	ob_start();
+	echo '<div class="ap-account">';
+	if ( is_user_logged_in() ) {
+		$user = wp_get_current_user();
+		/* translators: %s: customer name */
+		echo '<h2 class="ap-account-title">' . esc_html( sprintf( __( 'Hello, %s', '${t.slug}' ), $user->display_name ) ) . '</h2>';
+		echo '<p class="ap-account-muted">' . esc_html__( 'You are signed in. Manage your details below.', '${t.slug}' ) . '</p>';
+		echo '<div class="ap-account-grid">';
+		echo '<a class="ap-account-tile" href="' . esc_url( admin_url( 'profile.php' ) ) . '"><strong>' . esc_html__( 'Profile', '${t.slug}' ) . '</strong><span>' . esc_html__( 'Name, email and password', '${t.slug}' ) . '</span></a>';
+		echo '<a class="ap-account-tile" href="' . esc_url( home_url( '/' ) ) . '"><strong>' . esc_html__( 'Home', '${t.slug}' ) . '</strong><span>' . esc_html__( 'Back to the website', '${t.slug}' ) . '</span></a>';
+		echo '<a class="ap-account-tile" href="' . esc_url( wp_logout_url( home_url( '/' ) ) ) . '"><strong>' . esc_html__( 'Log out', '${t.slug}' ) . '</strong><span>' . esc_html__( 'Sign out of this device', '${t.slug}' ) . '</span></a>';
+		echo '</div>';
+	} else {
+		echo '<h2 class="ap-account-title">' . esc_html__( 'Log in to your account', '${t.slug}' ) . '</h2>';
+		wp_login_form(
+			array(
+				'redirect'       => ${fn}_account_url(),
+				'label_username' => __( 'Email or username', '${t.slug}' ),
+				'label_log_in'   => __( 'Log in', '${t.slug}' ),
+			)
+		);
+		echo '<p class="ap-account-muted"><a href="' . esc_url( wp_lostpassword_url( ${fn}_account_url() ) ) . '">' . esc_html__( 'Forgot your password?', '${t.slug}' ) . '</a></p>';
+		if ( get_option( 'users_can_register' ) ) {
+			echo '<p class="ap-account-muted">' . esc_html__( 'New here?', '${t.slug}' ) . ' <a href="' . esc_url( ${fn}_signup_url() ) . '">' . esc_html__( 'Create an account', '${t.slug}' ) . '</a></p>';
+		}
+	}
+	echo '</div>';
+	return ob_get_clean();
+}
+
+/** [ap_signup] sign-up box: sends people to the right sign-up form, or explains why sign-ups are closed. */
+function ${fn}_signup() {
+	if ( is_user_logged_in() ) {
+		return '<div class="ap-account"><h2 class="ap-account-title">' . esc_html__( 'You are already signed in', '${t.slug}' ) . '</h2><p><a class="ap-account-link is-signed-in" href="' . esc_url( ${fn}_account_url() ) . '">' . esc_html__( 'Go to my account', '${t.slug}' ) . '</a></p></div>';
+	}
+	if ( shortcode_exists( 'woocommerce_my_account' ) ) {
+		return do_shortcode( '[woocommerce_my_account]' );
+	}
+	if ( get_option( 'users_can_register' ) ) {
+		return '<div class="ap-account"><h2 class="ap-account-title">' . esc_html__( 'Create your free account', '${t.slug}' ) . '</h2><p class="ap-account-muted">' . esc_html__( 'Choose a username and enter your email. We will email you a link to set your password.', '${t.slug}' ) . '</p><p><a class="ap-account-link is-signed-in" href="' . esc_url( wp_registration_url() ) . '">' . esc_html__( 'Sign up', '${t.slug}' ) . '</a></p><p class="ap-account-muted">' . esc_html__( 'Already have an account?', '${t.slug}' ) . ' <a href="' . esc_url( ${fn}_account_url() ) . '">' . esc_html__( 'Log in', '${t.slug}' ) . '</a></p></div>';
+	}
+	if ( current_user_can( 'manage_options' ) ) {
+		return '<div class="ap-account"><p>' . esc_html__( 'Admin note: sign-ups are switched off. Turn on Settings > General > "Anyone can register", or install WooCommerce.', '${t.slug}' ) . '</p></div>';
+	}
+	return '<div class="ap-account"><p>' . esc_html__( 'Sign-ups are closed at the moment. Please contact us.', '${t.slug}' ) . '</p></div>';
+}
+
+function ${fn}_shortcodes() {
+	add_shortcode( 'ap_account_link', '${fn}_account_link' );
+	add_shortcode( 'ap_account', '${fn}_account' );
+	add_shortcode( 'ap_signup', '${fn}_signup' );
+}
+add_action( 'init', '${fn}_shortcodes' );
+
+/** Customers (not staff) don't see the black WordPress admin bar on the website. */
+function ${fn}_admin_bar( $show ) {
+	return current_user_can( 'edit_posts' ) ? $show : false;
+}
+add_filter( 'show_admin_bar', '${fn}_admin_bar' );
+
+add_action(
+	'after_setup_theme',
+	function () {
+		add_theme_support( 'woocommerce' );
+	}
+);
+
+/** The WordPress log in / sign up screen in the theme's colours, with the site logo. */
+function ${fn}_login_style() {
+	$logo = has_custom_logo() ? wp_get_attachment_image_url( get_theme_mod( 'custom_logo' ), 'medium' ) : '';
+	$css  = 'body.login{background:${t.palette.surface};font-family:system-ui,sans-serif}'
+		. '.login form{border:1px solid ${t.palette.border};border-radius:18px;box-shadow:0 24px 48px -32px rgba(0,0,0,.35);padding:28px}'
+		. '.login .button-primary{background:${t.palette.primary};border-color:${t.palette.primary};border-radius:999px;padding:4px 22px;font-weight:600}'
+		. '.login .button-primary:hover,.login .button-primary:focus{background:${t.palette["primary-dark"]};border-color:${t.palette["primary-dark"]}}'
+		. '.login input[type=text],.login input[type=password],.login input[type=email]{border-radius:10px;border-color:${t.palette.border}}'
+		. '.login input:focus{border-color:${t.palette.primary};box-shadow:0 0 0 1px ${t.palette.primary}}'
+		. '.login #nav a,.login #backtoblog a,.login a{color:${t.palette.primary}}'
+		. ( $logo ? '.login h1 a{background-image:url(' . esc_url( $logo ) . ');background-size:contain;width:180px;height:80px}' : '.login h1 a{background:none;text-indent:0;width:auto;height:auto;font-size:26px;font-weight:800;color:${t.palette.heading};text-decoration:none}' );
+	wp_add_inline_style( 'login', $css );
+}
+add_action( 'login_enqueue_scripts', '${fn}_login_style' );
+add_filter( 'login_headerurl', function () { return home_url( '/' ); } );
+add_filter( 'login_headertext', function () { return get_bloginfo( 'name' ); } );
 `;
 }
 
@@ -220,20 +386,45 @@ ${markup.trim()}
 `;
 }
 
+/* ---------------- customer area pages (added to every theme) ---------------- */
+
+const LOGIN_SAMPLE = `<div class="ap-account"><h2 class="ap-account-title">Log in to your account</h2><form><p><label>Email or username</label><input type="text"></p><p><label>Password</label><input type="password"></p><p class="login-remember"><label><input type="checkbox"> Remember me</label></p><p><input type="submit" value="Log in"></p></form><p class="ap-account-muted"><a href="#">Forgot your password?</a></p><p class="ap-account-muted">New here? <a href="#">Create an account</a></p></div>`;
+const SIGNUP_SAMPLE = `<div class="ap-account"><h2 class="ap-account-title">Create your free account</h2><p class="ap-account-muted">Choose a username and enter your email. We will email you a link to set your password.</p><p><a class="ap-account-link is-signed-in" href="#">Sign up</a></p><p class="ap-account-muted">Already have an account? <a href="#">Log in</a></p></div>`;
+
+export function accountPatterns(t) {
+  const head = (title, sub) => b.stack(b.heading(title, { level: 1, align: "center", size: "xx-large" }) + b.para(sub, { align: "center", className: "ap-muted" }), { gap: 20, justify: "center" });
+  const pageCat = [`${t.slug}-pages`];
+  return [
+    { slug: "page-account", title: "My account page (log in + customer area)", page: true, categories: pageCat,
+      description: "Use on a page with the slug my-account. Shows the log in form to visitors and the customer area when signed in (WooCommerce My account if WooCommerce is active).",
+      render: () => b.section(head("My account", "Log in to see your orders, details and more.") + b.spacer("16px") + b.shortcode("ap_account", LOGIN_SAMPLE), { bg: "surface", pad: [80, 80] }) },
+    { slug: "page-signup", title: "Sign up page", page: true, categories: pageCat,
+      description: "Use on a page with the slug sign-up. Turn on Settings > General > Anyone can register (or install WooCommerce).",
+      render: () => b.section(b.columns([
+        { inner: b.stack(b.eyebrow("Free account") + b.heading("Join us in less than a minute", { level: 1, size: "xx-large" })
+          + b.para("Tell visitors what they get with an account. Edit this list:", { className: "ap-muted" })
+          + b.list(["Track your orders and bookings", "Save your details for faster checkout", "Get member-only offers"], { className: "ap-checks" }), { gap: 20 }) },
+        { inner: b.shortcode("ap_signup", SIGNUP_SAMPLE) },
+      ], { align: "wide", valign: "center" }), { bg: "surface", pad: [80, 80] }) },
+  ];
+}
+
 /* ---------------- template parts and templates ---------------- */
 
 export function headerPart(t) {
   return b.group({ align: "full", className: "ap-header", bg: "base", pad: [20, 20], layout: { type: "constrained" } },
     b.row(
       b.row(b.siteLogo() + b.siteTitle(), { wrap: false, gap: 20 })
-      + b.row(b.navigation(t.nav) + (t.headerCta ? b.group({ className: "ap-header-cta", layout: { type: "flex" } }, b.buttons([t.headerCta])) : ""), { wrap: false, gap: 50 }),
+      + b.row(b.navigation(t.nav)
+        + b.group({ className: "ap-header-account", layout: { type: "flex" } }, b.shortcode("ap_account_link", '<a class="ap-account-link" href="#">Log in</a>'))
+        + (t.headerCta ? b.group({ className: "ap-header-cta", layout: { type: "flex" } }, b.buttons([t.headerCta])) : ""), { wrap: false, gap: 40 }),
       { align: "wide", justify: "space-between" },
     ));
 }
 
 export function footerPart(t) {
   const f = t.footer;
-  const col = (title, lines) => b.stack(b.heading(title, { level: 4, size: "medium" }) + lines.map((l) => b.para(l, { className: "ap-muted" })).join(""), { gap: 10 });
+  const col = (title, lines) => b.stack(b.heading(title, { level: 4, size: "medium" }) + lines.map((l) => b.para(l, { className: "ap-muted", size: "small" })).join(""), { gap: 10 });
   return b.group({ align: "full", bg: f.bg ?? "surface", pad: [70, 50], layout: { type: "constrained" } },
     b.columns([
       { width: "40%", inner: b.stack(b.row(b.siteLogo() + b.siteTitle(), { wrap: false, gap: 20 }) + b.para(f.about, { className: "ap-muted" }), { gap: 30 }) },
@@ -312,6 +503,21 @@ ${t.description}
 
 Replace every sample text, phone number, WhatsApp link, email, price and picture with your own before you publish.
 Contact forms: install the free "WPForms Lite" or "Contact Form 7" plugin and paste its form block where you want it.
+
+== Customer accounts (log in, sign up, My account) ==
+
+The header has a "Log in" button that becomes "My account" once a customer is signed in.
+
+Selling online? Install WooCommerce. It creates the "My account" page (orders, downloads, addresses, password)
+and this theme styles it automatically. To let customers sign up: WooCommerce > Settings > Accounts & Privacy >
+tick "Allow customers to create an account on the My account page".
+
+Not using WooCommerce?
+1. Settings > General: tick "Anyone can register" and set New User Default Role to "Subscriber".
+2. Pages > Add New: title "My account" (the address must end in /my-account), choose the "My account page" design.
+3. Pages > Add New: title "Sign up" (address /sign-up), choose the "Sign up page" design.
+The WordPress log in screen is also styled in your theme colours and shows your logo (Appearance > Editor > Site logo).
+Customers never see the WordPress admin bar on your website.
 
 == Support ==
 

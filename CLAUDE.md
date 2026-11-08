@@ -378,7 +378,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   address" on gift card sales was offered; owner said wait for the partner wallet.
 - WEBSITE TEMPLATES (2026-11-08, owner's request): WordPress block themes in `website-templates/` (own generator, not part of the
   Next app; `node website-templates/build.mjs --shots` → dist/<slug>.zip + screenshots; see its README). Owner chose 5: Startup (Ignite,
-  `ap-ignite`, done first), Small business, Restaurant, Real estate, Delivery company; plus a "We set it up for you" manual shop product.
+  `ap-ignite`, done first), Small business, Restaurant, Real estate, Delivery company; plus a "We set it up for you" manual shop product. CUSTOMER AREA in every theme (shared, lib/theme.mjs): header [ap_account_link] (Log in / My account), [ap_account] (WooCommerce My account if active, else wp_login_form + simple panel), [ap_signup], full-page patterns "My account page" (slug my-account) + "Sign up page" (slug sign-up), WooCommerce + log-in screen styled, admin bar hidden for customers.
   theme.json v2 (WP 6.4+), patterns + full-page patterns, bundled OFL fonts, own SVG art. WordPress can't be run in this sandbox
   (wordpress.org blocked; running WP from npm was refused by the safety check), so the owner tests zips at playground.wordpress.net.
   Delivery template must NOT include fake tracking (same rule as the declined consignment tool).

@@ -199,3 +199,8 @@ export function latestPosts(n = 3) {
 export function copyright(text) {
   return preview() ? `<p class="has-small-font-size">© ${new Date().getFullYear()} ${esc(ctx.previewSiteTitle ?? "Your Brand")}. ${esc(text)}</p>` : para(text, { size: "small" });
 }
+
+/** Shortcode block (rendered by the theme's PHP). In the preview, `sample` is drawn instead. */
+export function shortcode(tag, sample = "") {
+  return preview() ? sample : `<!-- wp:shortcode -->\n[${tag}]\n<!-- /wp:shortcode -->\n`;
+}
