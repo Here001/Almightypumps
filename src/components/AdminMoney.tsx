@@ -143,7 +143,7 @@ export function AdminWithdrawals() {
             <dd>
               <strong>{w.accountName}</strong><br />{w.bankName}<br />
               <span style={{ fontFamily: "var(--mono)", fontSize: 18, letterSpacing: ".05em" }}>{w.accountNumber}</span> <CopyBtn text={w.accountNumber} /><br />
-              {w.nameCheck === "match" ? <span className="ap-tag ok">Bank confirmed: account is in the customer&apos;s verified name</span>
+              {w.nameCheck === "match" ? <span className="ap-tag ok">Bank confirmed: account is in the customer&apos;s name</span>
                 : w.nameCheck === "unchecked" ? <span className="ap-tag">⚠ Bank name not checked automatically: confirm it matches {w.user.name} in your banking app before paying</span>
                 : <span className="ap-tag">Requested before name checks started</span>}
             </dd>

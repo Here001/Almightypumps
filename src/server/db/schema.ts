@@ -32,8 +32,6 @@ export const users = pgTable("users", {
   suspendReason: text("suspend_reason"),
   /** Email me when my orders are delivered, refunded or pending (migration 0032). */
   notifyOrders: boolean("notify_orders").notNull().default(true),
-  identityStatus: text("identity_status").$type<"none" | "pending" | "info_needed" | "verified" | "rejected">().notNull().default("none"),
-  identityVerifiedAt: ts("identity_verified_at"),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 
@@ -98,22 +96,6 @@ export const withdrawals = pgTable("withdrawals", {
   nameCheck: text("name_check").$type<"match" | "unchecked">(),
   createdAt: ts("created_at").notNull().defaultNow(),
   decidedAt: ts("decided_at"),
-});
-
-export const identityChecks = pgTable("identity_checks", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id").notNull().references(() => users.id),
-  idType: text("id_type").notNull(),
-  idNumberEnc: text("id_number_enc").notNull(),
-  idLast4: text("id_last4").notNull(),
-  idHash: text("id_hash").notNull(),
-  nameOnId: text("name_on_id").notNull(),
-  status: text("status").$type<"pending" | "info_needed" | "verified" | "rejected">().notNull().default("pending"),
-  adminNote: text("admin_note"),
-  customerReply: text("customer_reply"),
-  submittedAt: ts("submitted_at").notNull().defaultNow(),
-  decidedAt: ts("decided_at"),
-  decidedBy: uuid("decided_by").references(() => users.id),
 });
 
 export const nameChangeRequests = pgTable("name_change_requests", {

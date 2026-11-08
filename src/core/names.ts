@@ -1,5 +1,5 @@
 /**
- * Name matching for withdrawals and identity checks. Nigerian banks often show "SURNAME FIRSTNAME MIDDLENAME", so word
+ * Name matching for withdrawals (bank account name vs. the customer's name). Nigerian banks often show "SURNAME FIRSTNAME MIDDLENAME", so word
  * order doesn't matter. Titles and punctuation are ignored. Two names match when they share at least two words and
  * every word of the shorter name appears in the longer one (initials like "A." match a word starting with that letter).
  */
@@ -28,11 +28,3 @@ export function namesMatch(a: string, b: string): boolean {
   return full >= 2;
 }
 
-export const IDENTITY_ID_TYPES = [
-  { id: "nin", label: "NIN slip or National ID card", pattern: /^\d{11}$/, hint: "11-digit NIN" },
-  { id: "bvn", label: "BVN (with any photo ID)", pattern: /^\d{11}$/, hint: "11-digit BVN" },
-  { id: "drivers_license", label: "Driver's licence", pattern: /^[A-Z0-9]{8,15}$/i, hint: "8–15 letters or digits" },
-  { id: "passport", label: "International passport", pattern: /^[A-Z]\d{8}$/i, hint: "1 letter + 8 digits" },
-  { id: "voters_card", label: "Voter's card (PVC)", pattern: /^[A-Z0-9]{19}$|^[A-Z0-9]{9,10}$/i, hint: "VIN on your card" },
-] as const;
-export type IdentityIdType = (typeof IDENTITY_ID_TYPES)[number]["id"];

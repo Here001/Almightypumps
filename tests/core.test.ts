@@ -498,7 +498,7 @@ test("services: tile order", async () => {
   assert.ok(!hiddenTiles(["esim_us"]).has("esim"));
 });
 
-import { namesMatch } from "../src/core/identity.ts";
+import { namesMatch } from "../src/core/names.ts";
 test("withdrawal name matching", () => {
   assert.ok(namesMatch("Bayo Adeyemi", "ADEYEMI BAYO"));
   assert.ok(namesMatch("Bayo Adeyemi", "ADEYEMI OLUWABAYO BAYO"));

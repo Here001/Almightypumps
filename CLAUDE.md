@@ -358,18 +358,18 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   email per newly stuck batch; app_settings `stuck_alerted` {upTo}). Payments, sell desk, support, supplier top-ups have their own emails.
   BADGES CLEAR AT ONCE: `api()` in src/components/api.ts fires window event `ap:admin-counts` after any admin POST (or opening a
   support conversation); AdminShell refetches counts then, every 30 s and when the tab becomes visible.
-- IDENTITY + NAME CHANGES + WITHDRAWAL NAME MATCH (2026-11-05, owner's request; migration 0033): `src/server/identity.ts`,
-  `src/core/identity.ts` (`namesMatch`: order-free, titles ignored, ≥2 full words shared and every word of the shorter name in the
-  longer; tested), customer `IdentityCheck.tsx` (Settings card + inside Withdraw until verified; `NameChange` under Profile name,
-  which is now read-only), /api/me/identity {submit|reply|name|name_reply|name_cancel} (rate limit `identity`), admin /admin/identity
-  `AdminIdentity.tsx` (tabs Identity checks / Name changes; Approve / Ask for more info / Reject, all email the customer; photos via
-  admin-only /api/admin/identity/files/[id]; warns when an ID number is on other accounts via `id_hash`), badge `identity`,
-  Admin Home todo, alertAdmins on every submit/reply. users.identity_status none|pending|info_needed|verified|rejected. ID number
-  secretBox-encrypted; photos bytea in `kyc_files` (private). `updateProfile` refuses name changes (phone only). Withdrawals:
-  `assertIdentityVerified` → `lookupAccountName` (Flutterwave POST /accounts/resolve; "invalid" only on a clear 4xx account error;
-  null = couldn't check) → bank name (or typed name if unchecked) must `namesMatch` the profile name; stored in
-  withdrawals.bank_account_name / name_check (match|unchecked; admin queue tags it). Privacy + Terms defaults updated (only shown
-  if the owner hasn't edited those pages in /admin/legal). `decodeImage` moved to src/server/images.ts; `shrink` to dashboard/photos.ts.
+- NAME CHANGES + WITHDRAWAL NAME MATCH (2026-11-05/08, owner's request; migration 0033_name_changes): customers can't edit their
+  name (Profile name is read-only; `updateProfile` refuses it). Settings → "Change my name" (`NameChange.tsx`) sends a request (new
+  name, reason, up to 4 document photos in `kyc_files`, private) → /admin/name-changes (`AdminNameChanges.tsx`, menu Customers, badge
+  `nameChanges`, Admin Home todo, alertAdmins): Approve (name changes) / Ask for more info (customer replies with text + photos in
+  Settings) / Reject; customer emailed each time. `src/server/nameChanges.ts`, /api/me/name-change {request|reply|cancel} (rate limit
+  `nameChange`), /api/admin/name-changes, admin-only /api/admin/name-changes/files/[id]. WITHDRAWALS (owner chose "bank name check only",
+  NO ID upload/identity step, 2026-11-08): `lookupAccountName` (Flutterwave POST /accounts/resolve; "invalid" only on a clear 4xx
+  account error; null = couldn't check) → bank name (or the typed name if unchecked) must `namesMatch` (`src/core/names.ts`, tested:
+  order-free, titles ignored, ≥2 full words shared, every word of the shorter in the longer) the customer's name; stored in
+  withdrawals.bank_account_name / name_check (match|unchecked; admin queue tags it). Neon DEV still has an unused `identity_checks`
+  table and users.identity_status/identity_verified_at from a first draft of 0033 (identity-photo step, dropped at the owner's request);
+  harmless, can be dropped. `decodeImage` lives in src/server/images.ts; `shrink` in dashboard/photos.ts.
 - Insights: `src/components/Tracker.tsx` beacons each page and dashboard #section to
   `/api/track` → `site_events` (anonymous cookie id, no IP/UA stored). Section names come
   from `src/core/analytics.ts` (add new pages there). Queries in `src/server/insights.ts`.

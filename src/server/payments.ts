@@ -15,8 +15,7 @@ import { AppError, badRequest, notFound } from "./errors";
 import { creditWallet, placeHold, settleHold, walletIdForUser } from "./wallet";
 import { handleTransferWebhook } from "./bankTransfer";
 import { alertCustomer, alertNaira } from "./customerAlerts";
-import { assertIdentityVerified } from "./identity";
-import { namesMatch } from "@/core/identity";
+import { namesMatch } from "@/core/names";
 
 /**
  * Ask the bank (through Flutterwave) whose name an account is in. Returns the name, "invalid" when the bank says the
@@ -164,15 +163,17 @@ export async function requestWithdrawal(
   if (!/^\d{10}$/.test(input.accountNumber)) throw badRequest("Account number must be 10 digits.");
   if (!NG_BANKS.some((b) => b.code === input.bankCode)) throw badRequest("Choose your bank.");
   if (input.accountName.trim().length < 3) throw badRequest("Enter the account name.");
-  // Security: identity verified first, and the money can only go to an account in the customer's own (verified) name.
-  const me = await assertIdentityVerified(db, userId);
+  // Security: money only goes to an account in the customer's own name, as reported by their bank. Names can only
+  // change with an admin's approval (nameChanges.ts), so nobody can rename themselves to match someone else's account.
+  const [me] = await db.select({ name: users.name }).from(users).where(eq(users.id, userId));
+  if (!me) throw notFound("Account");
   const bankName = await lookupAccountName(input.bankCode, input.accountNumber);
   if (bankName === "invalid") throw badRequest("Your bank says that account number doesn't exist. Please check the number and the bank.");
   const checkedName = bankName ?? input.accountName.trim();
   if (!namesMatch(checkedName, me.name)) {
     throw badRequest(bankName
-      ? `This account is in the name “${bankName}”, which doesn't match your verified name (${me.name}). You can only withdraw to an account in your own name.`
-      : `The account name must match your verified name (${me.name}). You can only withdraw to an account in your own name.`);
+      ? `This account is in the name “${bankName}”, which doesn't match your name on Almighty Pumps (${me.name}). You can only withdraw to an account in your own name.`
+      : `The account name must match your name on Almighty Pumps (${me.name}). You can only withdraw to an account in your own name.`);
   }
   const w = await db.transaction(async (tx) => {
     const walletId = await walletIdForUser(tx, userId);
@@ -195,7 +196,7 @@ export async function requestWithdrawal(
   alertAdmins(db, `Withdrawal to pay: ${"₦" + (input.amount / 100).toLocaleString("en-NG")}`, [
     "A customer asked to withdraw money to their bank account.",
     `Pay to: ${w.accountName} · ${NG_BANKS.find((b) => b.code === input.bankCode)?.name ?? input.bankCode} · ${input.accountNumber}`,
-    w.nameCheck === "match" ? "The bank confirmed this account is in the customer's verified name." : "⚠ The bank name couldn't be checked automatically: confirm the account name matches the customer before paying.",
+    w.nameCheck === "match" ? "The bank confirmed this account is in the customer's name." : "⚠ The bank name couldn't be checked automatically: confirm the account name matches the customer before paying.",
     "Send the transfer, then tap “Mark paid” (or reject it with a reason).",
   ], "/admin/withdrawals", { customerId: userId });
   return w;
@@ -226,9 +227,8 @@ export async function myWithdrawals(db: Db, userId: string) {
   const last = list[0];
   const bank = sp ?? (last ? { bankCode: last.bankCode, accountNumber: last.accountNumber, accountName: last.accountName } : null);
   const name = (code: string) => NG_BANKS.find((b) => b.code === code)?.name ?? code;
-  const [me] = await db.select({ identityStatus: users.identityStatus, name: users.name }).from(users).where(eq(users.id, userId));
+  const [me] = await db.select({ name: users.name }).from(users).where(eq(users.id, userId));
   return {
-    identityStatus: me?.identityStatus ?? "none",
     profileName: me?.name ?? "",
     minKobo: env().MIN_WITHDRAWAL_KOBO,
     bank,
