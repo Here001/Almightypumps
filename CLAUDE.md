@@ -127,6 +127,10 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   myVerification/myTopup/myGiftOrder/myTravelOrder); email budget in `sendNotice` (`emailNotice` 2000/day site-wide, `emailTo` 40/day
   per customer address, admins exempt; login codes not affected). requireCron uses timingSafeEqual. Over a limit = 429 + Retry-After
   ("Please wait N minutes" / "today's limit… resets in N hours"); a failing counter allows the request. Counters >1 day old pruned by cron.
+  SQL INJECTION TEST (2026-11-09, owner's request, LOCAL copy only): all queries go through drizzle (parameterized); the only
+  sql.raw is smm.ts `excluded.<constant column>`. 24 payloads (OR 1=1, UNION, stacked DROP/UPDATE, error-based, pg_sleep time-based)
+  × 34 inputs (auth, searches, ids, forms, reseller API, admin searches), 806 requests: no bypass, no leak, no delay, no 500, data intact.
+  Searches escape LIKE wildcards (support inbox fixed the same day). Script: scratchpad sqli.js pattern (rotate x-forwarded-for, many sessions).
 - Providers from the admin (migration 0017, /admin/providers `AddProvider` + card "Edit"): paste any standard
   SMM panel (API v2) URL + key → "Test connection" (balance + service count) → save. Keys are stored
   AES-256-GCM encrypted in `smm_providers.api_key_enc` (`src/server/secretBox.ts`, key derived from

@@ -79,6 +79,7 @@ async function emailAdmins(db: Db, userId: string, text: string) {
 export async function inbox(db: Db, opts: { filter?: "open" | "closed" | "all"; q?: string }) {
   const filter = opts.filter ?? "open";
   const q = (opts.q ?? "").trim().slice(0, 80);
+  const like = `%${q.replace(/[\\%_]/g, (c) => "\\" + c)}%`; // search text is data, wildcards included
   const rows = await db.select({
     id: supportThreads.id, status: supportThreads.status, unread: supportThreads.unreadAdmin, lastAt: supportThreads.lastMessageAt,
     userId: users.id, name: users.name, email: users.email,
@@ -87,7 +88,7 @@ export async function inbox(db: Db, opts: { filter?: "open" | "closed" | "all"; 
   }).from(supportThreads).innerJoin(users, eq(users.id, supportThreads.userId))
     .where(and(
       filter === "all" ? undefined : eq(supportThreads.status, filter),
-      q ? sql`(${users.name} ilike ${"%" + q + "%"} or ${users.email} ilike ${"%" + q + "%"})` : undefined,
+      q ? sql`(${users.name} ilike ${like} or ${users.email} ilike ${like})` : undefined,
     ))
     .orderBy(desc(supportThreads.unreadAdmin), desc(supportThreads.lastMessageAt)).limit(100);
   return rows.map((r) => ({ ...r, last: (r.last ?? "").slice(0, 140) }));
