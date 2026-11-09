@@ -46,6 +46,12 @@ const schema = z.object({
   // Terminal Africa (T-Ship) for "Send a Package". Test keys use the sandbox automatically; TERMINAL_AFRICA_BASE_URL overrides (mocks).
   TERMINAL_AFRICA_SECRET_KEY: z.string().optional().default(""),
   TERMINAL_AFRICA_BASE_URL: z.string().optional().default(""),
+  // WhatsApp agent: Meta WhatsApp Cloud API (Meta for Developers > your app > WhatsApp > API setup) + Claude (Anthropic).
+  WHATSAPP_ACCESS_TOKEN: z.string().optional().default(""),     // permanent System User token
+  WHATSAPP_PHONE_NUMBER_ID: z.string().optional().default(""),  // the business number's "Phone number ID"
+  WHATSAPP_APP_SECRET: z.string().optional().default(""),       // App settings > Basic > App secret (checks webhook signatures)
+  WHATSAPP_GRAPH_URL: z.string().optional().default(""),        // local tests only (mock)
+  ANTHROPIC_API_KEY: z.string().optional().default(""),
   CRON_SECRET: z.string().min(16, "CRON_SECRET must be at least 16 characters"),
   MIN_FUNDING_KOBO: z.coerce.number().int().positive().default(100_000), // ₦1,000
   MIN_WITHDRAWAL_KOBO: z.coerce.number().int().positive().default(200_000), // ₦2,000

@@ -298,3 +298,13 @@ export async function adminRefundTravel(db: Db, id: string) {
   const u = await closeTravel(db, id, "refunded", { error: "Refunded by admin" });
   return { status: u?.status };
 }
+
+/** One package's current Naira price (WhatsApp agent quote; the live price is re-checked again when buying). */
+export async function travelQuote(db: Db, code: string) {
+  const cfg = await getTravelConfig(db);
+  assertOpen(cfg);
+  const rate = await getUsdRateKobo(db);
+  const [p] = await db.select().from(travelPackages).where(eq(travelPackages.code, code));
+  if (!p || p.hidden) throw notFound("Package");
+  return presentPackage(p, rate, cfg);
+}

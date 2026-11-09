@@ -736,3 +736,22 @@ export async function undoPriceHide(db: Db) {
   await writeSetting(db, UNDO_KEY, { ids: [] });
   return { turnedOn: restored };
 }
+
+/** Price check for one Boost service + quantity (WhatsApp agent), same rules as placeOrder. */
+export async function boostQuote(db: Db, servicePublicId: number, quantity: number) {
+  await assertServiceOn(db, "boost");
+  const [r] = await db.select({ svc: smmServices }).from(smmServices)
+    .innerJoin(smmProviders, eq(smmProviders.id, smmServices.providerId))
+    .where(and(onSale(), eq(smmServices.publicId, servicePublicId)));
+  if (!r) throw notFound("Service");
+  const svc = r.svc;
+  const qtyErr = validateQuantity(quantity, svc.minQty, svc.maxQty);
+  if (qtyErr) throw badRequest(qtyErr);
+  const cost = orderCost(svc.rateKobo, quantity);
+  const minOrder = await getMinOrderKobo(db);
+  if (cost < minOrder) {
+    const needQty = Math.min(svc.maxQty, Math.ceil((minOrder * 1000) / svc.rateKobo));
+    throw badRequest(`The minimum order is ₦${(minOrder / 100).toLocaleString("en-NG")}. Order at least ${needQty.toLocaleString("en-NG")} for this service.`);
+  }
+  return { id: svc.publicId, name: svc.displayName || svc.name, platform: svc.platform, kind: svc.kind, quantity, costKobo: cost };
+}

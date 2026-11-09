@@ -27,6 +27,7 @@ const TODO: { key: keyof AdminCounts; href: string; one: string; many: string; h
 /** One line per menu item, so the owner knows where to go. */
 const ABOUT: Record<string, string> = {
   "/admin/support": "Customers' messages: read and reply",
+  "/admin/whatsapp": "AI assistant on WhatsApp: on/off, daily AI budget, setup, chats",
   "/admin/name-changes": "Approve customers' name changes (withdrawals must match their name)",
   "/admin/users": "Find any customer: wallet, activity, suspend, adjust",
   "/admin/payments": "Bank transfer & crypto top-ups",

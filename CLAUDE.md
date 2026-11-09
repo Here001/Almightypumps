@@ -395,6 +395,22 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   theme.json v2 (WP 6.4+), patterns + full-page patterns, bundled OFL fonts, own SVG art. WordPress can't be run in this sandbox
   (wordpress.org blocked; running WP from npm was refused by the safety check), so the owner tests zips at playground.wordpress.net.
   Delivery template must NOT include fake tracking (same rule as the declined consignment tool).
+- WHATSAPP AGENT (2026-11-09, owner's request: "help + buy", AI, Meta WhatsApp Cloud API; migration 0035): `src/server/whatsapp.ts`
+  (config app_settings `whatsapp_agent` {enabled default OFF, businessNumber, dailyBudgetUsd 5, graphVersion v23.0}, webhook
+  GET verify (verify token = HMAC of SESSION_SECRET, shown in admin) / POST signed X-Hub-Signature-256 with WHATSAPP_APP_SECRET,
+  processed in `after()`; dedupe by wa_id; linking: Settings → WhatsApp (`WhatsAppLink.tsx`, /api/me/whatsapp) gives a 6-char
+  code (15 min, hashed) → customer sends "LINK CODE"; "UNLINK"), `src/server/whatsappAgent.ts` (Claude `claude-opus-5-5`, effort
+  low, beta server-side fallbacks "default", cached system prompt, per-customer context as a mid-conversation system message,
+  last 16 turns in whatsapp_chats.history; tools: find_boost_services, contact_support (→ support chat), and for linked
+  numbers get_account, recent_orders, airtime_options, find_gift_cards, travel_esim_options, prepare_purchase). SAFETY: the AI
+  only PREPARES (price + balance checked, stored in whatsapp_chats.pending, 10 min); a plain YES/NO (`isYes`/`isNo` in
+  `src/core/whatsapp.ts`) is handled by CODE, which takes the pending row atomically and calls buyTopup/placeOrder/buyGiftCard/
+  buyTravelEsim at that exact price. Gift card codes / eSIM QR never sent in chat (website Orders). Limits `whatsapp` 20/10min,
+  `whatsappDay` 200, `whatsappLink` 8/h, `buy`; daily AI budget (whatsapp_ai_usage, Lagos day; over → website message + admin email).
+  Admin /admin/whatsapp (`AdminWhatsApp.tsx`): switch, number, budget, setup checklist (webhook URL + verify token), messages, 14 days.
+  Env (Vercel): ANTHROPIC_API_KEY, WHATSAPP_ACCESS_TOKEN (System User, permanent), WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_APP_SECRET;
+  WHATSAPP_GRAPH_URL / ANTHROPIC_BASE_URL for local mocks. Privacy default lists Meta + Anthropic, but LIVE has an edited
+  legal_privacy (2026-11-04), so the owner must add those lines in Admin → Legal pages. Neon dev has 0035; main not yet.
 - Insights: `src/components/Tracker.tsx` beacons each page and dashboard #section to
   `/api/track` → `site_events` (anonymous cookie id, no IP/UA stored). Section names come
   from `src/core/analytics.ts` (add new pages there). Queries in `src/server/insights.ts`.
@@ -437,7 +453,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
     usd auto, Instagram Likes/Live viewers 100% rules. NOT copied: dev's P2P category renamed "Accounts"
     (account sales are blocked); live keeps "Digital products". Re-star 3 TikTok follower services
     (Owlet ids 8277, 24221, 8619) after the first live sync. No users yet (owner signs up, then promote to admin).
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0034 applied (main too: 0034 applied 2026-11-09 with owner's yes). Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0035 applied (main: up to 0034, applied 2026-11-09 with owner's yes). Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

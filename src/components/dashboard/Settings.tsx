@@ -9,6 +9,7 @@ import { ID_TYPES, NG_BANKS } from "@/core/banks";
 import { ShopPhoto } from "./ShopPhoto";
 import { PasswordInput } from "../PasswordInput";
 import { NameChange } from "./NameChange";
+import { WhatsAppLink } from "./WhatsAppLink";
 
 type Me = { name: string; email: string; phone: string | null; sellerStatus: string; isAdmin: boolean };
 type Msg = { ok: boolean; text: string } | null;
@@ -21,6 +22,7 @@ export function Settings({ me, onOpenSellerPanel }: { me: Me; onOpenSellerPanel:
       <Profile me={me} />
       <Appearance />
       <Notifications />
+      <WhatsAppLink />
       <Security />
       <Seller status={me.sellerStatus} onOpenPanel={onOpenSellerPanel} />
       <ApiKeys />

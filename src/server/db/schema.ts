@@ -2,7 +2,7 @@
  * Drizzle table definitions. These mirror drizzle/0000_init.sql exactly;
  * change both together (or regenerate with `npm run db:generate`).
  */
-import { pgTable, uuid, text, boolean, timestamp, bigint, bigserial, integer, serial, jsonb, customType } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, boolean, timestamp, bigint, bigserial, integer, serial, jsonb, customType, date } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => "bytea" });
@@ -744,4 +744,40 @@ export const supportMessages = pgTable("support_messages", {
   adminId: uuid("admin_id").references(() => users.id),
   body: text("body").notNull(),
   createdAt: ts("created_at").notNull().defaultNow(),
+});
+
+/** WhatsApp agent (migration 0035). */
+export const whatsappLinks = pgTable("whatsapp_links", {
+  phone: text("phone").primaryKey(),
+  userId: uuid("user_id").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
+  linkedAt: ts("linked_at").notNull().defaultNow(),
+});
+export const whatsappLinkCodes = pgTable("whatsapp_link_codes", {
+  userId: uuid("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  codeHash: text("code_hash").notNull(),
+  expiresAt: ts("expires_at").notNull(),
+});
+export const whatsappChats = pgTable("whatsapp_chats", {
+  phone: text("phone").primaryKey(),
+  history: jsonb("history").$type<{ role: "user" | "assistant"; text: string }[]>().notNull().default([]),
+  pending: jsonb("pending"),
+  pendingAt: ts("pending_at"),
+  lastInAt: ts("last_in_at"),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+});
+export const whatsappMessages = pgTable("whatsapp_messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  waId: text("wa_id").unique(),
+  phone: text("phone").notNull(),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+  direction: text("direction").$type<"in" | "out">().notNull(),
+  body: text("body").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export const whatsappAiUsage = pgTable("whatsapp_ai_usage", {
+  day: date("day", { mode: "string" }).primaryKey(),
+  replies: integer("replies").notNull().default(0),
+  inputTokens: bigint("input_tokens", { mode: "number" }).notNull().default(0),
+  outputTokens: bigint("output_tokens", { mode: "number" }).notNull().default(0),
+  costMicroUsd: bigint("cost_micro_usd", { mode: "number" }).notNull().default(0),
 });

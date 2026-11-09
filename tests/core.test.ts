@@ -509,3 +509,36 @@ test("withdrawal name matching", () => {
   assert.ok(!namesMatch("Bayo Adeyemi", "OKAFOR JOHN PETER"));
   assert.ok(!namesMatch("", "ADEYEMI BAYO"));
 });
+
+import { parseLinkCommand, isYes, isNo, makeLinkCode, maskPhone, parseWebhook, splitForWhatsApp, usageCostMicroUsd, toWhatsAppText } from "../src/core/whatsapp.ts";
+
+test("WhatsApp: link command, yes/no, codes, masking", () => {
+  assert.equal(parseLinkCommand("LINK ab12cd"), "AB12CD");
+  assert.equal(parseLinkCommand(" link: XY34ZW. "), "XY34ZW");
+  assert.equal(parseLinkCommand("please link my account AB12CD"), null);
+  assert.ok(isYes("YES") && isYes("yes.") && isYes("Confirm"));
+  assert.ok(!isYes("yes but change the number") && !isYes("no"));
+  assert.ok(isNo("Cancel") && !isNo("not now maybe"));
+  const code = makeLinkCode(new Uint8Array([0, 1, 2, 30, 31, 255]));
+  assert.match(code, /^[A-Z2-9]{6}$/);
+  assert.ok(!/[01OIL]/.test(code));
+  assert.equal(maskPhone("2348031234567"), "+234 ••• ••• 4567");
+});
+
+test("WhatsApp: webhook parsing, splitting, cost, formatting", () => {
+  const body = { entry: [{ changes: [{ value: {
+    contacts: [{ wa_id: "2348031234567", profile: { name: "Bayo" } }],
+    messages: [{ id: "wamid.1", from: "2348031234567", type: "text", text: { body: "hi" } }, { id: "wamid.2", from: "2348031234567", type: "image" }],
+  } }] }] };
+  const msgs = parseWebhook(body);
+  assert.equal(msgs.length, 2);
+  assert.deepEqual(msgs[0], { waId: "wamid.1", from: "2348031234567", name: "Bayo", text: "hi", type: "text" });
+  assert.equal(msgs[1].text, null);
+  assert.deepEqual(parseWebhook({ entry: [{ changes: [{ value: { statuses: [{}] } }] }] }), []);
+  assert.deepEqual(parseWebhook(null), []);
+  const long = ("word ".repeat(300) + "\n\n").repeat(4);
+  const parts = splitForWhatsApp(long, 2000);
+  assert.ok(parts.length >= 3 && parts.every((p) => p.length <= 2000));
+  assert.equal(usageCostMicroUsd({ input_tokens: 1000, output_tokens: 100, cache_read_input_tokens: 2000 }, { input: 4, output: 20, cacheRead: 0.2, cacheWrite: 5 }), 4000 + 2000 + 400);
+  assert.equal(toWhatsAppText("## Hi\n**Total** ₦1,000"), "Hi\n*Total* ₦1,000");
+});

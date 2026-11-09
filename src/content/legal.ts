@@ -44,6 +44,8 @@ We share only what each service needs to do its job:
 - **Reloadly**: delivers gift cards and airtime/data; receives the phone number you top up (not your name or email).
 - **eSIM Access**: provides travel eSIMs; receives which data package you bought (not your name or email).
 - **Hosting and email**: Vercel (website hosting), Neon (database, located in the EU) and Zoho (our email).
+- **WhatsApp (Meta)**: if you chat with us on WhatsApp, Meta carries the messages between you and our WhatsApp Business number; receives your WhatsApp number, profile name and the messages.
+- **Anthropic**: provides the AI that writes our WhatsApp assistant's replies; receives the messages in that chat and, if you linked your account, your name, balance and order details needed to answer. It does not use them to train its models.
 - **Other users**: in the P2P marketplace, buyers see the seller's shop name, picture, ratings and ad answers; sellers see what a buyer ordered and their trade messages.
 - **Authorities**: when the law requires it, or to protect users from fraud.
 
@@ -54,6 +56,7 @@ Some of these providers process data outside Nigeria (for example in the EU or t
 - Wallet, payment and order records: as long as the law requires for financial records (generally up to 6 years).
 - eSIM number-transfer details: deleted as soon as the order is delivered or refunded.
 - Security counters: deleted after one day.
+- WhatsApp chats: the assistant keeps your last few messages to follow the conversation; a log of messages is kept for support and fraud checks. Unlinking your number clears the assistant's memory of the conversation.
 
 ## 6. Cookies and similar storage
 - **ap_session**: keeps you logged in. With “Remember me” it lasts 30 days; otherwise it ends when you close your browser.

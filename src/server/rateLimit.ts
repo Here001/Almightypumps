@@ -77,6 +77,9 @@ export const LIMITS = {
   listingPhotoDay: { max: 200, windowSec: DAY },
   support: { max: 40, windowSec: HOUR },
   supportDay: { max: 150, windowSec: DAY },
+  whatsapp: { max: 20, windowSec: 10 * MIN },           // WhatsApp messages the AI answers, per number
+  whatsappDay: { max: 200, windowSec: DAY },
+  whatsappLink: { max: 8, windowSec: HOUR },            // "LINK code" tries per number
   // ---- reseller API ----
   resellerApi: { max: 120, windowSec: MIN },
   resellerApiDay: { max: 50_000, windowSec: DAY },
@@ -144,6 +147,9 @@ export const LIMIT_LABELS: Record<LimitName, string> = {
   listingPhotoDay: "P2P ad photo uploads (daily)",
   support: "Support chat messages",
   supportDay: "Support chat messages (daily)",
+  whatsapp: "WhatsApp assistant messages per number",
+  whatsappDay: "WhatsApp assistant messages per number (daily)",
+  whatsappLink: "WhatsApp link-code tries per number",
   resellerApi: "Reseller API requests per key",
   resellerApiDay: "Reseller API requests per key (daily)",
   apiKeyFail: "Wrong reseller API keys from one network (then that network is blocked)",
