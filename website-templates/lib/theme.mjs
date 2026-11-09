@@ -201,6 +201,31 @@ html { scroll-behavior: smooth; scroll-padding-top: 90px; }
   .ap-header-account { display: none; }
 }
 
+/* ---------- 3D look ---------- */
+/* Moving 3D background (block style on a Group): shapes are drawn on a canvas behind the content */
+.is-style-hero-3d { position: relative; isolation: isolate; overflow: hidden; }
+.ap-3d-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
+/* Product pictures sit at a 3D angle and float */
+.is-style-soft-shadow { perspective: 1400px; }
+.is-style-soft-shadow img { transform: rotateY(-12deg) rotateX(5deg) rotateZ(.5deg); transform-origin: 60% 50%;
+  box-shadow: 0 2px 4px rgb(0 0 0 / .04), 0 24px 48px -20px rgb(0 0 0 / .28), 0 60px 120px -40px var(--wp--preset--color--primary); }
+@keyframes ap-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -12px; } }
+.is-style-soft-shadow img, .ap-float img { animation: ap-float 7s ease-in-out infinite; }
+.is-style-soft-shadow, .is-style-card { transition: transform .25s ease, box-shadow .25s ease; transform-style: preserve-3d; will-change: transform; }
+.is-style-card { box-shadow: 0 1px 2px rgb(0 0 0 / .04), 0 18px 40px -30px rgb(0 0 0 / .35); }
+.is-style-card:hover { box-shadow: 0 2px 4px rgb(0 0 0 / .05), 0 40px 70px -36px rgb(0 0 0 / .45); }
+/* Buttons with a pressable 3D edge */
+.wp-block-button:not(.is-style-outline) > .wp-block-button__link {
+  box-shadow: 0 4px 0 var(--wp--preset--color--primary-dark), 0 14px 28px -14px var(--wp--preset--color--primary);
+}
+.wp-block-button:not(.is-style-outline) > .wp-block-button__link:hover { transform: translateY(-2px); box-shadow: 0 6px 0 var(--wp--preset--color--primary-dark), 0 20px 34px -14px var(--wp--preset--color--primary); }
+.wp-block-button:not(.is-style-outline) > .wp-block-button__link:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--wp--preset--color--primary-dark), 0 6px 14px -10px var(--wp--preset--color--primary); }
+/* Scroll reveal (only when the script runs; content is never hidden without it) */
+.ap-motion .ap-reveal { transition: opacity .7s ease, transform .7s cubic-bezier(.2,.7,.2,1); }
+.ap-motion .ap-reveal:not(.is-in) { opacity: 0; transform: translateY(28px); }
+@media (max-width: 781px) { .is-style-soft-shadow img { transform: rotateY(-6deg) rotateX(3deg); } }
+@media (prefers-reduced-motion: reduce) { .is-style-soft-shadow img, .ap-float img { animation: none; } }
+
 /* Accessibility */
 :where(a, button, summary, input, select, textarea):focus-visible { outline: 2px solid var(--wp--preset--color--primary); outline-offset: 3px; border-radius: 4px; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
@@ -230,6 +255,8 @@ add_action( 'after_setup_theme', '${fn}_setup' );
 
 function ${fn}_styles() {
 	wp_enqueue_style( '${t.slug}-style', get_stylesheet_uri(), array(), wp_get_theme()->get( 'Version' ) );
+	// 3D background, 3D tilt and scroll reveal (small, no libraries, deferred).
+	wp_enqueue_script( '${t.slug}-3d', get_theme_file_uri( 'assets/js/ap-3d.js' ), array(), wp_get_theme()->get( 'Version' ), array( 'in_footer' => true, 'strategy' => 'defer' ) );
 }
 add_action( 'wp_enqueue_scripts', '${fn}_styles' );
 
@@ -243,6 +270,7 @@ function ${fn}_register() {
 	register_block_style( 'core/image', array( 'name' => 'icon', 'label' => __( 'Icon', '${t.slug}' ) ) );
 	register_block_style( 'core/image', array( 'name' => 'soft-shadow', 'label' => __( 'Soft shadow', '${t.slug}' ) ) );
 	register_block_style( 'core/image', array( 'name' => 'rounded-img', 'label' => __( 'Rounded corners', '${t.slug}' ) ) );
+	register_block_style( 'core/group', array( 'name' => 'hero-3d', 'label' => __( 'Moving 3D background', '${t.slug}' ) ) );
 }
 add_action( 'init', '${fn}_register' );
 
@@ -518,6 +546,14 @@ Not using WooCommerce?
 3. Pages > Add New: title "Sign up" (address /sign-up), choose the "Sign up page" design.
 The WordPress log in screen is also styled in your theme colours and shows your logo (Appearance > Editor > Site logo).
 Customers never see the WordPress admin bar on your website.
+
+== 3D effects ==
+
+The top section has a moving 3D background in your theme colours; cards and product pictures tilt in 3D under the
+mouse, and sections slide in as visitors scroll. Visitors who turn on "reduce motion", use data saver or have a
+low-memory phone automatically get a still version.
+To switch the moving background off (or add it to another section): select the section (Group) > Styles >
+choose "Default" (off) or "Moving 3D background" (on).
 
 == Support ==
 

@@ -68,5 +68,5 @@ export function previewHtml(t, json, body, themeCss) {
 <style>${core}</style>
 <style>${globalCss(t, json)}</style>
 <style>${themeCss}</style>
-</head><body><div class="wp-site-blocks">${body}</div></body></html>`;
+</head><body><div class="wp-site-blocks">${body}</div><script src="assets/js/ap-3d.js"></script></body></html>`;
 }

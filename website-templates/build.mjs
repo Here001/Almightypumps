@@ -42,6 +42,7 @@ async function build(t) {
   for (const p of t.patterns) write(join(out, "patterns", `${p.slug}.php`), patternPhp(t, p, p.render()));
   for (const [name, svg] of Object.entries(t.images)) write(join(out, "assets/images", name), svg);
   for (const [name, svg] of Object.entries(t.icons)) write(join(out, "assets/images/icons", name), svg);
+  cpSync(join(root, "lib/ap-3d.js"), join(out, "assets/js/ap-3d.js"));
   for (const f of Object.values(t.fonts)) {
     for (const file of [...f.files, f.license]) cpSync(join(root, "fonts", file), join(out, "assets/fonts", file));
   }
@@ -59,15 +60,15 @@ async function build(t) {
   if (shots) {
     const { chromium } = createRequire(import.meta.url)("playwright"); // installed globally in this sandbox
     const browser = await chromium.launch();
-    const page = await browser.newPage({ viewport: { width: 1200, height: 900 }, deviceScaleFactor: 1 });
+    const page = await browser.newPage({ viewport: { width: 1200, height: 900 }, deviceScaleFactor: 1, reducedMotion: "reduce" });
     await page.goto(`file://${join(pv, "index.html")}`);
     await page.waitForTimeout(400);
     await page.screenshot({ path: join(out, "screenshot.png") }); // WordPress theme picture (1200×900)
-    const big = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
+    const big = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, reducedMotion: "reduce" });
     await big.goto(`file://${join(pv, "index.html")}`);
     await big.waitForTimeout(400);
     await big.screenshot({ path: join(dist, `${t.slug}-full.png`), fullPage: true });
-    const phone = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+    const phone = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, reducedMotion: "reduce" });
     await phone.goto(`file://${join(pv, "index.html")}`);
     await phone.waitForTimeout(400);
     await phone.screenshot({ path: join(dist, `${t.slug}-phone.png`), fullPage: true });

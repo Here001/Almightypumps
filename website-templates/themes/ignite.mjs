@@ -65,7 +65,7 @@ const heroP = () => b.section(
       + b.para("✓ No credit card needed  ·  ✓ Set up in 5 minutes", { size: "small", className: "ap-muted" }), { gap: 30 }) },
     { width: "48%", inner: b.image(b.img("hero.svg"), "Product dashboard preview", { className: "is-style-soft-shadow" }) },
   ], { align: "wide", valign: "center" }),
-  { gradient: "hero", pad: [80, 80] });
+  { gradient: "hero", pad: [80, 80], className: "is-style-hero-3d" });
 
 const featuresP = () => b.section(
   b.stack(b.eyebrow("Features", { align: "center" }) + b.heading("Everything your team needs in one place", { align: "center" })
