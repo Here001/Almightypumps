@@ -47,7 +47,8 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   market, smm, payments (Flutterwave), auth, env, http helpers.
 - Customer dashboard (`app/dashboard` → `src/components/dashboard/`): tabs Services / Orders /
   Wallet / P2P / Settings (URL hash; bottom tab bar on phones). Services = hub of service tiles from
-  `src/components/dashboard/services.ts` (Boost Account, Get Verification Code and eSIMs live). Boost Account (#boost) = all SMM/Owlet services: search + platform tiles +
+  `src/components/dashboard/services.ts` (Boost Account, Get Verification Code and eSIMs live). Each tile shows its `short` line (2026-11-09, owner's request, replaced "Open"); orange icons kept on purpose.
+  Help button (`.sup-fab`) on phones sits top-right of the page (absolute, scrolls away; `.ap-hello` has right padding for it). Boost Account (#boost) = all SMM/Owlet services: search + platform tiles +
   kind chips + paged service cards (recommended first, then cheapest) + order sheet.
   "Recommended" = provider flag (`provider_recommended`, detected by `isProviderRecommended`;
   sync logs the provider's field names as `[provider] … service fields`) OR admin star

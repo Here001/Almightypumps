@@ -113,7 +113,7 @@ function Dashboard(props: Props) {
   // (a shop category with the same name replaces its "coming soon" tile).
   const shopNames = new Set(props.shopCategories.map((c) => c.name.trim().toLowerCase()));
   const hubTiles = [
-    ...sortByOrder([...HUB_SERVICES.filter((s) => s.status === "live" && !hidden.has(s.id)).map((s) => ({ ...s, sub: s.id === "boost" ? `${props.catalog.length} platforms` : "Open" })),
+    ...sortByOrder([...HUB_SERVICES.filter((s) => s.status === "live" && !hidden.has(s.id)).map((s) => ({ ...s, sub: s.short })),
     ...props.shopCategories.map((c) => ({
       id: `shop-${c.slug}`, title: c.name, description: c.description, icon: SHOP_ICON_PATHS[c.icon] ?? SHOP_ICON_PATHS.bag,
       status: "live" as const, sub: `${c.products} product${c.products === 1 ? "" : "s"}`,
@@ -180,7 +180,7 @@ function Dashboard(props: Props) {
           {tab === "services" && (
             <section className="card glass">
               <h2>What do you want to do?</h2>
-              <div className="ap-platforms">
+              <div className="ap-platforms ap-hub-tiles">
                 {hubTiles.map((svc) => (
                   <button
                     key={svc.id} type="button" className="ap-platform ap-hub-tile" disabled={svc.status !== "live"} title={svc.description}

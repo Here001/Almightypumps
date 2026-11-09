@@ -191,7 +191,13 @@ button.btn-ghost { border: 1px solid rgb(var(--ov) / 0.200); }
 
 .ap-hub-tile[disabled] { cursor: default; opacity: .7; }
 .ap-hub-tile:not([disabled]) .ap-hub-icon { background: var(--accent); color: var(--accent-ink); }
+/* Services tiles: one short description under each title, equal heights */
+.ap-hub-tiles { grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 12px; }
+.ap-hub-tile { gap: 4px; padding: 16px; min-height: 128px; }
+.ap-hub-tile .ap-hub-icon { min-width: 36px; height: 36px; margin-bottom: 8px; }
+.ap-hub-tile .ap-platform-count { font-size: 13px; line-height: 1.35; }
 .ap-hub-icon svg { width: 18px; height: 18px; }
+@media (max-width: 520px) { .ap-hub-tiles { grid-template-columns: 1fr 1fr; } .ap-hub-tile { min-height: 120px; padding: 14px; } }
 .ap-crumb { display: flex; align-items: center; gap: 8px; font-size: 15px; }
 .ap-subform { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 16px; border: 1px dashed rgb(var(--ov) / 0.200); }
 .ap-code { padding: 12px 14px; border-radius: 12px; background: var(--code-bg); border: 1px solid var(--line); font-family: var(--mono); font-size: 15px; overflow-wrap: anywhere; user-select: all; }
@@ -312,7 +318,8 @@ button.ad-photo-cover { background: rgb(0 0 0 / 0.7); color: #fff; cursor: point
 .sup-fab { position: fixed; right: 18px; bottom: 22px; z-index: 45; display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; border-radius: 999px; border: 0; background: var(--accent); color: var(--accent-ink); font: inherit; font-weight: 800; font-size: 15px; box-shadow: 0 10px 30px rgb(0 0 0 / 0.35); cursor: pointer; }
 .sup-fab:focus-visible { outline: 3px solid var(--fg); outline-offset: 3px; }
 .sup-dot { position: absolute; top: 4px; right: 6px; width: 11px; height: 11px; border-radius: 999px; background: #ef4444; border: 2px solid var(--accent); }
-@media (max-width: 860px) { .sup-fab { bottom: calc(86px + env(safe-area-inset-bottom, 0px)); right: 14px; padding: 12px; } .sup-fab-label { display: none; } }
+/* Phones: Help sits in the top-right corner of the page (scrolls away with it) so it never covers tiles or buttons */
+@media (max-width: 860px) { .sup-fab { position: absolute; top: calc(22px + env(safe-area-inset-top, 0px)); bottom: auto; right: 16px; padding: 8px 14px; font-size: 14px; box-shadow: none; } .sup-fab svg { width: 16px; height: 16px; } .ap-hello { padding-right: 96px; } }
 .sup-msgs { max-height: min(52vh, 420px); min-height: 160px; }
 .tr-send textarea.input { flex: 1; min-width: 0; resize: none; }
 
