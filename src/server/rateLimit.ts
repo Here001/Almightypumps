@@ -79,7 +79,8 @@ export const LIMITS = {
   supportDay: { max: 150, windowSec: DAY },
   whatsapp: { max: 20, windowSec: 10 * MIN },           // WhatsApp messages the AI answers, per number
   whatsappDay: { max: 200, windowSec: DAY },
-  whatsappLink: { max: 8, windowSec: HOUR },            // "LINK code" tries per number
+  whatsappLink: { max: 8, windowSec: HOUR },            // "LINK code" / email-code tries per number
+  whatsappEmail: { max: 3, windowSec: HOUR },           // connect-by-email codes sent to one email address
   // ---- reseller API ----
   resellerApi: { max: 120, windowSec: MIN },
   resellerApiDay: { max: 50_000, windowSec: DAY },
@@ -150,6 +151,7 @@ export const LIMIT_LABELS: Record<LimitName, string> = {
   whatsapp: "WhatsApp assistant messages per number",
   whatsappDay: "WhatsApp assistant messages per number (daily)",
   whatsappLink: "WhatsApp link-code tries per number",
+  whatsappEmail: "WhatsApp connect-by-email codes per email address",
   resellerApi: "Reseller API requests per key",
   resellerApiDay: "Reseller API requests per key (daily)",
   apiKeyFail: "Wrong reseller API keys from one network (then that network is blocked)",

@@ -54,6 +54,7 @@ export function WhatsAppLink() {
         <>
           <p style={{ margin: 0 }}>Link your WhatsApp to chat with our assistant: check your balance and orders, and buy from your wallet right inside WhatsApp. Every purchase needs your YES.</p>
           <button type="button" className="btn btn-primary" style={{ alignSelf: "flex-start" }} disabled={busy} onClick={() => void act("code")}>Link WhatsApp</button>
+          {s.businessNumber && <p className="muted" style={{ fontSize: 13, margin: 0 }}>On your phone? You can also message us on WhatsApp with your account email and we&apos;ll email you a code to connect.</p>}
         </>
       )}
       {err && <div className="form-error" role="alert">{err}</div>}

@@ -399,7 +399,11 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   (config app_settings `whatsapp_agent` {enabled default OFF, businessNumber, dailyBudgetUsd 5, graphVersion v23.0}, webhook
   GET verify (verify token = HMAC of SESSION_SECRET, shown in admin) / POST signed X-Hub-Signature-256 with WHATSAPP_APP_SECRET,
   processed in `after()`; dedupe by wa_id; linking: Settings → WhatsApp (`WhatsAppLink.tsx`, /api/me/whatsapp) gives a 6-char
-  code (15 min, hashed) → customer sends "LINK CODE"; "UNLINK"), `src/server/whatsappAgent.ts` (Claude `claude-opus-5-5`, effort
+  code (15 min, hashed) → customer sends "LINK CODE"; "UNLINK"; OR connect inside WhatsApp (owner's yes 2026-11-09): an unlinked
+  number sends just its account email (`asEmail`) → same reply whether or not the account exists, a 6-digit code is emailed
+  (only verified, unsuspended accounts; limits `whatsappEmail` 3/h per email + `whatsappLink` per number; stored in
+  whatsapp_chats.pending as {kind:"link"}, 10 min, 5 tries) → customer types it (`asSixDigits`) → linked; every new link
+  emails the account owner "WhatsApp connected" with how to unlink. Needs RESEND_API_KEY), `src/server/whatsappAgent.ts` (Claude `claude-opus-5-5`, effort
   low, beta server-side fallbacks "default", cached system prompt, per-customer context as a mid-conversation system message,
   last 16 turns in whatsapp_chats.history; tools: find_boost_services, contact_support (→ support chat), and for linked
   numbers get_account, recent_orders, airtime_options, find_gift_cards, travel_esim_options, prepare_purchase). SAFETY: the AI

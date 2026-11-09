@@ -306,12 +306,12 @@ export async function replyToCustomer(db: Db, m: { phone: string; text: string; 
     return sendWhatsApp(db, phone, OFF_TEXT(), user?.id ?? null);
   }
   // A new question replaces any purchase that was waiting (the customer moved on).
-  if (chat?.pending) await db.update(whatsappChats).set({ pending: null, pendingAt: null }).where(eq(whatsappChats.phone, phone));
+  if (user && chat?.pending) await db.update(whatsappChats).set({ pending: null, pendingAt: null }).where(eq(whatsappChats.phone, phone));
 
   // 3) Ask Claude.
   const who = user
     ? `The customer is linked: ${user.name} (account email ${user.email}). Use their first name.`
-    : `This number is NOT linked to an account${m.profileName ? ` (WhatsApp name: ${m.profileName})` : ""}. You can explain services and Boost prices. For balances, orders or buying, they must link first: log in at ${site()}/login, open Settings → WhatsApp, tap "Link WhatsApp" and send the code shown. No account yet? Sign up at ${site()}/signup.`;
+    : `This number is NOT linked to an account${m.profileName ? ` (WhatsApp name: ${m.profileName})` : ""}. You can explain services and Boost prices. For balances, orders or buying, they must connect first: the easiest way is to type their account email address here as a message on its own, and we email them a 6-digit code to type back. Or on the website: Settings → WhatsApp → Link WhatsApp. No account yet? Sign up at ${site()}/signup.`;
   const messages: Anthropic.Beta.BetaMessageParam[] = [
     ...history.map((h): Anthropic.Beta.BetaMessageParam => ({ role: h.role, content: h.text })),
     { role: "user", content: text },

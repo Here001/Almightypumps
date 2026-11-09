@@ -78,3 +78,14 @@ export function usageCostMicroUsd(u: { input_tokens: number; output_tokens: numb
 export function toWhatsAppText(md: string): string {
   return md.replace(/\*\*(.+?)\*\*/g, "*$1*").replace(/^#{1,6}\s+/gm, "").replace(/\n{3,}/g, "\n\n").trim();
 }
+
+/** The whole message is one email address → lower-cased email, else null. */
+export function asEmail(text: string): string | null {
+  const t = text.trim().replace(/[.!]+$/, "").toLowerCase();
+  return /^[^\s@<>()]{1,64}@[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(t) && t.length <= 254 ? t : null;
+}
+/** The whole message is a 6-digit code ("123456", "123 456") → "123456", else null. */
+export function asSixDigits(text: string): string | null {
+  const m = /^\s*(\d{3})[\s-]?(\d{3})\s*$/.exec(text);
+  return m ? m[1] + m[2] : null;
+}

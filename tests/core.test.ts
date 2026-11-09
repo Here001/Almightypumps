@@ -510,7 +510,7 @@ test("withdrawal name matching", () => {
   assert.ok(!namesMatch("", "ADEYEMI BAYO"));
 });
 
-import { parseLinkCommand, isYes, isNo, makeLinkCode, maskPhone, parseWebhook, splitForWhatsApp, usageCostMicroUsd, toWhatsAppText } from "../src/core/whatsapp.ts";
+import { asEmail, asSixDigits, parseLinkCommand, isYes, isNo, makeLinkCode, maskPhone, parseWebhook, splitForWhatsApp, usageCostMicroUsd, toWhatsAppText } from "../src/core/whatsapp.ts";
 
 test("WhatsApp: link command, yes/no, codes, masking", () => {
   assert.equal(parseLinkCommand("LINK ab12cd"), "AB12CD");
@@ -541,4 +541,14 @@ test("WhatsApp: webhook parsing, splitting, cost, formatting", () => {
   assert.ok(parts.length >= 3 && parts.every((p) => p.length <= 2000));
   assert.equal(usageCostMicroUsd({ input_tokens: 1000, output_tokens: 100, cache_read_input_tokens: 2000 }, { input: 4, output: 20, cacheRead: 0.2, cacheWrite: 5 }), 4000 + 2000 + 400);
   assert.equal(toWhatsAppText("## Hi\n**Total** ₦1,000"), "Hi\n*Total* ₦1,000");
+});
+
+test("WhatsApp: connect by email message parsing", () => {
+  assert.equal(asEmail(" Bayo@Test.NG "), "bayo@test.ng");
+  assert.equal(asEmail("my email is bayo@test.ng"), null);
+  assert.equal(asEmail("bayo@test"), null);
+  assert.equal(asSixDigits("123 456"), "123456");
+  assert.equal(asSixDigits("123-456"), "123456");
+  assert.equal(asSixDigits("1234567"), null);
+  assert.equal(asSixDigits("code 123456"), null);
 });
