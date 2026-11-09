@@ -3,6 +3,7 @@
  * card: the price is held, we order from Reloadly, and when the code arrives the hold is captured and the
  * code (stored encrypted) is shown. If Reloadly refuses or fails, the hold is released (refund).
  */
+import { rateLimit } from "./rateLimit";
 import { and, asc, desc, eq, ilike, inArray, notInArray, or, sql } from "drizzle-orm";
 import { costToKobo, giftCost, parseGiftProduct, withMarkup, type GiftData } from "@/core/instant";
 import { readSetting, writeSetting } from "./appSettings";
@@ -262,7 +263,7 @@ export async function myGiftOrders(db: Db, userId: string) {
 export async function myGiftOrder(db: Db, userId: string, id: string) {
   const [o] = await db.select().from(giftOrders).where(and(eq(giftOrders.id, id), eq(giftOrders.userId, userId)));
   if (!o) throw notFound("Order");
-  if (o.status === "pending") await refreshGiftOrder(db, id).catch((e) => console.error("[giftcards] refresh", e));
+  if (o.status === "pending" && (await rateLimit(db, "upstreamPoll", id, { silent: true }))) await refreshGiftOrder(db, id).catch((e) => console.error("[giftcards] refresh", e));
   return presentOne(db, id);
 }
 

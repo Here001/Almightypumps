@@ -1,4 +1,8 @@
 /** Sending email through Resend (https://resend.com). */
+import { eq } from "drizzle-orm";
+import { users } from "./db/schema";
+import { getDb } from "./db";
+import { rateLimit } from "./rateLimit";
 import { env } from "./env";
 import { AppError } from "./errors";
 
@@ -38,6 +42,15 @@ export function codeEmail(code: string, purpose: "signup" | "login" | "reset", n
   return { subject, text, html };
 }
 
+let adminCache = { at: 0, set: new Set<string>() };
+async function adminEmails(db: ReturnType<typeof getDb>) {
+  if (Date.now() - adminCache.at > 5 * 60_000) {
+    const rows = await db.select({ email: users.email }).from(users).where(eq(users.role, "admin")).catch(() => []);
+    adminCache = { at: Date.now(), set: new Set(rows.map((r) => r.email.toLowerCase())) };
+  }
+  return adminCache.set;
+}
+
 /** A plain notification (admin alerts, payment updates). */
 export async function sendNotice(to: string[], subject: string, lines: string[], link?: { href: string; label: string }) {
   if (!emailConfigured() || to.length === 0) { console.warn("[email] notice not sent (email off or no recipients):", subject); return; }
@@ -47,7 +60,13 @@ export async function sendNotice(to: string[], subject: string, lines: string[],
 ${lines.map((l) => `<p>${escape(l)}</p>`).join("\n")}
 ${link ? `<p><a href="${escape(link.href)}" style="display:inline-block;background:#ff6a2b;color:#111;padding:12px 20px;border-radius:999px;text-decoration:none;font-weight:700">${escape(link.label)}</a></p>` : ""}
 </div>`;
-  for (const addr of [...new Set(to)]) {
+  const db = getDb();
+  const admins = await adminEmails(db);
+  for (const addr of [...new Set(to.map((a) => a.trim().toLowerCase()))]) {
+    // Cost control: a daily budget for all notification emails, and a daily cap per customer address
+    // (admins are exempt from the per-address cap so you never miss an alert). Login codes are not affected.
+    if (!admins.has(addr) && !(await rateLimit(db, "emailTo", addr, { silent: true }))) { console.warn("[email] daily cap reached for a recipient, skipped:", subject); continue; }
+    if (!(await rateLimit(db, "emailNotice", "all", { silent: true }))) { console.warn("[email] daily notification budget used up, skipped:", subject); break; }
     await sendEmail(addr, subject, text, html).catch((e) => console.error("[email] notice failed", addr, e));
   }
 }

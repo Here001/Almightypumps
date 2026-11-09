@@ -2,6 +2,7 @@
  * Nigerian airtime and data through Reloadly. Operators (MTN, Airtel, Glo, 9mobile, and their data operators)
  * are cached for 6 hours. Pay-on-delivery: hold → top-up → capture when Reloadly says SUCCESSFUL, release if it fails.
  */
+import { rateLimit } from "./rateLimit";
 import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { costToKobo, networkOf, ngPhone, withMarkup, NG_NETWORKS, type NgNetwork } from "@/core/instant";
 import { readSetting, writeSetting } from "./appSettings";
@@ -267,6 +268,7 @@ export async function myTopup(db: Db, userId: string, id: string) {
   const [o] = await db.select().from(topupOrders).where(and(eq(topupOrders.id, id), eq(topupOrders.userId, userId)));
   if (!o) throw notFound("Top-up");
   if (o.status !== "pending") return present(o);
+  if (!(await rateLimit(db, "upstreamPoll", id, { silent: true }))) return present(o); // supplier check at most every 10 s
   const u = await refreshTopup(db, id).catch((e) => { console.error("[airtime] refresh", e); return o; });
   return present(u ?? o);
 }

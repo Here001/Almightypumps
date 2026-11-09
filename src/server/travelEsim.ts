@@ -3,6 +3,7 @@
  * a package: the price is held, we order from eSIM Access, and when the profile (activation code) is ready the hold
  * is captured and the QR code is shown. If the order fails, the hold is released.
  */
+import { rateLimit } from "./rateLimit";
 import { and, asc, desc, eq, ilike, inArray, notInArray, or, sql } from "drizzle-orm";
 import QRCode from "qrcode";
 import { dataSize, durationLabel, e4ToKobo, withMarkup } from "@/core/instant";
@@ -230,6 +231,7 @@ export async function myTravelOrder(db: Db, userId: string, id: string) {
   const [o] = await db.select().from(travelEsimOrders).where(and(eq(travelEsimOrders.id, id), eq(travelEsimOrders.userId, userId)));
   if (!o) throw notFound("eSIM");
   if (o.status !== "pending") return presentOrder(o);
+  if (!(await rateLimit(db, "upstreamPoll", id, { silent: true }))) return presentOrder(o); // supplier check at most every 10 s
   const u = await refreshTravelOrder(db, id).catch((e) => { console.error("[esimaccess] refresh", e); return o; });
   return presentOrder(u ?? o);
 }

@@ -34,6 +34,7 @@ const ABOUT: Record<string, string> = {
   "/admin/sell": "Cards and coins customers sell you, your rates",
   "/admin/money": "Your platform wallet and what you earned",
   "/admin/insights": "Visitors, sign-ups and top sellers",
+  "/admin/limits": "Speed limits, daily quotas and blocked attempts (security & cost control)",
   "/admin/switches": "Tile order (1st, 2nd…) and switch services off or on",
   "/admin/instant": "Markups, balances, stuck orders",
   "/admin/esim": "Plans, prices and orders to deliver",

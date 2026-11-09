@@ -1,4 +1,5 @@
 import { getDb } from "@/server/db";
+import { callerKey, rateLimit } from "@/server/rateLimit";
 import { route } from "@/server/http";
 import { browseServices, serviceCatalog } from "@/server/smm";
 
@@ -12,6 +13,7 @@ export const dynamic = "force-dynamic";
 export const GET = route(async (req: Request) => {
   const p = new URL(req.url).searchParams;
   const db = getDb();
+  await rateLimit(db, "catalogIp", callerKey(req));
   const platform = p.get("platform")?.slice(0, 100) || undefined;
   const q = p.get("q")?.slice(0, 100) || undefined;
   if (!platform && !q) return { platforms: await serviceCatalog(db) };

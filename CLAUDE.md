@@ -112,13 +112,21 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   account <3 days, account differs from seller profile). /admin/disputes = DISPUTED trades with complaint,
   seller proof, contacts, timeline/messages → Refund buyer / Pay seller (`act` RESOLVE_*). Wallet history
   lines without a memo get friendly names (`kindLabel` in app/dashboard/page.tsx).
-- Rate limiting (`src/server/rateLimit.ts`, migration 0016 `rate_limits`, maths in `src/core/rateLimit.ts`):
-  Postgres fixed-window counters (work across Vercel instances), keys HMAC-hashed with SESSION_SECRET (no
-  raw IPs/emails). Rules in `LIMITS` (login 30/15min per IP + 10/15min per email, signup 6/h per IP,
-  password change, top-up, withdraw, orders, buys, trade actions/messages, verification, seller apply/avatar,
-  listings, API keys, reseller /api/v2 120/min per key, /api/track silent drop). Over the limit = 429 with
-  Retry-After and "Please wait N minutes"; a failing counter allows the request. Counters >1 day old are
-  pruned by the sync-orders cron. IP = first x-forwarded-for (set by Vercel).
+- Rate limiting, quotas, throttling, cost control (`src/server/rateLimit.ts`, migrations 0016 + 0034 `rate_limits.rule`, maths in
+  `src/core/rateLimit.ts`; security audit + rework 2026-11-09, owner's request): Postgres fixed-window counters (shared across Vercel
+  instances), keys HMAC-hashed (no raw IPs/emails), rule name stored for stats. `LIMITS` = every rule; a rule `x` with `xDay` also checks
+  the DAILY QUOTA automatically (orders, buys, verifications, quotes, shipping, P2P, support, uploads, money, sign-in, reseller API per key
+  50k/day). Owner edits any limit in Admin › Website › "Limits & usage" (/admin/limits, `AdminLimits.tsx`, /api/admin/limits; overrides
+  in app_settings `rate_limit_overrides`, cached 60 s, logged in admin_actions; page shows 24 h used/blocked per rule). SITE-WIDE THROTTLE
+  in `route()` (src/server/http.ts) for every API request except /api/webhooks/ and /api/cron/: in-memory burst per caller (240 reads /
+  60 writes per minute) + per network ceiling (3000/600), plus Postgres `writeIp` (per caller) and `writeNet` (per network) on changes.
+  CALLER = hashed session cookie when signed in, else IP (`callerKey`): Nigerian mobile networks share IPs (CGNAT), so per-IP-only limits
+  would block real customers; per-IP limits were raised (loginIp 100/15min, registerIp 30/h) and per-account limits do the protecting.
+  `catalogIp` on public catalogue (smm/services, shop/[slug]); `fundCheck` on /api/wallet/verify; reseller /api/v2 blocks a network after
+  20 wrong keys/hour (`apiKeyFail` + `isOverLimit`). COST CONTROL: `upstreamPoll` (supplier status checks at most every 10 s per order in
+  myVerification/myTopup/myGiftOrder/myTravelOrder); email budget in `sendNotice` (`emailNotice` 2000/day site-wide, `emailTo` 40/day
+  per customer address, admins exempt; login codes not affected). requireCron uses timingSafeEqual. Over a limit = 429 + Retry-After
+  ("Please wait N minutes" / "today's limit… resets in N hours"); a failing counter allows the request. Counters >1 day old pruned by cron.
 - Providers from the admin (migration 0017, /admin/providers `AddProvider` + card "Edit"): paste any standard
   SMM panel (API v2) URL + key → "Test connection" (balance + service count) → save. Keys are stored
   AES-256-GCM encrypted in `smm_providers.api_key_enc` (`src/server/secretBox.ts`, key derived from
@@ -424,7 +432,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
     usd auto, Instagram Likes/Live viewers 100% rules. NOT copied: dev's P2P category renamed "Accounts"
     (account sales are blocked); live keeps "Digital products". Re-star 3 TikTok follower services
     (Owlet ids 8277, 24221, 8619) after the first live sync. No users yet (owner signs up, then promote to admin).
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0033 applied (main too: 0033 applied 2026-11-08 with owner's yes). Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0034 applied (main: 0000–0033; 0033 applied 2026-11-08 with owner's yes). Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

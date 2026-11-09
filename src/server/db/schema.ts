@@ -420,6 +420,7 @@ export const rateLimits = pgTable("rate_limits", {
   key: text("key").notNull(),
   windowStart: ts("window_start").notNull(),
   count: integer("count").notNull().default(1),
+  rule: text("rule"),
 });
 
 /** eSIMs sold by hand (drizzle/0019_esim.sql). */

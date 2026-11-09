@@ -11,7 +11,7 @@ import { getDb } from "@/server/db";
 import { apiKeys, users, wallets } from "@/server/db/schema";
 import { toAppError } from "@/server/errors";
 import { listServices, myOrders, placeOrder } from "@/server/smm";
-import { rateLimit } from "@/server/rateLimit";
+import { clientIp, isOverLimit, rateLimit } from "@/server/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -38,11 +38,14 @@ export async function POST(req: Request) {
   if (!p.key) return fail("Missing API key", 401);
 
   const db = getDb();
+  const ip = clientIp(req);
+  // Stop key guessing: a network that sent too many wrong keys is blocked for the rest of the hour.
+  if (await isOverLimit(db, "apiKeyFail", ip)) return fail("Too many wrong API keys. Try again later.", 429);
   const [k] = await db.select().from(apiKeys).where(and(eq(apiKeys.keyHash, hashApiKey(p.key)), isNull(apiKeys.revokedAt)));
-  if (!k) return fail("Invalid API key", 401);
+  if (!k) { await rateLimit(db, "apiKeyFail", ip, { silent: true }); return fail("Invalid API key", 401); }
   const [owner] = await db.select({ suspendedAt: users.suspendedAt }).from(users).where(eq(users.id, k.userId));
   if (!owner || owner.suspendedAt) return fail("This account is suspended", 403);
-  if (!(await rateLimit(db, "resellerApi", k.id, { silent: true }))) return fail("Too many requests. Slow down to 120 per minute.", 429);
+  if (!(await rateLimit(db, "resellerApi", k.id, { silent: true }))) return fail("Too many requests for this API key. Slow down, or ask support for a higher limit.", 429);
 
   try {
     switch (p.action) {

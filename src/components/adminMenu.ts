@@ -38,5 +38,5 @@ export const ADMIN_GROUPS: { title: string; items: Item[] }[] = [
       { href: "/admin/p2p-categories", label: "Categories" },
     ],
   },
-  { title: "Website", items: [{ href: "/admin/referrals", label: "Invite friends" }, { href: "/admin/legal", label: "Privacy & Terms" }] },
+  { title: "Website", items: [{ href: "/admin/referrals", label: "Invite friends" }, { href: "/admin/legal", label: "Privacy & Terms" }, { href: "/admin/limits", label: "Limits & usage" }] },
 ];

@@ -3,6 +3,7 @@
  * Pay-on-delivery: the price is held when the number is rented, captured when a code
  * arrives, and released (refunded) if no code comes or the customer cancels.
  */
+import { rateLimit } from "./rateLimit";
 import { and, asc, desc, eq, ilike, inArray, notInArray, or, sql } from "drizzle-orm";
 import { extractCode, outcomeFor, sellPriceKobo, serviceLabel, usdToMilli } from "@/core/smsVerify";
 import type { Db, DbOrTx } from "./db";
@@ -215,6 +216,8 @@ async function own(db: Db, userId: string, id: string) {
 export async function myVerification(db: Db, userId: string, id: string) {
   const v = await own(db, userId, id);
   if (v.status !== "pending") return present(v);
+  // Cost control: ask the supplier at most once every 10 seconds per number, however often the page polls.
+  if (!(await rateLimit(db, "upstreamPoll", id, { silent: true }))) return present(v);
   const r = await refreshVerification(db, id).catch((e) => { console.error("[verify] refresh", e); return v; });
   return present(r ?? v);
 }

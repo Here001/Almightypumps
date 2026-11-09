@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { rateLimit } from "@/server/rateLimit";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/server/db";
 import { payments } from "@/server/db/schema";
@@ -14,6 +15,7 @@ export const POST = route(async (req: Request) => {
   const user = await requireUser();
   const { reference } = await body(req, schema);
   const db = getDb();
+  await rateLimit(db, "fundCheck", user.id);
   const [p] = await db.select({ userId: payments.userId }).from(payments).where(eq(payments.reference, reference));
   if (!p) throw notFound("Payment");
   if (p.userId !== user.id) throw forbidden();
