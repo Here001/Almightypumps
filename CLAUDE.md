@@ -424,7 +424,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 
 ## Infrastructure state (as of 2026-11-03)
 - GitHub: `Here001/Almightypumps` (private). `main` = LIVE (fast-forwarded to dev 55d73ca, then 130dee2 provider tools, cdd5cf6 eSIMs,
-  757c38f login security, 8e08ee4 legal pages/homepage copy/support@, e42f52c gift cards/airtime/travel eSIMs + email codes, then forgot password + bank/crypto top-ups + admin redesign + supplier-out-of-money queue + sell gift cards & crypto + turn-off-by-price tool + phone comfort + SEO pages + brand logo + invites/ad photos/trade room/documents/7% fee (2026-11-04) + bank transfer/photo storage/Send-Receive a Package/admin users/wallet collapse + services on/off + tile order + no-auto-refund supplier waits + support chat + order alert emails + admin emails for every badge (2026-11-05) + name-change approval + withdrawal bank-name check (2026-11-08), each with the owner's yes); `dev` = day-to-day work. Promote later changes only with an explicit yes.
+  757c38f login security, 8e08ee4 legal pages/homepage copy/support@, e42f52c gift cards/airtime/travel eSIMs + email codes, then forgot password + bank/crypto top-ups + admin redesign + supplier-out-of-money queue + sell gift cards & crypto + turn-off-by-price tool + phone comfort + SEO pages + brand logo + invites/ad photos/trade room/documents/7% fee (2026-11-04) + bank transfer/photo storage/Send-Receive a Package/admin users/wallet collapse + services on/off + tile order + no-auto-refund supplier waits + support chat + order alert emails + admin emails for every badge (2026-11-05) + name-change approval + withdrawal bank-name check (2026-11-08) + security limits/quotas/cost control (2026-11-09), each with the owner's yes); `dev` = day-to-day work. Promote later changes only with an explicit yes.
 - Neon: project **almighty-pumps** (`jolly-dust-18900048`, AWS eu-central-1).
   - `main` branch (`br-bitter-feather-ba9z9jv8`): PRODUCTION. Set up 2026-11-04 with owner's yes: 0000–0016
     applied (schema identical to dev), platform wallet created. Config copied from dev: Owlet provider (markup 60%),
@@ -432,7 +432,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
     usd auto, Instagram Likes/Live viewers 100% rules. NOT copied: dev's P2P category renamed "Accounts"
     (account sales are blocked); live keeps "Digital products". Re-star 3 TikTok follower services
     (Owlet ids 8277, 24221, 8619) after the first live sync. No users yet (owner signs up, then promote to admin).
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0034 applied (main: 0000–0033; 0033 applied 2026-11-08 with owner's yes). Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0034 applied (main too: 0034 applied 2026-11-09 with owner's yes). Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).
