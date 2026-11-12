@@ -705,3 +705,16 @@ html[data-theme="light"] .app-shell .adm-nav a[aria-current="page"] { background
 @media (max-width: 860px) { .app-shell .sup-fab { background: transparent; color: var(--fg); border: 1px solid rgb(var(--ov) / .16); box-shadow: none; } }
 .app-shell .ap-main { padding-bottom: 96px; }
 @media (max-width: 900px) { .app-shell .ap-main { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); } }
+/* No boxes inside boxes (same pass, owner's "change them"): lists inside a panel are rows with hairlines; option grids are
+   flat filled tiles (selected = orange outline); info boxes are flat inset panels without a border. */
+.app-shell .ap-service, .app-shell .ship-rate, .app-shell .ord-list li, .app-shell .pub-faq details {
+  border: 0; border-bottom: 1px solid var(--hair); border-radius: 0; background: none; padding: 12px 4px; }
+.app-shell .ap-service:hover, .app-shell .ap-service:focus-visible, .app-shell .ship-rate:hover { background: rgb(var(--ov) / .04); border-color: var(--hair); }
+.app-shell .ship-rate.on { border-color: var(--hair); background: rgb(var(--ov) / .06); }
+.app-shell .pub-related a { border: 0; border-top: 1px solid var(--hair); border-radius: 0; background: none; padding: 12px 4px; }
+.app-shell .ap-platform, .app-shell .gc-card, .app-shell .es-duration { border: 0; background: rgb(var(--ov) / .045); border-radius: 12px; box-shadow: none; }
+.app-shell .ap-platform:hover, .app-shell .gc-card:hover, .app-shell .gc-card:focus-visible, .app-shell .es-duration:hover { background: rgb(var(--ov) / .08); }
+.app-shell .ap-platform[aria-pressed="true"], .app-shell .es-duration[aria-checked="true"] { border: 0; background: #FF5A1F14; box-shadow: inset 0 0 0 1.5px var(--accent); }
+.app-shell .bt-box, .app-shell .nc-box, .app-shell .mp-box, .app-shell .doc-group, .app-shell .es-order { border: 0; background: rgb(var(--ov) / .04); border-radius: 12px; }
+html:has(.app-shell) body { background: #0E1015; }
+html[data-theme="light"]:has(.app-shell) body { background: var(--bg); }
