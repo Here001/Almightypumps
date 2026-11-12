@@ -12,11 +12,20 @@ export type HubService = {
   /** SVG path (24x24, stroked) */
   icon: string;
   status: "live" | "soon";
+  /** Section on the Services page. */
+  group: HubGroup;
 };
+
+export type HubGroup = "buy" | "grow" | "sell" | "free";
+export const HUB_GROUPS: { id: HubGroup | "shop" | "soon"; title: string }[] = [
+  { id: "buy", title: "Buy" }, { id: "grow", title: "Grow" }, { id: "sell", title: "Sell & send" },
+  { id: "shop", title: "Shop" }, { id: "free", title: "Free tools" }, { id: "soon", title: "Coming soon" },
+];
 
 export const HUB_SERVICES: HubService[] = [
   {
     id: "boost",
+    group: "grow",
     short: "Followers, likes and views",
     title: "Boost Account",
     description: "Followers, likes, views and more for Instagram, TikTok, YouTube and 30+ platforms.",
@@ -25,6 +34,7 @@ export const HUB_SERVICES: HubService[] = [
   },
   {
     id: "esim",
+    group: "buy",
     short: "Travel data or a US line",
     title: "eSIMs",
     description: "Travel data eSIMs for 190+ countries, delivered instantly. Or a US phone line: talk, text and data.",
@@ -33,6 +43,7 @@ export const HUB_SERVICES: HubService[] = [
   },
   {
     id: "giftcards",
+    group: "buy",
     short: "Amazon, Apple, Steam and more",
     title: "Gift Cards & Subscriptions",
     description: "Official gift cards and subscription vouchers: Amazon, Apple, PlayStation, Steam and more. Delivered instantly.",
@@ -41,6 +52,7 @@ export const HUB_SERVICES: HubService[] = [
   },
   {
     id: "airtime",
+    group: "buy",
     short: "MTN, Airtel, Glo, 9mobile",
     title: "Airtime & Data",
     description: "Recharge MTN, Airtel, Glo and 9mobile: airtime and data bundles, sent instantly.",
@@ -49,6 +61,7 @@ export const HUB_SERVICES: HubService[] = [
   },
   {
     id: "sell",
+    group: "sell",
     short: "Cards or crypto to Naira",
     title: "Sell Gift Cards & Crypto",
     description: "Turn your gift cards, Bitcoin or USDT into Naira, paid into your wallet.",
@@ -57,6 +70,7 @@ export const HUB_SERVICES: HubService[] = [
   },
   {
     id: "ship",
+    group: "sell",
     short: "Courier pickup and tracking",
     title: "Send/Receive a Package",
     description: "Send or receive packages with courier pickup and delivery, within Nigeria or from the USA to Nigeria. Compare prices, pay from your wallet, track it live.",
@@ -65,6 +79,7 @@ export const HUB_SERVICES: HubService[] = [
   },
   {
     id: "docs",
+    group: "free",
     short: "Invoices, receipts, CVs · free",
     title: "Business Documents",
     description: "Make invoices, receipts and CVs in minutes and save them as PDF. Free.",
@@ -73,6 +88,7 @@ export const HUB_SERVICES: HubService[] = [
   },
   {
     id: "invite",
+    group: "free",
     short: "A bonus for each friend",
     title: "Invite Friends & Earn",
     description: "Share your link. When a friend you invite starts ordering, you both get a bonus in your wallet.",
@@ -81,6 +97,7 @@ export const HUB_SERVICES: HubService[] = [
   },
   {
     id: "verify",
+    group: "buy",
     short: "SMS codes on a US number",
     title: "Get Verification Code",
     description: "Receive one-time SMS codes on a virtual number.",

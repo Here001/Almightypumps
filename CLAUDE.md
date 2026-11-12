@@ -48,6 +48,15 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 - Customer dashboard (`app/dashboard` → `src/components/dashboard/`): tabs Services / Orders /
   Wallet / P2P / Settings (URL hash; bottom tab bar on phones). Services = hub of service tiles from
   `src/components/dashboard/services.ts` (Boost Account, Get Verification Code and eSIMs live). Each tile shows its `short` line (2026-11-09, owner's request, replaced "Open"); orange icons kept on purpose.
+  IMPECCABLE PASS (2026-11-12, owner chose "all of it" after a mock-up using github.com/pbakaus/impeccable rules; end of app/app.css,
+  scoped to `.app-shell`, homepage untouched): Geist everywhere in app screens (`--display` = body font; logo keeps Space Grotesk),
+  solid surfaces instead of frosted `.glass`/colour glows (bg #0E1016, rail #0A0B10, raised #161922), sentence-case labels (no
+  mono uppercase eyebrows), 10px button radius with no glow, orange focus/selection, AP chevron marks the active sidebar/tab/admin
+  item (no coloured border bars), admin Home lists are rows (no nested boxes). Services home = `hub-*`: wallet panel (balance,
+  held, Add money / Withdraw → #wallet) + "Recent orders" (`src/server/recent.ts` `recentOrders`: latest 4 across Boost, airtime/
+  data, gift cards, travel eSIMs, shop) + services as grouped rows (`group` in services.ts / `HUB_GROUPS`: Buy, Grow, Sell & send,
+  Shop (admin categories), Free tools, Coming soon); the header balance pill shows on the other tabs only. Phones: wallet, groups,
+  then recent; Help is an outlined button top-right.
   Help button (`.sup-fab`) on phones sits top-right of the page (absolute, scrolls away; `.ap-hello` has right padding for it). Boost Account (#boost) = all SMM/Owlet services: search + platform tiles +
   kind chips + paged service cards (recommended first, then cheapest) + order sheet.
   "Recommended" = provider flag (`provider_recommended`, detected by `isProviderRecommended`;

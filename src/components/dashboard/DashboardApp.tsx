@@ -5,7 +5,8 @@ import { Suspense, useEffect, useState } from "react";
 import { FundWallet, LogoutButton, PaymentReturn } from "../DashboardActions";
 import { Boost, type CatalogPlatform } from "./Boost";
 import { CurrencyProvider, CurrencySwitch, useCurrency } from "./Currency";
-import { HUB_SERVICES } from "./services";
+import { HUB_GROUPS, HUB_SERVICES } from "./services";
+import type { RecentOrder } from "@/server/recent";
 import { hiddenTiles, sortByOrder } from "@/core/switches";
 import { VerifyCode } from "./VerifyCode";
 import { Esim } from "./Esim";
@@ -68,6 +69,8 @@ type Props = {
   tileOrder: string[];
   shopCategories: { slug: string; name: string; description: string; icon: string; products: number }[];
   shopOrders: { id: number; product: string; amount: number; status: string; content: string | null; note: string | null; when: string }[];
+  /** Latest orders across every service (Services home). */
+  recent: RecentOrder[];
 };
 
 export function DashboardApp(props: Props) {
@@ -113,12 +116,12 @@ function Dashboard(props: Props) {
   // (a shop category with the same name replaces its "coming soon" tile).
   const shopNames = new Set(props.shopCategories.map((c) => c.name.trim().toLowerCase()));
   const hubTiles = [
-    ...sortByOrder([...HUB_SERVICES.filter((s) => s.status === "live" && !hidden.has(s.id)).map((s) => ({ ...s, sub: s.short })),
+    ...sortByOrder([...HUB_SERVICES.filter((s) => s.status === "live" && !hidden.has(s.id)).map((s) => ({ ...s, sub: s.short, group: s.group as string })),
     ...props.shopCategories.map((c) => ({
       id: `shop-${c.slug}`, title: c.name, description: c.description, icon: SHOP_ICON_PATHS[c.icon] ?? SHOP_ICON_PATHS.bag,
-      status: "live" as const, sub: `${c.products} product${c.products === 1 ? "" : "s"}`,
+      status: "live" as const, sub: c.description || `${c.products} product${c.products === 1 ? "" : "s"}`, group: "shop",
     }))], props.tileOrder),
-    ...HUB_SERVICES.filter((s) => s.status === "soon" && !shopNames.has(s.title.trim().toLowerCase())).map((s) => ({ ...s, sub: "Coming soon" })),
+    ...HUB_SERVICES.filter((s) => s.status === "soon" && !shopNames.has(s.title.trim().toLowerCase())).map((s) => ({ ...s, sub: "Coming soon", group: "soon" })),
   ];
   const shopSlug = tab.startsWith("shop-") ? tab.slice(5) : null;
   const shopName = props.shopCategories.find((c) => c.slug === shopSlug)?.name ?? "Shop";
@@ -150,7 +153,7 @@ function Dashboard(props: Props) {
             </div>
             <div className="ap-top-right">
             <CurrencySwitch />
-            <div className="ap-balance glass">
+            {tab !== "services" && <div className="ap-balance glass">
               <span className="ap-balance-label">
                 Balance
                 <button type="button" className="ap-eye" onClick={toggleHide} aria-pressed={hideBal} aria-label={hideBal ? "Show balance" : "Hide balance"} title={hideBal ? "Show balance" : "Hide balance"}>
@@ -162,7 +165,7 @@ function Dashboard(props: Props) {
               </span>
               <button type="button" className="ap-balance-num" onClick={() => go("wallet")} aria-label={hideBal ? "Balance hidden. Open wallet" : `Wallet balance ${money(props.wallet.available)}. Open wallet`}>{show(props.wallet.available)}</button>
               <button type="button" className="ap-balance-add" onClick={() => go("wallet")}>+ Add money</button>
-            </div>
+            </div>}
             </div>
           </header>
 
@@ -178,21 +181,66 @@ function Dashboard(props: Props) {
           )}
 
           {tab === "services" && (
-            <section className="card glass">
-              <h2>What do you want to do?</h2>
-              <div className="ap-platforms ap-hub-tiles">
-                {hubTiles.map((svc) => (
-                  <button
-                    key={svc.id} type="button" className="ap-platform ap-hub-tile" disabled={svc.status !== "live"} title={svc.description}
-                    onClick={() => svc.status === "live" && go(svc.id as Tab)}
-                  >
-                    <span className="ap-mono ap-hub-icon" aria-hidden="true"><Icon d={svc.icon} /></span>
-                    <span className="ap-platform-name">{svc.title}</span>
-                    <span className="ap-platform-count">{svc.sub}</span>
-                  </button>
-                ))}
+            <>
+              <div className="hub-top">
+                <section className="hub-wallet" aria-label="Wallet">
+                  <span className="hub-label">
+                    Wallet balance
+                    <button type="button" className="ap-eye" onClick={toggleHide} aria-pressed={hideBal} aria-label={hideBal ? "Show balance" : "Hide balance"} title={hideBal ? "Show balance" : "Hide balance"}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" />
+                        {hideBal && <path d="M3 3l18 18" />}
+                      </svg>
+                    </button>
+                  </span>
+                  <div className="hub-balance" aria-live="polite">{show(props.wallet.available)}</div>
+                  {props.wallet.held > 0 && <div className="hub-held"><b>{show(props.wallet.held)}</b> held for orders in progress</div>}
+                  <div className="hub-actions">
+                    <button type="button" className="btn btn-primary" onClick={() => go("wallet")}>Add money</button>
+                    <button type="button" className="btn btn-ghost" onClick={() => go("wallet")}>Withdraw</button>
+                  </div>
+                </section>
+                <section className="hub-recent" aria-label="Recent orders">
+                  <div className="hub-recent-head"><h2>Recent orders</h2>{props.recent.length > 0 && <button type="button" className="ap-link" onClick={() => go("orders")}>See all</button>}</div>
+                  {props.recent.length === 0 ? (
+                    <p className="muted hub-empty">Nothing yet. Pick a service below and your orders will show up here.</p>
+                  ) : (
+                    <ul>
+                      {props.recent.map((r) => (
+                        <li key={r.key}>
+                          <button type="button" onClick={() => go(r.tab as Tab)}>
+                            <span className="hub-r-main"><strong>{r.title}</strong><span>{r.detail}</span></span>
+                            <span className="hub-r-end"><span className="hub-amt">{show(r.amount)}</span><span className={`hub-st ${r.tone}`}>{r.status}</span></span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
               </div>
-            </section>
+              <div className="hub-groups">
+                {HUB_GROUPS.map((g) => {
+                  const items = hubTiles.filter((t) => t.group === g.id);
+                  if (!items.length) return null;
+                  return (
+                    <section key={g.id} className="hub-group" aria-labelledby={`hub-${g.id}`}>
+                      <h2 id={`hub-${g.id}`}>{g.title}</h2>
+                      <ul>
+                        {items.map((svc) => (
+                          <li key={svc.id}>
+                            <button type="button" className="hub-row" disabled={svc.status !== "live"} onClick={() => svc.status === "live" && go(svc.id as Tab)}>
+                              <span className="hub-icon" aria-hidden="true"><Icon d={svc.icon} /></span>
+                              <span className="hub-text"><strong>{svc.title}</strong><span>{svc.sub}</span></span>
+                              <svg className="hub-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  );
+                })}
+              </div>
+            </>
           )}
 
           {tab === "boost" && !hidden.has("boost") && (

@@ -1,3 +1,4 @@
+import { recentOrders } from "@/server/recent";
 import type { Metadata } from "next";
 import { offServices, tileOrder } from "@/server/serviceSwitches";
 import { redirect } from "next/navigation";
@@ -27,7 +28,7 @@ export default async function DashboardPage() {
   if (!user) redirect("/login");
   const db = getDb();
   const [wallet] = await db.select().from(wallets).where(eq(wallets.userId, user.id));
-  const [history, orders, trades, catalog, minOrderKobo, usdRateKobo, shopCats, shopOrders, off, order] = await Promise.all([
+  const [history, orders, trades, catalog, minOrderKobo, usdRateKobo, shopCats, shopOrders, off, order, recent] = await Promise.all([
     db.select().from(ledgerEntries).where(eq(ledgerEntries.walletId, wallet.id)).orderBy(desc(ledgerEntries.createdAt)).limit(20),
     myOrders(db, user.id),
     myTrades(db, user.id),
@@ -38,6 +39,7 @@ export default async function DashboardPage() {
     myShopOrders(db, user.id),
     offServices(db),
     tileOrder(db),
+    recentOrders(db, user.id),
   ]);
 
   return (
@@ -52,6 +54,7 @@ export default async function DashboardPage() {
       shopCategories={shopCats}
       off={off}
       tileOrder={order}
+      recent={recent}
       shopOrders={shopOrders.map((o) => ({ id: o.id, product: o.product, amount: o.amount, status: o.status, content: o.content, note: o.note, when: when(o.createdAt) }))}
       catalog={catalog}
       orders={orders.map((o) => ({ id: o.id, service: o.service, platform: o.platform, link: o.link, quantity: o.quantity, amount: o.charged || o.cost, status: o.status, remains: o.remains, when: when(o.createdAt) }))}
