@@ -279,3 +279,23 @@ footer { border-top: 1px solid #FFFFFF26; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 .top-actions{display:flex;gap:8px;align-items:center}
+/* Homepage tidy-up (2026-11-15, owner's request): quick links to each service under the hero buttons. */
+.hero-links { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 8px; }
+.hero-links a { display: inline-flex; align-items: center; min-height: 40px; padding: 8px 14px; border-radius: 999px; border: 1px solid #FFFFFF2E; background: #FFFFFF0D; color: var(--fg); font-size: 14px; font-weight: 500; text-decoration: none; transition: background-color .15s ease, border-color .15s ease; }
+.hero-links a:hover { background: #FFFFFF1F; border-color: #FFFFFF4D; }
+.hero-links a:last-child { border-color: transparent; background: none; color: var(--accent); }
+.portal-panel .hero-cta { justify-content: center; }
+@media (max-width: 860px) {
+  .top-actions .btn { min-height: 40px; }
+  .kit { padding: 22px; gap: 10px; border-radius: 22px; }
+  .kit .kit-vis { display: none; }
+  .hero-links { margin-top: 22px; }
+}
+@media (max-width: 860px) {
+  .top .logo { font-size: 12px; letter-spacing: .08em; gap: 6px; }
+  .top .logo-mark { width: 26px; height: 26px; }
+  .top-actions { margin-left: auto; gap: 6px; }
+  .top .top-actions .btn { min-height: 38px; padding: 8px 12px; font-size: 13px; }
+  .hero-cta { gap: 10px; }
+  .hero-cta .btn { flex: 1 1 140px; white-space: nowrap; padding: 14px 16px; }
+}

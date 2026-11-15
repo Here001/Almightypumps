@@ -23,18 +23,6 @@ export function initLanding() {
 
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /* ---------- Buy / Sell toggle ---------- */
-  var market = document.getElementById('market');
-  var bBuy = document.getElementById('mode-buy'), bSell = document.getElementById('mode-sell');
-  function setMode(sell) {
-    bBuy.setAttribute('aria-pressed', String(!sell));
-    bSell.setAttribute('aria-pressed', String(sell));
-    market.classList.toggle('sell-mode', sell);
-    market.querySelectorAll('.trade').forEach(function (a) { a.textContent = sell ? 'Sell' : 'Buy'; });
-  }
-  bBuy.addEventListener('click', function () { setMode(false); });
-  bSell.addEventListener('click', function () { setMode(true); });
-
   /* ---------- Glass specular highlight follows the pointer ---------- */
   var glasses = Array.prototype.slice.call(document.querySelectorAll('.glass'));
   var mouseX = 0, mouseY = 0, px = innerWidth / 2, py = innerHeight / 3, specQueued = false;
@@ -377,9 +365,9 @@ export function initLanding() {
 
   /* ---------- Progress bar + active section links ---------- */
   var topBar = document.querySelector('.top');
-  var ids = ['top', 'tools', 'escrow', 'market', 'growth', 'pricing', 'api', 'start'];
+  var ids = ['top', 'tools', 'escrow', 'growth', 'pricing', 'api', 'start'];
   var secEls = ids.map(function (id) { return document.getElementById(id === 'top' ? 'hero-title' : id); });
-  var navLinks = Array.prototype.slice.call(document.querySelectorAll('.nav a, .secnav a'));
+  var navLinks = Array.prototype.slice.call(document.querySelectorAll('.nav a'));
   var activeId = '';
   function onScroll() {
     var max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
@@ -462,7 +450,6 @@ export function initLanding() {
     return function () { setStep(2); };
   });
 
-  gsap.fromTo('#market', { rotateX: 40, y: 90, scale: 0.9, opacity: 0.5, transformPerspective: 1600 }, { rotateX: 0, y: 0, scale: 1, opacity: 1, ease: 'none', scrollTrigger: { trigger: '.market-stage', start: 'top 95%', end: 'top 35%', scrub: 1.2 } });
 
   var count = document.getElementById('count'), meter = document.getElementById('meter');
   var o = { v: 120 };

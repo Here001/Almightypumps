@@ -427,6 +427,12 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 - Insights: `src/components/Tracker.tsx` beacons each page and dashboard #section to
   `/api/track` → `site_events` (anonymous cookie id, no IP/UA stored). Section names come
   from `src/core/analytics.ts` (add new pages there). Queries in `src/server/insights.ts`.
+- HOMEPAGE TIDY (2026-11-15, owner's request "remove repetitive words/placeholders, rearrange buttons"): removed the side section
+  dots, the HUD corner labels, the repeating ticker, all small-caps eyebrows, "Scroll to enter" and the example P2P table with made-up
+  sellers (and its Buy/Sell toggle code in effects.ts). Header: Services / How it works / Pricing / API + Log in + Sign up (one row on
+  phones). Hero: Create free account + Log in, then quick links to each service page + All services. Services rail = 8 real services,
+  each with one action to its page. Final CTA: Create free account + Log in. Footer links fixed (no duplicate #escrow links).
+  Edit the copy in `src/landing/markup.ts` (one JSON string).
 - `src/landing/` homepage markup + effects ported from the approved prototype. Copy rewritten 2026-11-04 for the
   real services (Boost Account, Verification codes, US eSIMs, P2P escrow, Reseller API; hero "Boost. Verify. Trade.";
   pricing = free account / pay per order / 7% seller fee; ticker = real highlights, no fake activity). Don't advertise
