@@ -250,6 +250,14 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   orders >15 min, seller applications, ads to review), today's numbers (Lagos day: sales, top-ups, new customers, platform
   wallet + money customers hold) and a card per menu group with one-line descriptions. Insights moved to /admin/insights
   ("Visitors & sales"). New admin pages: add them to `adminMenu.ts` (+ a description in ABOUT in app/admin/page.tsx).
+- ADMIN PAGE TABS (2026-11-16, owner: "what I click is what should open, no click-and-scroll"): `src/components/AdminPageTabs.tsx`,
+  used by AdminShell. Every top-level `<section>` of an admin page becomes a tab (label = its h2/h3, else aria-label, else
+  "Overview"); only the open one shows; PREFER map puts the main job first (payments → To confirm, sell → To check, shipping →
+  Packages, switches → Switch services, providers → Connections, whatsapp → Overview, services → Overview); open tab kept in `#t=`;
+  a section that appears after a click (editor/form) opens automatically. SKIP: /admin, /admin/instant (own tabs), /admin/insights,
+  /admin/p2p-categories. `useRevealOnClick` scrolls a form/editor/panel that opens below the fold into view. Phones: the big h1 is
+  hidden (the top bar names the page) and the intro clamps to 2 lines; the tab bar is sticky under the top bar. New admin pages
+  get tabs automatically when they have 2+ cards (give each card an h2).
 - `app/api/**` route handlers; `app/page.tsx` 3D homepage; `app/signup`, `app/login`,
   `app/dashboard`; `app/admin` (Insights, Growth providers, Services, Pricing, Shop, Listings review; admins only).
 - Shop (`src/server/shop.ts`, /admin/shop, migration 0008): admin categories → products. Delivery

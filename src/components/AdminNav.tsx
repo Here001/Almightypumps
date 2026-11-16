@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { AdminTabBar, useAdminTabs, useRevealOnClick } from "./AdminPageTabs";
 import type { AdminCounts } from "@/server/adminHome";
 import { ADMIN_GROUPS } from "./adminMenu";
 
@@ -36,6 +37,9 @@ export function AdminShell({ initial, children }: { initial: AdminCounts; childr
   const path = usePathname();
   const [counts, setCounts] = useState(initial);
   const [open, setOpen] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
+  const tabs = useAdminTabs(mainRef, path);
+  useRevealOnClick(mainRef);
   useEffect(() => {
     setOpen(false);
     refreshCounts(setCounts);
@@ -80,7 +84,10 @@ export function AdminShell({ initial, children }: { initial: AdminCounts; childr
         </div>
       )}
 
-      <main className="adm-main">{children}</main>
+      <main className="adm-main" ref={mainRef}>
+        <AdminTabBar {...tabs} />
+        {children}
+      </main>
     </div>
   );
 }
