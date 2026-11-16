@@ -36,7 +36,7 @@ const EVENT_TEXT: Record<string, string> = {
 };
 
 /** The trade room: progress steps, live countdown, actions for the buyer or seller, and the chat. */
-export function TradeRoom({ tradeId, myId, onClose, onChanged }: { tradeId: string; myId?: string; onClose: () => void; onChanged: () => void }) {
+export function TradeRoom({ tradeId, myId, focus, onClose, onChanged }: { tradeId: string; myId?: string; focus?: "chat"; onClose: () => void; onChanged: () => void }) {
   const { charge } = useCurrency();
   const [room, setRoom] = useState<Room | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -91,7 +91,7 @@ export function TradeRoom({ tradeId, myId, onClose, onChanged }: { tradeId: stri
 
       {room.listing.images.length > 0 && <AdGallery images={room.listing.images} title={room.listing.title} />}
 
-      <Chat room={room} myId={room.role === "buyer" ? t.buyerId : room.role === "seller" ? t.sellerId : (myId ?? "")} other={other} onSent={load} />
+      <Chat room={room} focus={focus === "chat"} myId={room.role === "buyer" ? t.buyerId : room.role === "seller" ? t.sellerId : (myId ?? "")} other={other} onSent={load} />
 
       <details className="tr-timeline">
         <summary>Timeline</summary>
@@ -166,12 +166,21 @@ function RoomActions({ room, onDone }: { room: Room; onDone: () => Promise<void>
   );
 }
 
-function Chat({ room, myId, other, onSent }: { room: Room; myId: string; other: string; onSent: () => Promise<void> }) {
+function Chat({ room, myId, other, onSent, focus }: { room: Room; myId: string; other: string; onSent: () => Promise<void>; focus?: boolean }) {
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const end = useRef<HTMLDivElement>(null);
+  const box = useRef<HTMLElement>(null);
+  const input = useRef<HTMLInputElement>(null);
   const count = room.messages.length;
+  // Opened with "Chat seller": jump straight to the chat and put the cursor in the message box.
+  useEffect(() => {
+    if (!focus) return;
+    box.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const t = setTimeout(() => input.current?.focus({ preventScroll: true }), 350);
+    return () => clearTimeout(t);
+  }, [focus]);
   useEffect(() => { end.current?.scrollIntoView({ block: "nearest" }); }, [count]);
   async function send() {
     const body = text.trim();
@@ -182,7 +191,7 @@ function Chat({ room, myId, other, onSent }: { room: Room; myId: string; other: 
     finally { setBusy(false); }
   }
   return (
-    <section className="tr-chat" aria-label={`Chat with ${other}`}>
+    <section className="tr-chat" aria-label={`Chat with ${other}`} ref={box} style={{ scrollMarginTop: 12 }}>
       <div className="tr-chat-head"><strong>Chat with {other}</strong><span className="muted">Our team can read this chat if there&apos;s a dispute.</span></div>
       <div className="tr-msgs" aria-live="polite">
         {count === 0 && <p className="muted" style={{ fontSize: 13, margin: 0 }}>No messages yet. Say hello or ask a question.</p>}
@@ -200,7 +209,7 @@ function Chat({ room, myId, other, onSent }: { room: Room; myId: string; other: 
       <p className="tr-warn">Never pay or share passwords outside this chat. Money sent outside escrow can&apos;t be protected or refunded.</p>
       {room.role !== "admin" && (
         <form className="tr-send" onSubmit={(e) => { e.preventDefault(); void send(); }}>
-          <input className="input" value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a message" maxLength={2000} aria-label="Message" />
+          <input ref={input} className="input" value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a message" maxLength={2000} aria-label="Message" />
           <button className="btn btn-primary ap-mini" disabled={busy || !text.trim()}>Send</button>
         </form>
       )}

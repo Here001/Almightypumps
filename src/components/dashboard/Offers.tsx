@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "../api";
 import { useCurrency } from "./Currency";
+import { TradeRoom } from "./TradeRoom";
 
 export type Offer = {
   id: string; publicId: number; listingId: string; title: string; quantity: number; unitPrice: number; counterPrice: number | null;
@@ -124,6 +125,8 @@ export function BuyerOffers({ balance }: { balance: number }) {
   const { charge } = useCurrency();
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [deal, setDeal] = useState<string | null>(null);
+  const [room, setRoom] = useState<{ id: string; focus?: "chat" } | null>(null);
   const mine = lists?.asBuyer.slice(0, 12) ?? [];
   if (!lists || mine.length === 0) return null;
 
@@ -131,7 +134,8 @@ export function BuyerOffers({ balance }: { balance: number }) {
     if (action === "withdraw" && !window.confirm("Withdraw this offer? Your held money comes back to your wallet.")) return;
     setBusy(o.id); setMsg(null);
     try {
-      await send(o.id, action);
+      const r = await send(o.id, action);
+      if (action === "accept_counter" && r.tradeId) setDeal(r.tradeId);
       setMsg({ ok: true, text: action === "accept_counter" ? "Deal agreed. Your money is in escrow and the seller has 72 hours to deliver. Follow it under My trades." : action === "withdraw" ? "Offer withdrawn. Your money is back in your wallet." : "Counter-offer declined. Your money is back in your wallet." });
       await load(); router.refresh();
     } catch (e) { setMsg({ ok: false, text: (e as Error).message }); }
@@ -170,6 +174,13 @@ export function BuyerOffers({ balance }: { balance: number }) {
         })}
       </ul>
       {msg && <div className={msg.ok ? "form-ok" : "form-error"} role="status">{msg.text}</div>}
+      {deal && (
+        <div className="mk-after">
+          <button type="button" className="btn btn-primary" onClick={() => setRoom({ id: deal })}>Track order</button>
+          <button type="button" className="btn btn-ghost" onClick={() => setRoom({ id: deal, focus: "chat" })}>Chat seller</button>
+        </div>
+      )}
+      {room && <TradeRoom tradeId={room.id} focus={room.focus} onClose={() => setRoom(null)} onChanged={() => router.refresh()} />}
     </section>
   );
 }

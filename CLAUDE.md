@@ -101,6 +101,9 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   counter; withdraw. Offers expire after 24h (`expireOffers` in the escrow cron and on read) → money back. Emails via `notifyTrade`
   (exported from market.ts). APIs: POST /api/market/listings/[id]/offer, GET /api/market/offers, POST /api/market/offers/[id]
   {accept|decline|counter|withdraw|accept_counter|decline_counter}. buy() refuses negotiable ads. Neon dev has 0036; main not yet.
+- AFTER BUYING (2026-11-16, owner's request): the buy sheet's success screen shows "Track order" (opens the TradeRoom for the new
+  trade) and "Chat seller" (TradeRoom with `focus="chat"`: scrolls to the chat and focuses the message box). Same two buttons
+  after a buyer accepts a counter-offer (BuyerOffers). buy API returns the trade id.
 - P2P tab for everyone = Marketplace (`Marketplace.tsx`, layout inspired by Bybit P2P: seller, badge,
   orders/completion, price, limits, stock, orange Buy (same style as .btn-primary)) → buy sheet (answers, quantity, escrow). Verified
   sellers also get "My ads & sales". "Become a seller" lives only in Settings. Buyers' "My trades" has

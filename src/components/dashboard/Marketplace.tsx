@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import { api } from "../api";
 import { useCurrency } from "./Currency";
 import type { P2PCategory } from "./SellerPanel";
+import { TradeRoom } from "./TradeRoom";
 
 type Ad = {
   id: string; title: string; description: string; category: string; categoryName: string | null; deliveryType: string;
@@ -38,6 +39,8 @@ export function Marketplace({ myId, balance, onAddMoney, onViewTrades }: { myId:
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [picked, setPicked] = useState<Ad | null>(null);
+  const [room, setRoom] = useState<{ id: string; focus?: "chat" } | null>(null);
+  const router = useRouter();
 
   useEffect(() => { api<P2PCategory[]>("/api/market/categories").then(setCats).catch(() => {}); }, []);
 
@@ -132,14 +135,17 @@ export function Marketplace({ myId, balance, onAddMoney, onViewTrades }: { myId:
       {picked && (
         <BuySheet ad={picked} questions={cats.find((c) => c.slug === picked.category)?.questions ?? []} mine={picked.sellerId === myId} balance={balance}
           onClose={() => setPicked(null)} onAddMoney={() => { setPicked(null); onAddMoney(); }}
+          onOpenRoom={(id, focus) => { setPicked(null); setRoom({ id, focus }); void load(0); }}
           onDone={() => { const neg = picked.negotiable; setPicked(null); if (neg) document.getElementById("my-offers")?.scrollIntoView({ behavior: "smooth" }); else onViewTrades(); void load(0); }} />
       )}
+      {room && <TradeRoom tradeId={room.id} focus={room.focus} onClose={() => { setRoom(null); onViewTrades(); }} onChanged={() => router.refresh()} />}
     </section>
   );
 }
 
-function BuySheet({ ad, questions, mine, balance, onClose, onAddMoney, onDone }: {
+function BuySheet({ ad, questions, mine, balance, onClose, onAddMoney, onDone, onOpenRoom }: {
   ad: Ad; questions: P2PCategory["questions"]; mine: boolean; balance: number; onClose: () => void; onAddMoney: () => void; onDone: () => void;
+  onOpenRoom: (tradeId: string, focus?: "chat") => void;
 }) {
   const router = useRouter();
   const { money, charge } = useCurrency();
@@ -149,6 +155,7 @@ function BuySheet({ ad, questions, mine, balance, onClose, onAddMoney, onDone }:
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [tradeId, setTradeId] = useState<string | null>(null);
   const ref = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -183,7 +190,14 @@ function BuySheet({ ad, questions, mine, balance, onClose, onAddMoney, onDone }:
             ) : (
               <div className="form-ok" role="status">Paid into escrow. The seller has 72 hours to deliver. Your money is only released to them when you confirm (or 48 hours after delivery if you don&apos;t respond).</div>
             )}
-            <button type="button" className="btn btn-primary" onClick={onDone}>{ad.negotiable ? "See my offers" : "Track this order"}</button>
+            {!ad.negotiable && tradeId ? (
+              <div className="mk-after">
+                <button type="button" className="btn btn-primary" onClick={() => onOpenRoom(tradeId)}>Track order</button>
+                <button type="button" className="btn btn-ghost" onClick={() => onOpenRoom(tradeId, "chat")}>Chat seller</button>
+              </div>
+            ) : (
+              <button type="button" className="btn btn-primary" onClick={onDone}>{ad.negotiable ? "See my offers" : "Track this order"}</button>
+            )}
           </>
         ) : (
           <>
@@ -235,7 +249,7 @@ function BuySheet({ ad, questions, mine, balance, onClose, onAddMoney, onDone }:
                         await api(`/api/market/listings/${ad.id}/offer`, { price: offer, quantity: qty, note: note.trim() || undefined });
                         window.dispatchEvent(new Event("ap:offers"));
                       }
-                      else await api(`/api/market/listings/${ad.id}/buy`, { quantity: qty });
+                      else setTradeId((await api<{ id: string }>(`/api/market/listings/${ad.id}/buy`, { quantity: qty })).id);
                       setDone(true);
                       router.refresh();
                     } catch (e) {
