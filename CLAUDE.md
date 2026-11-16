@@ -100,7 +100,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   BuyerOffers): accept counter (old hold released + new hold placed in one transaction, fails if wallet short) → trade; decline
   counter; withdraw. Offers expire after 24h (`expireOffers` in the escrow cron and on read) → money back. Emails via `notifyTrade`
   (exported from market.ts). APIs: POST /api/market/listings/[id]/offer, GET /api/market/offers, POST /api/market/offers/[id]
-  {accept|decline|counter|withdraw|accept_counter|decline_counter}. buy() refuses negotiable ads. Neon dev has 0036; main not yet.
+  {accept|decline|counter|withdraw|accept_counter|decline_counter}. buy() refuses negotiable ads. Neon dev and main have 0036.
 - AFTER BUYING (2026-11-16, owner's request): the buy sheet's success screen shows "Track order" (opens the TradeRoom for the new
   trade) and "Chat seller" (TradeRoom with `focus="chat"`: scrolls to the chat and focuses the message box). Same two buttons
   after a buyer accepts a counter-offer (BuyerOffers). buy API returns the trade id.
@@ -114,7 +114,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   timeline so the seller doesn't see it), admins emailed, /admin/reports `AdminReports.tsx` (menu P2P, badge `reports`, Admin Home
   todo; mark handled with a note / reopen; shows how many reports a seller has; links to the customer pages to suspend).
   Action route /api/market/trades/[id]/action takes REQUEST_CANCEL | ACCEPT_CANCEL | REJECT_CANCEL | REPORT {reason, note}.
-  Neon dev has 0037; main not yet.
+  Neon dev and main have 0037.
 - P2P tab for everyone = Marketplace (`Marketplace.tsx`, layout inspired by Bybit P2P: seller, badge,
   orders/completion, price, limits, stock, orange Buy (same style as .btn-primary)) → buy sheet (answers, quantity, escrow). Verified
   sellers also get "My ads & sales". "Become a seller" lives only in Settings. Buyers' "My trades" has
@@ -505,7 +505,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 
 ## Infrastructure state (as of 2026-11-03)
 - GitHub: `Here001/Almightypumps` (private). `main` = LIVE (fast-forwarded to dev 55d73ca, then 130dee2 provider tools, cdd5cf6 eSIMs,
-  757c38f login security, 8e08ee4 legal pages/homepage copy/support@, e42f52c gift cards/airtime/travel eSIMs + email codes, then forgot password + bank/crypto top-ups + admin redesign + supplier-out-of-money queue + sell gift cards & crypto + turn-off-by-price tool + phone comfort + SEO pages + brand logo + invites/ad photos/trade room/documents/7% fee (2026-11-04) + bank transfer/photo storage/Send-Receive a Package/admin users/wallet collapse + services on/off + tile order + no-auto-refund supplier waits + support chat + order alert emails + admin emails for every badge (2026-11-05) + name-change approval + withdrawal bank-name check (2026-11-08) + security limits/quotas/cost control (2026-11-09) + Services tile descriptions/Help button + WhatsApp agent (off) + Impeccable design pass (2026-11-12) + homepage tidy + reseller API off (2026-11-16), each with the owner's yes); `dev` = day-to-day work. Promote later changes only with an explicit yes.
+  757c38f login security, 8e08ee4 legal pages/homepage copy/support@, e42f52c gift cards/airtime/travel eSIMs + email codes, then forgot password + bank/crypto top-ups + admin redesign + supplier-out-of-money queue + sell gift cards & crypto + turn-off-by-price tool + phone comfort + SEO pages + brand logo + invites/ad photos/trade room/documents/7% fee (2026-11-04) + bank transfer/photo storage/Send-Receive a Package/admin users/wallet collapse + services on/off + tile order + no-auto-refund supplier waits + support chat + order alert emails + admin emails for every badge (2026-11-05) + name-change approval + withdrawal bank-name check (2026-11-08) + security limits/quotas/cost control (2026-11-09) + Services tile descriptions/Help button + WhatsApp agent (off) + Impeccable design pass (2026-11-12) + homepage tidy + reseller API off + negotiable offers, Fund wallet switches, admin tabs, Track/Chat buttons, cancel/report/dispute (2026-11-16), each with the owner's yes); `dev` = day-to-day work. Promote later changes only with an explicit yes.
 - Neon: project **almighty-pumps** (`jolly-dust-18900048`, AWS eu-central-1).
   PLAN: Free plan ran out of compute on 2026-11-12 (crons keep both branches awake 24/7); owner upgraded the org to the paid
   Launch plan the same day. Live compute autoscaling is 0.25–8 CU (cost can be capped by lowering the max; ask the owner first).
@@ -515,7 +515,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
     usd auto, Instagram Likes/Live viewers 100% rules. NOT copied: dev's P2P category renamed "Accounts"
     (account sales are blocked); live keeps "Digital products". Re-star 3 TikTok follower services
     (Owlet ids 8277, 24221, 8619) after the first live sync. No users yet (owner signs up, then promote to admin).
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0037 applied (main: up to 0035, applied 2026-11-12 with owner's yes). Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0037 applied (main: up to 0037; 0036–0037 applied 2026-11-16 with owner's yes). Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).
