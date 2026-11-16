@@ -328,6 +328,10 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 - Business Documents (#docs, `Documents.tsx`, free, no server): invoice / receipt / CV forms with live preview, saved in
   localStorage `ap_docs_v1`, "Download PDF / Print" = window.print with @media print showing only `.doc-sheet`. CSS class is
   `.bdoc` (NOT `.doc`: landing.css uses `.doc` for a tilted card).
+- FUND WALLET PAGE OPTIONS (2026-11-16, owner saw "bank transfer" on Flutterwave's checkout after switching automatic bank transfer
+  off and asked for a switch, not removal): app_settings `checkout_options` {bankTransfer, ussd} (default both ON) →
+  `startFunding` sends Flutterwave `payment_options` = card[,banktransfer][,ussd]. Admin → Payments to confirm, "Fund wallet page
+  (Flutterwave)" (`AdminCheckoutOptions.tsx`, /api/admin/checkout-options). Card is always on.
 - AUTOMATIC BANK TRANSFER (2026-11-04, owner chose "both", migration 0027 `virtual_accounts`, `src/server/bankTransfer.ts`,
   `BankTransfer.tsx` in the Wallet tab, `AdminBankTransfer.tsx` on /admin/payments, /api/wallet/bank-transfer {onetime|permanent|check},
   /api/admin/bank-transfer): Flutterwave POST /virtual-account-numbers. One-time = exact amount, no BVN, expires (~1h);

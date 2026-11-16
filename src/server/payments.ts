@@ -16,6 +16,13 @@ import { creditWallet, placeHold, settleHold, walletIdForUser } from "./wallet";
 import { handleTransferWebhook } from "./bankTransfer";
 import { alertCustomer, alertNaira } from "./customerAlerts";
 import { namesMatch } from "@/core/names";
+import { readSetting, writeSetting } from "./appSettings";
+
+/** Which ways to pay show on Flutterwave's checkout page ("Fund wallet"). Card is always on. Admin → Payments to confirm. */
+export type CheckoutOptions = { bankTransfer: boolean; ussd: boolean };
+const CHECKOUT_DEFAULTS: CheckoutOptions = { bankTransfer: true, ussd: true };
+export const getCheckoutOptions = (db: Db) => readSetting(db, "checkout_options", CHECKOUT_DEFAULTS);
+export const saveCheckoutOptions = (db: Db, o: CheckoutOptions) => writeSetting(db, "checkout_options", { bankTransfer: !!o.bankTransfer, ussd: !!o.ussd });
 
 /**
  * Ask the bank (through Flutterwave) whose name an account is in. Returns the name, "invalid" when the bank says the
@@ -66,6 +73,8 @@ export async function startFunding(db: Db, userId: string, amount: Kobo) {
   const [u] = await db.select({ email: users.email, name: users.name }).from(users).where(eq(users.id, userId));
   if (!u) throw notFound("Account");
   const reference = paymentReference("fund");
+  const opts = await getCheckoutOptions(db);
+  const paymentOptions = ["card", opts.bankTransfer ? "banktransfer" : "", opts.ussd ? "ussd" : ""].filter(Boolean).join(",");
   await db.insert(payments).values({ userId, reference, amount, provider: "flutterwave" });
   const data = await flutterwave<{ link: string }>("/payments", {
     method: "POST",
@@ -76,6 +85,7 @@ export async function startFunding(db: Db, userId: string, amount: Kobo) {
       redirect_url: `${env().APP_URL}/dashboard`,
       customer: { email: u.email, name: u.name },
       customizations: { title: "Almighty Pumps wallet top-up" },
+      payment_options: paymentOptions,
       meta: { userId, purpose: "wallet_funding" },
     }),
   });
