@@ -404,7 +404,7 @@ function Dashboard(props: Props) {
             </section>
           )}
 
-          {tab === "settings" && <Settings me={{ ...props.me, isAdmin: props.isAdmin }} onOpenSellerPanel={() => { setP2pView("mine"); go("trades"); }} />}
+          {tab === "settings" && <Settings me={{ ...props.me, isAdmin: props.isAdmin }} apiOn={!props.off.includes("api")} onOpenSellerPanel={() => { setP2pView("mine"); go("trades"); }} />}
 
           {tab === "wallet" && (
             <>

@@ -2,18 +2,28 @@
 import type { DbOrTx } from "./db";
 import { readSetting, writeSetting } from "./appSettings";
 import { AppError } from "./errors";
-import { SWITCHES, isSwitchId, type SwitchId } from "@/core/switches";
+import { DEFAULT_OFF, SWITCHES, isSwitchId, type SwitchId } from "@/core/switches";
 
+type Stored = { off: string[]; on: string[] };
+const stored = async (db: DbOrTx): Promise<Stored> => {
+  const s = await readSetting<Stored>(db, "services_off", { off: [], on: [] });
+  return { off: Array.isArray(s.off) ? s.off : [], on: Array.isArray(s.on) ? s.on : [] };
+};
+
+/** Services that are off: the ones switched off, plus default-off ones (e.g. the reseller API) not yet switched on. */
 export async function offServices(db: DbOrTx): Promise<SwitchId[]> {
-  const s = await readSetting<{ off: string[] }>(db, "services_off", { off: [] });
-  return (Array.isArray(s.off) ? s.off : []).filter(isSwitchId);
+  const s = await stored(db);
+  const off = new Set(s.off.filter(isSwitchId));
+  for (const id of DEFAULT_OFF) if (!s.on.includes(id) && isSwitchId(id)) off.add(id);
+  return [...off];
 }
 
 export async function setService(db: DbOrTx, id: SwitchId, on: boolean) {
-  const off = new Set(await offServices(db));
-  if (on) off.delete(id); else off.add(id);
-  await writeSetting(db, "services_off", { off: [...off] });
-  return { off: [...off] };
+  const s = await stored(db);
+  const off = new Set(s.off), onSet = new Set(s.on);
+  if (on) { off.delete(id); if (DEFAULT_OFF.includes(id)) onSet.add(id); } else { off.add(id); onSet.delete(id); }
+  await writeSetting(db, "services_off", { off: [...off], on: [...onSet] });
+  return { off: await offServices(db) };
 }
 
 /** Refuse new orders for a service that's switched off. */

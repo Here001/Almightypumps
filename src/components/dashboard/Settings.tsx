@@ -15,7 +15,7 @@ type Me = { name: string; email: string; phone: string | null; sellerStatus: str
 type Msg = { ok: boolean; text: string } | null;
 const Note = ({ msg }: { msg: Msg }) => (msg ? <div className={msg.ok ? "form-ok" : "form-error"} role={msg.ok ? "status" : "alert"}>{msg.text}</div> : null);
 
-export function Settings({ me, onOpenSellerPanel }: { me: Me; onOpenSellerPanel: () => void }) {
+export function Settings({ me, onOpenSellerPanel, apiOn }: { me: Me; onOpenSellerPanel: () => void; apiOn: boolean }) {
   const router = useRouter();
   return (
     <>
@@ -25,7 +25,7 @@ export function Settings({ me, onOpenSellerPanel }: { me: Me; onOpenSellerPanel:
       <WhatsAppLink />
       <Security />
       <Seller status={me.sellerStatus} onOpenPanel={onOpenSellerPanel} />
-      <ApiKeys />
+      {apiOn && <ApiKeys />}
       <section className="card glass">
         <h2>Account</h2>
         {me.isAdmin && <a href="/admin" className="btn btn-ghost" style={{ alignSelf: "flex-start" }}>Open admin panel</a>}

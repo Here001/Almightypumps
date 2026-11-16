@@ -433,6 +433,11 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   phones). Hero: Create free account + Log in, then quick links to each service page + All services. Services rail = 8 real services,
   each with one action to its page. Final CTA: Create free account + Log in. Footer links fixed (no duplicate #escrow links).
   Edit the copy in `src/landing/markup.ts` (one JSON string).
+- RESELLER API OFF (2026-11-16, owner: "not ready to give out API"): new switch `api` in `src/core/switches.ts`, in `DEFAULT_OFF`
+  (off until the admin switches it on in /admin/switches; stored as services_off.on). Off = /api/v2 answers 503 "The API is not
+  available right now.", POST /api/keys refused, Settings hides the API keys section. Homepage API section, nav link and footer link
+  removed; smm-panel-nigeria SEO page and /llms.txt no longer promise an API (FAQ says "coming"). Turning it back on: switch +
+  re-add homepage/SEO copy.
 - `src/landing/` homepage markup + effects ported from the approved prototype. Copy rewritten 2026-11-04 for the
   real services (Boost Account, Verification codes, US eSIMs, P2P escrow, Reseller API; hero "Boost. Verify. Trade.";
   pricing = free account / pay per order / 7% seller fee; ticker = real highlights, no fake activity). Don't advertise

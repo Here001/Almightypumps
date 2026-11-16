@@ -11,7 +11,10 @@ export const SWITCHES = [
   { id: "docs", label: "Business Documents", hint: "Invoices, receipts, CVs" },
   { id: "invite", label: "Invite Friends & Earn", hint: "Hides the tile (bonus amounts are set in Invite friends)" },
   { id: "p2p", label: "P2P marketplace", hint: "Hides the P2P tab and stops new ads and purchases; open trades carry on" },
+  { id: "api", label: "Reseller API", hint: "API keys in customers' Settings and the /api/v2 connection for resellers. Off until you switch it on" },
 ] as const;
+/** Switches that start OFF until the admin turns them on (stored in services_off.on). */
+export const DEFAULT_OFF: readonly string[] = ["api"];
 export type SwitchId = (typeof SWITCHES)[number]["id"];
 export const isSwitchId = (id: string): id is SwitchId => SWITCHES.some((s) => s.id === id);
 

@@ -12,6 +12,7 @@ import { apiKeys, users, wallets } from "@/server/db/schema";
 import { toAppError } from "@/server/errors";
 import { listServices, myOrders, placeOrder } from "@/server/smm";
 import { clientIp, isOverLimit, rateLimit } from "@/server/rateLimit";
+import { offServices } from "@/server/serviceSwitches";
 
 export const dynamic = "force-dynamic";
 
@@ -35,9 +36,11 @@ async function readParams(req: Request): Promise<Record<string, string>> {
 export async function POST(req: Request) {
   const p = await readParams(req);
   const fail = (error: string, status = 400) => NextResponse.json({ error }, { status });
+  const db = getDb();
+  // The owner switches the API on in Admin → Services: order & on/off (off by default).
+  if ((await offServices(db)).includes("api")) return fail("The API is not available right now.", 503);
   if (!p.key) return fail("Missing API key", 401);
 
-  const db = getDb();
   const ip = clientIp(req);
   // Stop key guessing: a network that sent too many wrong keys is blocked for the rest of the hour.
   if (await isOverLimit(db, "apiKeyFail", ip)) return fail("Too many wrong API keys. Try again later.", 429);

@@ -365,7 +365,7 @@ export function initLanding() {
 
   /* ---------- Progress bar + active section links ---------- */
   var topBar = document.querySelector('.top');
-  var ids = ['top', 'tools', 'escrow', 'growth', 'pricing', 'api', 'start'];
+  var ids = ['top', 'tools', 'escrow', 'growth', 'pricing', 'start'];
   var secEls = ids.map(function (id) { return document.getElementById(id === 'top' ? 'hero-title' : id); });
   var navLinks = Array.prototype.slice.call(document.querySelectorAll('.nav a'));
   var activeId = '';
@@ -461,7 +461,6 @@ export function initLanding() {
     gsap.fromTo(el, { y: 130, z: -220, rotateX: 26, opacity: 0.4, transformPerspective: 1000 }, { y: 0, z: 0, rotateX: 0, opacity: 1, ease: 'power2.out', scrollTrigger: { trigger: '.tiers', start: 'top ' + (95 - i * 6) + '%', end: 'top 45%', scrub: 1.2 } });
   });
 
-  gsap.fromTo('#apicard', { rotateX: -22, y: 90, opacity: 0.5, transformPerspective: 1400 }, { rotateX: 0, y: 0, opacity: 1, ease: 'none', scrollTrigger: { trigger: '#api', start: 'top 95%', end: 'top 45%', scrub: 1.2 } });
   gsap.fromTo('#rings', { scale: 0.4, rotate: -40 }, { scale: 1.15, rotate: 0, ease: 'none', scrollTrigger: { trigger: '#start', start: 'top bottom', end: 'bottom bottom', scrub: 1.2 } });
   return cleanup;
 }

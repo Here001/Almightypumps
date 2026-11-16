@@ -15,7 +15,7 @@ export function GET() {
     "- Website: " + SITE_URL + " (sign up free at " + SITE_URL + "/signup)",
     "- Currency: Nigerian Naira (prices can be viewed in US dollars)",
     "- Support: support@almightypumps.com",
-    "- Social media growth for Instagram, TikTok, YouTube, Facebook, X and 30+ platforms, plus a reseller API (standard SMM panel API v2)",
+    "- Social media growth for Instagram, TikTok, YouTube, Facebook, X and 30+ platforms",
     "- Temporary US numbers for SMS verification codes (pay only if the code arrives)",
     "- US phone-line eSIMs and instant travel data eSIMs for 190+ countries",
     "- Digital gift cards (Amazon, Apple, Google Play, PlayStation, Steam…), Nigerian airtime and data (MTN, Airtel, Glo, 9mobile)",
