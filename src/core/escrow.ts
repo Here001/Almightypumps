@@ -9,6 +9,9 @@
  *  CANCELLED                └─RESOLVE_BUYER──▶ REFUNDED  (buyer refunded)
  *  (buyer refunded)
  *
+ * Cancellation requests (2026-11-16): the buyer asks to cancel (PAID or SHIPPED); the seller agrees → CANCEL_AGREED
+ * (refund), or refuses → ESCALATE (DISPUTED, our team decides). No answer in 24h also escalates (system).
+ *
  * The buyer's money sits in a wallet hold from the moment the trade is created.
  */
 import { feeBps, type Kobo } from "./money.ts";
@@ -22,7 +25,9 @@ export type TradeAction =
   | "AUTO_RELEASE"
   | "AUTO_CANCEL"
   | "RESOLVE_SELLER"
-  | "RESOLVE_BUYER";
+  | "RESOLVE_BUYER"
+  | "CANCEL_AGREED"
+  | "ESCALATE";
 export type ActorRole = "buyer" | "seller" | "admin" | "system";
 export type Effect = "NONE" | "PAYOUT_SELLER" | "REFUND_BUYER";
 
@@ -115,6 +120,16 @@ export function transition(
       if (s !== "PAID") deny("Only undelivered trades auto-cancel.");
       if (now < trade.shipBy) deny("The seller still has time to deliver.");
       return { status: "CANCELLED", effect: "REFUND_BUYER", patch: { closedAt: now } };
+
+    case "CANCEL_AGREED":
+      if (actor !== "seller") deny("Only the seller can agree to cancel.");
+      if (s !== "PAID" && s !== "SHIPPED") deny("This trade can't be cancelled now.");
+      return { status: "CANCELLED", effect: "REFUND_BUYER", patch: { closedAt: now } };
+
+    case "ESCALATE":
+      if (actor !== "seller" && actor !== "system") deny("Only a refused or unanswered cancellation request goes to dispute this way.");
+      if (s !== "PAID" && s !== "SHIPPED") deny("This trade can't be disputed now.");
+      return { status: "DISPUTED", effect: "NONE", patch: {} };
 
     case "RESOLVE_SELLER":
       if (actor !== "admin") deny("Only the dispute team can resolve disputes.");

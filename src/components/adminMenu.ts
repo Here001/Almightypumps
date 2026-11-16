@@ -33,6 +33,7 @@ export const ADMIN_GROUPS: { title: string; items: Item[] }[] = [
     title: "P2P marketplace",
     items: [
       { href: "/admin/disputes", label: "Disputes", count: "disputes" },
+      { href: "/admin/reports", label: "Seller reports", count: "reports" },
       { href: "/admin/sellers", label: "Seller applications", count: "sellers" },
       { href: "/admin/listings", label: "Ads to review", count: "listings" },
       { href: "/admin/p2p-categories", label: "Categories" },

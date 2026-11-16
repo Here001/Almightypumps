@@ -560,3 +560,16 @@ test("negotiable listings need no price; guide and minimum are optional but at l
   assert.ok(checkListing({ ...base, negotiable: true, guidePriceKobo: 50_000_000, minOfferKobo: 40_000_000 }, ["gadgets"]).ok);
   assert.ok(!checkListing({ ...base, negotiable: true, guidePriceKobo: 500 }, ["gadgets"]).ok);
 });
+
+test("cancellation requests: seller agrees (refund) or refuses (dispute), before or after delivery", () => {
+  const now = new Date("2026-11-16T10:00:00Z");
+  const paid = { status: "PAID" as const, shipBy: new Date("2026-11-19T10:00:00Z"), inspectionEndsAt: null };
+  const shipped = { status: "SHIPPED" as const, shipBy: paid.shipBy, inspectionEndsAt: new Date("2026-11-18T10:00:00Z") };
+  assert.deepEqual([transition(paid, "CANCEL_AGREED", "seller", now).status, transition(paid, "CANCEL_AGREED", "seller", now).effect], ["CANCELLED", "REFUND_BUYER"]);
+  assert.equal(transition(shipped, "CANCEL_AGREED", "seller", now).effect, "REFUND_BUYER");
+  assert.throws(() => transition(paid, "CANCEL_AGREED", "buyer", now), EscrowError);
+  assert.equal(transition(paid, "ESCALATE", "seller", now).status, "DISPUTED");
+  assert.equal(transition(shipped, "ESCALATE", "system", now).status, "DISPUTED");
+  assert.throws(() => transition(shipped, "ESCALATE", "buyer", now), EscrowError);
+  assert.throws(() => transition({ ...paid, status: "COMPLETED" }, "ESCALATE", "system", now), EscrowError);
+});

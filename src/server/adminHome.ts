@@ -5,7 +5,7 @@ import { platformWalletId } from "./wallet";
 
 export type AdminCounts = {
   payments: number; withdrawals: number; disputes: number; esim: number; shop: number;
-  sellers: number; listings: number; instantStuck: number; waitingFunds: number; sell: number; support: number; nameChanges: number;
+  sellers: number; listings: number; instantStuck: number; waitingFunds: number; sell: number; support: number; nameChanges: number; reports: number;
 };
 
 const one = async <T>(db: Db, q: ReturnType<typeof sql>) => ((await db.execute(q)) as unknown as { rows: T[] }).rows[0];
@@ -18,6 +18,7 @@ export async function adminCounts(db: Db): Promise<AdminCounts> {
     (select count(*) from name_change_requests where status = 'pending')::int as "nameChanges",
     (select count(*) from withdrawals where status = 'requested')::int as withdrawals,
     (select count(*) from trades where status = 'DISPUTED')::int as disputes,
+    (select count(*) from seller_reports where status = 'open')::int as reports,
     (select count(*) from esim_orders where status = 'pending')::int as esim,
     (select count(*) from shop_orders where status = 'pending')::int as shop,
     (select count(*) from users where seller_status = 'pending')::int as sellers,

@@ -104,6 +104,17 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 - AFTER BUYING (2026-11-16, owner's request): the buy sheet's success screen shows "Track order" (opens the TradeRoom for the new
   trade) and "Chat seller" (TradeRoom with `focus="chat"`: scrolls to the chat and focuses the message box). Same two buttons
   after a buyer accepts a counter-offer (BuyerOffers). buy API returns the trade id.
+- CANCEL / REPORT / DISPUTE IN THE TRADE ROOM (2026-11-16, owner's request; migration 0037): buyer sees "Problem with this order?" →
+  Cancel order (reason ≥5 chars → `requestCancel` in market.ts sets trades.cancel_status 'pending' + cancel_reason, emails the seller;
+  PAID or SHIPPED; once per trade), Raise dispute (now also from PAID), Report seller. Seller sees Accept cancellation (escrow action
+  CANCEL_AGREED → CANCELLED + refund) or Refuse (optional note → ESCALATE → DISPUTED, disputes row "Buyer asked to cancel: …", admins
+  + buyer emailed). No answer in CANCEL_ANSWER_HOURS (24) → escrow cron ESCALATEs (cancel_status 'expired'). While pending: SHIP is
+  refused and AUTO_RELEASE is skipped; a late PAID order is still refunded by AUTO_CANCEL, and the buyer's instant "Cancel & refund"
+  after the ship deadline is unchanged. Reports: `seller_reports` (one per buyer per trade, reasons = REPORT_REASONS, NOT in the trade
+  timeline so the seller doesn't see it), admins emailed, /admin/reports `AdminReports.tsx` (menu P2P, badge `reports`, Admin Home
+  todo; mark handled with a note / reopen; shows how many reports a seller has; links to the customer pages to suspend).
+  Action route /api/market/trades/[id]/action takes REQUEST_CANCEL | ACCEPT_CANCEL | REJECT_CANCEL | REPORT {reason, note}.
+  Neon dev has 0037; main not yet.
 - P2P tab for everyone = Marketplace (`Marketplace.tsx`, layout inspired by Bybit P2P: seller, badge,
   orders/completion, price, limits, stock, orange Buy (same style as .btn-primary)) → buy sheet (answers, quantity, escrow). Verified
   sellers also get "My ads & sales". "Become a seller" lives only in Settings. Buyers' "My trades" has
@@ -504,7 +515,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
     usd auto, Instagram Likes/Live viewers 100% rules. NOT copied: dev's P2P category renamed "Accounts"
     (account sales are blocked); live keeps "Digital products". Re-star 3 TikTok follower services
     (Owlet ids 8277, 24221, 8619) after the first live sync. No users yet (owner signs up, then promote to admin).
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0036 applied (main: up to 0035, applied 2026-11-12 with owner's yes). Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0037 applied (main: up to 0035, applied 2026-11-12 with owner's yes). Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

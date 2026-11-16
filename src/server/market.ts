@@ -10,7 +10,7 @@ import { checkAnswers } from "@/core/listingQuestions";
 import { blockedReasons } from "@/core/listingPolicy";
 import type { Db } from "./db";
 import { allCategories, getCategory } from "./listingCategories";
-import { disputes, listingCategories, listings, sellerAvatars, sellerProfiles, tradeEvents, tradeMessages, trades, users } from "./db/schema";
+import { disputes, listingCategories, listings, sellerAvatars, sellerProfiles, sellerReports, tradeEvents, tradeMessages, trades, users } from "./db/schema";
 import { badRequest, forbidden, notFound } from "./errors";
 import { avatarUrl } from "./sellers";
 import { imageUrlsSql } from "./listingImages";
@@ -194,6 +194,23 @@ export async function act(
   extra: { note?: string; deliveryProof?: string } = {},
 ) {
   const updated = await actTx(db, tradeId, action, actor, extra);
+  if (action === "ESCALATE") {
+    alertAdmins(db, `Dispute opened on P2P order #M-${updated.publicId}`, [
+      actor.userId ? "The buyer asked to cancel and the seller refused, so the order went to dispute. The money stays in escrow until you decide."
+        : "The buyer asked to cancel and the seller didn't answer within 24 hours, so the order went to dispute. The money stays in escrow until you decide.",
+      `Buyer's reason: ${updated.cancelReason ?? "No reason given"}`,
+      ...(extra.note ? [`Seller says: ${extra.note}`] : []),
+    ], "/admin/disputes", { customerId: updated.buyerId, amountKobo: updated.amount });
+    void notifyTrade(db, updated.buyerId, `Order #M-${updated.publicId} is now a dispute`, [
+      actor.userId ? "The seller didn't agree to cancel your order, so our team will look at it." : "The seller didn't answer your cancellation request within 24 hours, so our team will look at it.",
+      "Your money stays safe in escrow until we decide. You can add details in the trade room chat.",
+    ]);
+  }
+  if (action === "CANCEL_AGREED") {
+    void notifyTrade(db, updated.buyerId, `Order #M-${updated.publicId} cancelled: money returned`, [
+      "The seller agreed to cancel your order. The full amount is back in your Almighty Pumps wallet.",
+    ]);
+  }
   if (action === "DISPUTE") {
     alertAdmins(db, `Dispute opened on P2P order #M-${updated.publicId}`, [
       "The buyer says something is wrong with their order. The money stays in escrow until you decide.",
@@ -227,6 +244,7 @@ async function actTx(
     else if (actor.userId === t.sellerId) role = "seller";
     else throw forbidden();
 
+    if (action === "SHIP" && t.cancelStatus === "pending") throw badRequest("The buyer asked to cancel this order. Accept or refuse the request first.");
     const now = new Date();
     const r = transition({ status: t.status, shipBy: t.shipBy, inspectionEndsAt: t.inspectionEndsAt }, action, role, now);
 
@@ -261,6 +279,11 @@ async function actTx(
         inspectionEndsAt: r.patch.inspectionEndsAt ?? t.inspectionEndsAt,
         closedAt: r.patch.closedAt ?? t.closedAt,
         deliveryProof: action === "SHIP" ? (extra.deliveryProof ?? t.deliveryProof) : t.deliveryProof,
+        // A cancellation request is answered (accept / refuse / no answer) or overtaken by the trade ending some other way.
+        cancelStatus: t.cancelStatus !== "pending" ? t.cancelStatus
+          : action === "CANCEL_AGREED" ? "accepted"
+          : action === "ESCALATE" ? (role === "system" ? "expired" : "rejected")
+          : r.status !== "PAID" && r.status !== "SHIPPED" ? "closed" : t.cancelStatus,
       })
       .where(eq(trades.id, t.id))
       .returning();
@@ -269,6 +292,10 @@ async function actTx(
 
     if (action === "DISPUTE") {
       await tx.insert(disputes).values({ tradeId: t.id, openedBy: actor.userId!, reason: extra.note?.trim() || "No reason given" });
+    }
+    if (action === "ESCALATE") {
+      const why = role === "system" ? "The seller didn't answer the buyer's cancellation request within 24 hours." : `The seller refused the buyer's cancellation request.${extra.note?.trim() ? ` Seller says: ${extra.note.trim()}` : ""}`;
+      await tx.insert(disputes).values({ tradeId: t.id, openedBy: t.buyerId, reason: `Buyer asked to cancel: ${t.cancelReason ?? "no reason given"}. ${why}` });
     }
     if (action === "RESOLVE_BUYER" || action === "RESOLVE_SELLER") {
       await tx
@@ -285,7 +312,8 @@ export async function runEscrowTimers(db: Db, now = new Date()) {
   const dueRelease = await db
     .select({ id: trades.id })
     .from(trades)
-    .where(and(eq(trades.status, "SHIPPED"), lte(trades.inspectionEndsAt, now)))
+    // A delivered order whose buyer is waiting on a cancellation answer is not paid out automatically.
+    .where(and(eq(trades.status, "SHIPPED"), lte(trades.inspectionEndsAt, now), sql`${trades.cancelStatus} is distinct from 'pending'`))
     .limit(200);
   const dueCancel = await db
     .select({ id: trades.id })
@@ -293,12 +321,24 @@ export async function runEscrowTimers(db: Db, now = new Date()) {
     .where(and(eq(trades.status, "PAID"), lte(trades.shipBy, now)))
     .limit(200);
 
-  const result = { released: 0, cancelled: 0, errors: [] as string[] };
+  // Cancellation requests the seller ignored for 24 hours go to dispute (a PAID order past its ship deadline is refunded instead).
+  const dueEscalate = await db
+    .select({ id: trades.id })
+    .from(trades)
+    .where(and(eq(trades.cancelStatus, "pending"), inArray(trades.status, ["PAID", "SHIPPED"]),
+      lte(trades.cancelRequestedAt, new Date(now.getTime() - CANCEL_ANSWER_HOURS * 3_600_000))))
+    .limit(200);
+
+  const result = { released: 0, cancelled: 0, escalated: 0, errors: [] as string[] };
   for (const { id } of dueRelease) {
     try { await act(db, id, "AUTO_RELEASE", { userId: null }); result.released++; } catch (e) { result.errors.push(`${id}: ${(e as Error).message}`); }
   }
   for (const { id } of dueCancel) {
     try { await act(db, id, "AUTO_CANCEL", { userId: null }); result.cancelled++; } catch (e) { result.errors.push(`${id}: ${(e as Error).message}`); }
+  }
+  for (const { id } of dueEscalate) {
+    if (dueCancel.some((d) => d.id === id)) continue;
+    try { await act(db, id, "ESCALATE", { userId: null }); result.escalated++; } catch (e) { result.errors.push(`${id}: ${(e as Error).message}`); }
   }
   // Offers on negotiable ads that nobody answered in time: give the buyer's money back.
   const { expireOffers } = await import("./offers");
@@ -319,12 +359,17 @@ export async function tradeForUser(db: Db, tradeId: string, userId: string, isAd
   const nameOf = (id: string) => { const p = people.find((x) => x.id === id); return id === t.sellerId ? (p?.shop || p?.name || "Seller") : (p?.name.split(" ")[0] || "Buyer"); };
   const { holdId: _hold, ...trade } = t;
   void _hold;
+  const [reported] = t.buyerId === userId
+    ? await db.select({ id: sellerReports.id }).from(sellerReports).where(and(eq(sellerReports.tradeId, t.id), eq(sellerReports.reporterId, userId))).limit(1)
+    : [];
   return {
     trade, events, messages,
     listing: { title: l?.title ?? "", deliveryType: l?.deliveryType ?? "", images: l?.images ?? [] },
     buyerName: nameOf(t.buyerId), sellerName: nameOf(t.sellerId),
     role: t.buyerId === userId ? "buyer" : t.sellerId === userId ? "seller" : "admin",
     sellerReceives: payoutSplit(t.amount, ESCROW_DEFAULTS.sellerFeeBps).seller,
+    reported: Boolean(reported),
+    cancelAnswerBy: t.cancelStatus === "pending" && t.cancelRequestedAt ? new Date(t.cancelRequestedAt.getTime() + CANCEL_ANSWER_HOURS * 3_600_000) : null,
   };
 }
 
@@ -441,4 +486,70 @@ export async function sellerOrders(db: Db, sellerId: string) {
     .orderBy(desc(trades.createdAt))
     .limit(100);
   return rows.map((r) => ({ ...r, youReceive: payoutSplit(r.amount, ESCROW_DEFAULTS.sellerFeeBps).seller }));
+}
+
+/** How long the seller has to answer a buyer's cancellation request before it becomes a dispute. */
+export const CANCEL_ANSWER_HOURS = 24;
+
+/**
+ * Buyer asks to cancel. Before the ship deadline (or after delivery) the seller must agree, so this only records the
+ * request and tells the seller. Late, undelivered orders are cancelled at once by the normal CANCEL action instead.
+ */
+export async function requestCancel(db: Db, tradeId: string, buyerId: string, reason: string) {
+  const why = reason.trim();
+  if (why.length < 5 || why.length > 1000) throw badRequest("Please tell the seller why you want to cancel (at least a few words).");
+  const t = await db.transaction(async (tx) => {
+    const [t] = await tx.select().from(trades).where(eq(trades.id, tradeId)).for("update");
+    if (!t) throw notFound("Trade");
+    if (t.buyerId !== buyerId) throw forbidden();
+    if (t.status !== "PAID" && t.status !== "SHIPPED") throw badRequest("This order can't be cancelled now.");
+    if (t.cancelStatus === "pending") throw badRequest("You already asked to cancel. Waiting for the seller to answer.");
+    if (t.cancelStatus === "rejected" || t.cancelStatus === "expired") throw badRequest("You already asked once. Raise a dispute if something is wrong.");
+    const [u] = await tx.update(trades).set({ cancelStatus: "pending", cancelReason: why, cancelRequestedAt: new Date() }).where(eq(trades.id, t.id)).returning();
+    await tx.insert(tradeEvents).values({ tradeId: t.id, actorId: buyerId, action: "REQUEST_CANCEL", fromStatus: t.status, toStatus: t.status, note: why });
+    return u;
+  });
+  void notifyTrade(db, t.sellerId, `Buyer wants to cancel order #M-${t.publicId}`, [
+    `The buyer asked to cancel P2P order #M-${t.publicId}.`,
+    `Reason: “${why.length > 300 ? why.slice(0, 300) + "…" : why}”`,
+    `Open the trade room and tap Accept (the buyer gets their money back) or Refuse (our team reviews it as a dispute). If you don't answer within ${CANCEL_ANSWER_HOURS} hours, it goes to dispute.`,
+  ]);
+  return t;
+}
+
+/** Seller answers a cancellation request: accept = refund the buyer, refuse = dispute for the admins. */
+export async function answerCancel(db: Db, tradeId: string, sellerId: string, accept: boolean, note?: string) {
+  const [t] = await db.select({ sellerId: trades.sellerId, cancelStatus: trades.cancelStatus }).from(trades).where(eq(trades.id, tradeId));
+  if (!t) throw notFound("Trade");
+  if (t.sellerId !== sellerId) throw forbidden();
+  if (t.cancelStatus !== "pending") throw badRequest("There is no cancellation request to answer.");
+  return act(db, tradeId, accept ? "CANCEL_AGREED" : "ESCALATE", { userId: sellerId }, { note: note?.trim() || undefined });
+}
+
+export const REPORT_REASONS = [
+  "Asked me to pay or talk outside Almighty Pumps",
+  "Scam or fraud attempt",
+  "Item is fake or not as described",
+  "Rude, threatening or abusive",
+  "Something else",
+] as const;
+
+/** Buyer reports the seller of one of their trades to the admins (once per trade). Money is not affected. */
+export async function reportSeller(db: Db, tradeId: string, buyerId: string, reason: string, details: string) {
+  if (!(REPORT_REASONS as readonly string[]).includes(reason)) throw badRequest("Pick a reason.");
+  const text = details.trim();
+  if (reason === "Something else" && text.length < 5) throw badRequest("Please describe what happened.");
+  if (text.length > 2000) throw badRequest("Please keep it under 2,000 characters.");
+  const [t] = await db.select({ id: trades.id, buyerId: trades.buyerId, sellerId: trades.sellerId, publicId: trades.publicId }).from(trades).where(eq(trades.id, tradeId));
+  if (!t) throw notFound("Trade");
+  if (t.buyerId !== buyerId) throw forbidden();
+  const [row] = await db.insert(sellerReports).values({ tradeId: t.id, reporterId: buyerId, sellerId: t.sellerId, reason, details: text || null })
+    .onConflictDoNothing().returning();
+  if (!row) throw badRequest("You already reported this seller for this order. Our team is looking at it.");
+  // Not added to the trade timeline: the seller sees that timeline, and a report stays between the buyer and us.
+  alertAdmins(db, `Seller reported on P2P order #M-${t.publicId}`, [
+    `A buyer reported the seller: ${reason}.`,
+    ...(text ? [`Details: ${text.length > 400 ? text.slice(0, 400) + "…" : text}`] : []),
+  ], "/admin/disputes#t=seller-reports", { customerId: t.sellerId });
+  return { ok: true };
 }

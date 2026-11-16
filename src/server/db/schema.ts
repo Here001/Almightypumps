@@ -242,7 +242,25 @@ export const trades = pgTable("trades", {
   inspectionEndsAt: ts("inspection_ends_at"),
   closedAt: ts("closed_at"),
   deliveryProof: text("delivery_proof"),
+  cancelStatus: text("cancel_status").$type<"pending" | "accepted" | "rejected" | "expired" | "closed">(),
+  cancelReason: text("cancel_reason"),
+  cancelRequestedAt: ts("cancel_requested_at"),
   createdAt: ts("created_at").notNull().defaultNow(),
+});
+
+export const sellerReports = pgTable("seller_reports", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  publicId: serial("public_id").unique(),
+  tradeId: uuid("trade_id").notNull().references(() => trades.id),
+  reporterId: uuid("reporter_id").notNull().references(() => users.id),
+  sellerId: uuid("seller_id").notNull().references(() => users.id),
+  reason: text("reason").notNull(),
+  details: text("details"),
+  status: text("status").$type<"open" | "closed">().notNull().default("open"),
+  adminNote: text("admin_note"),
+  closedBy: uuid("closed_by").references(() => users.id),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  closedAt: ts("closed_at"),
 });
 
 export const tradeEvents = pgTable("trade_events", {

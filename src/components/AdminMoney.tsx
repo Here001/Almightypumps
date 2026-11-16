@@ -195,6 +195,7 @@ type Dispute = {
 const ACTION: Record<string, string> = {
   PAY: "Paid into escrow", SHIP: "Marked delivered", CONFIRM: "Confirmed received", DISPUTE: "Opened a dispute", CANCEL: "Cancelled",
   RESOLVE_BUYER: "Resolved: buyer refunded", RESOLVE_SELLER: "Resolved: seller paid", AUTO_RELEASE: "Auto-released after 48h", AUTO_CANCEL: "Auto-cancelled (not shipped in time)",
+  REQUEST_CANCEL: "Asked to cancel", CANCEL_AGREED: "Agreed to cancel (buyer refunded)", ESCALATE: "Cancellation refused or not answered → dispute",
 };
 
 export function AdminDisputes() {

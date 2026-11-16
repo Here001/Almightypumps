@@ -741,3 +741,15 @@ html[data-theme="light"]:has(.app-shell) body { background: var(--bg); }
 .mk-after { display: flex; gap: 10px; flex-wrap: wrap; }
 .mk-after .btn { flex: 1 1 140px; }
 .ap-sheet-wrap :focus-visible { outline-color: var(--accent); }
+
+/* Trade room: cancel request, report seller, raise dispute (2026-11-16) */
+.tr-status.warn { display: flex; flex-direction: column; gap: 6px; }
+.tr-quote { font-style: italic; opacity: 0.9; white-space: pre-wrap; }
+.tr-more { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-top: 4px; }
+.tr-more > .muted { font-size: 13px; width: 100%; }
+.tr-report { color: rgb(248 113 113); }
+.tr-form { display: flex; flex-direction: column; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: rgb(var(--ov) / 0.03); }
+.tr-reasons { display: flex; flex-direction: column; gap: 6px; }
+.tr-reason { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; font-size: 14px; cursor: pointer; }
+.tr-reason.on { border-color: var(--accent, #FF5A1F); background: rgb(255 90 31 / 0.08); }
+.tr-reason input { accent-color: #FF5A1F; margin: 0; }
