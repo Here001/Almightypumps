@@ -764,3 +764,5 @@ html[data-theme="light"]:has(.app-shell) body { background: var(--bg); }
 .p2p-switch > button[aria-selected="true"] .p2p-count { background: #fff; color: #FF5A1F; }
 @media (max-width: 420px) { .p2p-switch > button { font-size: 13px; padding: 10px 4px; } }
 .app-shell .ap-row .status { white-space: nowrap; flex-shrink: 0; align-self: flex-start; height: auto; }
+.app-shell .mt-groups { display: flex; flex-wrap: nowrap; gap: 6px; }
+.app-shell .mt-groups .ap-chip { flex: 1 1 0; min-width: 0; justify-content: center; text-align: center; padding-inline: 6px; font-size: 14px; white-space: nowrap; }

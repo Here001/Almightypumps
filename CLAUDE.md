@@ -117,7 +117,9 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   Neon dev and main have 0037.
 - P2P SWITCH (2026-11-16, owner: "visible My trades button"): top of the P2P tab = `.p2p-switch` Marketplace | My trades (orange count
   of PAID/SHIPPED/DISPUTED) | My ads & sales (verified sellers). p2pView "market" | "trades" | "mine" in DashboardApp. My trades view =
-  trades list (empty state + "Browse the marketplace") then "My offers". `#my-trades` opens it (trade emails link there); after a
+  trades list (empty state + "Browse the marketplace") then "My offers". The list has chips Active (PAID/SHIPPED/DISPUTED) /
+  Completed / Cancelled (CANCELLED+REFUNDED) with counts (`TRADE_GROUPS`, `.mt-groups`); `myTrades` returns every open trade first,
+  then the latest finished ones (limit 100). `#my-trades` opens it (trade emails link there); after a
   buy/offer the Marketplace calls onViewTrades(focus?).
 - P2P tab for everyone = Marketplace (`Marketplace.tsx`, layout inspired by Bybit P2P: seller, badge,
   orders/completion, price, limits, stock, orange Buy (same style as .btn-primary)) → buy sheet (answers, quantity, escrow). Verified

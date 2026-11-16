@@ -35,6 +35,13 @@ type Order = { id: number; service: string; platform: string; link: string; quan
 type Trade = { id: number; uuid: string; title: string; role: string; amount: number; status: string; when: string; shipBy: string; inspectionEndsAt: string | null; proof: string | null };
 type Entry = { id: string; what: string; change: number; after: number; when: string };
 
+type TradeGroup = "active" | "completed" | "cancelled";
+const TRADE_GROUPS: { id: TradeGroup; label: string; statuses: string[]; empty: string }[] = [
+  { id: "active", label: "Active", statuses: ["PAID", "SHIPPED", "DISPUTED"], empty: "No active trades. Orders waiting for delivery, being checked or in dispute show here." },
+  { id: "completed", label: "Completed", statuses: ["COMPLETED"], empty: "No completed trades yet." },
+  { id: "cancelled", label: "Cancelled", statuses: ["CANCELLED", "REFUNDED"], empty: "No cancelled or refunded trades." },
+];
+
 const TABS = [
   { id: "services", label: "Services", icon: "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" },
   { id: "orders", label: "Orders", icon: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" },
@@ -86,6 +93,8 @@ function Dashboard(props: Props) {
   const [esimKind, setEsimKind] = useState<"travel" | "us">(usOff && !travelOff ? "travel" : "us");
   const hidden = hiddenTiles(props.off);
   const activeTrades = props.trades.filter((t) => t.status === "PAID" || t.status === "SHIPPED" || t.status === "DISPUTED").length;
+  const [tradeGroup, setTradeGroup] = useState<TradeGroup>("active");
+  const shownTrades = props.trades.filter((t) => TRADE_GROUPS.find((g) => g.id === tradeGroup)!.statuses.includes(t.status));
   const tabs = TABS.filter((t) => !(t.id === "trades" && hidden.has("p2p") && props.trades.length === 0));
   const [room, setRoom] = useState<string | null>(null);
   const router = useRouter();
@@ -469,9 +478,17 @@ function Dashboard(props: Props) {
           {tab === "trades" && (p2pView === "trades" || hidden.has("p2p")) && props.trades.length > 0 && (
             <section className="card glass" id="my-trades" style={{ scrollMarginTop: 12 }}>
               <h2>My trades</h2>
-              {(
+              <div className="ap-chips mt-groups" role="group" aria-label="Which trades">
+                {TRADE_GROUPS.map((g) => {
+                  const n = props.trades.filter((t) => g.statuses.includes(t.status)).length;
+                  return <button key={g.id} type="button" className="ap-chip" aria-pressed={tradeGroup === g.id} onClick={() => setTradeGroup(g.id)}>{g.label} ({n})</button>;
+                })}
+              </div>
+              {shownTrades.length === 0 ? (
+                <div className="empty">{TRADE_GROUPS.find((g) => g.id === tradeGroup)?.empty}</div>
+              ) : (
                 <ul className="ap-list">
-                  {props.trades.map((t) => {
+                  {shownTrades.map((t) => {
                     const st = TRADE_STATUS[t.status] ?? { label: t.status, tone: "" };
                     return (
                       <li key={t.id} className="ap-row" style={{ flexDirection: "column", gap: 8 }}>

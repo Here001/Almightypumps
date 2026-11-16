@@ -412,8 +412,9 @@ export async function myTrades(db: Db, userId: string) {
     .from(trades)
     .innerJoin(listings, eq(listings.id, trades.listingId))
     .where(sql`${trades.buyerId} = ${userId} or ${trades.sellerId} = ${userId}`)
-    .orderBy(desc(trades.createdAt))
-    .limit(50);
+    // Every open trade first (never cut off by the limit), then the latest finished ones.
+    .orderBy(sql`(${trades.status} in ('PAID','SHIPPED','DISPUTED')) desc`, desc(trades.createdAt))
+    .limit(100);
 }
 
 export async function openDisputes(db: Db) {
