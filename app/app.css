@@ -753,3 +753,14 @@ html[data-theme="light"]:has(.app-shell) body { background: var(--bg); }
 .tr-reason { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; font-size: 14px; cursor: pointer; }
 .tr-reason.on { border-color: var(--accent, #FF5A1F); background: rgb(255 90 31 / 0.08); }
 .tr-reason input { accent-color: #FF5A1F; margin: 0; }
+
+/* P2P tab: Marketplace / My trades / My ads & sales switch (2026-11-16) */
+.p2p-switch { display: flex; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 12px; background: rgb(var(--ov) / 0.04); }
+.p2p-switch > button { flex: 1 1 0; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 8px;
+  border: 0; border-radius: 9px; background: transparent; color: inherit; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; opacity: 0.75; }
+.p2p-switch > button[aria-selected="true"] { background: #FF5A1F; color: #fff; opacity: 1; }
+.p2p-switch > button:focus-visible { outline: 2px solid #FF5A1F; outline-offset: 2px; }
+.p2p-count { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: #FF5A1F; color: #fff; font-size: 12px; line-height: 20px; text-align: center; }
+.p2p-switch > button[aria-selected="true"] .p2p-count { background: #fff; color: #FF5A1F; }
+@media (max-width: 420px) { .p2p-switch > button { font-size: 13px; padding: 10px 4px; } }
+.app-shell .ap-row .status { white-space: nowrap; flex-shrink: 0; align-self: flex-start; height: auto; }

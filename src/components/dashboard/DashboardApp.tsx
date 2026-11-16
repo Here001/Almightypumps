@@ -81,10 +81,11 @@ export function DashboardApp(props: Props) {
 function Dashboard(props: Props) {
   const { money, currency, charge } = useCurrency();
   const [tab, setTab] = useState<Tab>("services");
-  const [p2pView, setP2pView] = useState<"market" | "mine">("market");
+  const [p2pView, setP2pView] = useState<"market" | "trades" | "mine">("market");
   const usOff = props.off.includes("esim_us"), travelOff = props.off.includes("esim_travel");
   const [esimKind, setEsimKind] = useState<"travel" | "us">(usOff && !travelOff ? "travel" : "us");
   const hidden = hiddenTiles(props.off);
+  const activeTrades = props.trades.filter((t) => t.status === "PAID" || t.status === "SHIPPED" || t.status === "DISPUTED").length;
   const tabs = TABS.filter((t) => !(t.id === "trades" && hidden.has("p2p") && props.trades.length === 0));
   const [room, setRoom] = useState<string | null>(null);
   const router = useRouter();
@@ -93,6 +94,7 @@ function Dashboard(props: Props) {
   useEffect(() => {
     const read = () => {
       const h = window.location.hash.replace("#", "");
+      if (h === "my-trades") { setTab("trades"); setP2pView("trades"); return; }
       const legacy: Record<string, Tab> = { growth: "boost" };
       const next = (legacy[h] ?? h) as Tab;
       if (next === "boost" || next === "verify" || next === "esim" || next === "giftcards" || next === "airtime" || next === "sell" || next === "invite" || next === "docs" || next === "ship" || next.startsWith("shop-") || TABS.some((t) => t.id === next)) setTab(next);
@@ -442,18 +444,29 @@ function Dashboard(props: Props) {
             </>
           )}
 
-          {tab === "trades" && !hidden.has("p2p") && props.me.sellerStatus === "verified" && (
-            <div className="ap-chips ap-chips-wrap" role="group" aria-label="P2P view">
-              <button type="button" className="ap-chip" aria-pressed={p2pView === "market"} onClick={() => setP2pView("market")}>Marketplace</button>
-              <button type="button" className="ap-chip" aria-pressed={p2pView === "mine"} onClick={() => setP2pView("mine")}>My ads & sales</button>
+          {tab === "trades" && (!hidden.has("p2p") || props.trades.length > 0) && (
+            <div className="p2p-switch" role="tablist" aria-label="P2P">
+              {!hidden.has("p2p") && <button type="button" role="tab" aria-selected={p2pView === "market"} onClick={() => setP2pView("market")}>Marketplace</button>}
+              <button type="button" role="tab" aria-selected={p2pView === "trades" || hidden.has("p2p")} onClick={() => setP2pView("trades")}>
+                My trades{activeTrades > 0 && <span className="p2p-count" aria-label={`${activeTrades} active`}>{activeTrades}</span>}
+              </button>
+              {!hidden.has("p2p") && props.me.sellerStatus === "verified" && <button type="button" role="tab" aria-selected={p2pView === "mine"} onClick={() => setP2pView("mine")}>My ads & sales</button>}
             </div>
           )}
-          {tab === "trades" && !hidden.has("p2p") && (p2pView === "mine" && props.me.sellerStatus === "verified"
-            ? <SellerPanel />
-            : <Marketplace myId={props.userId} balance={props.wallet.available} onAddMoney={() => go("wallet")} onViewTrades={() => document.getElementById("my-trades")?.scrollIntoView({ behavior: "smooth" })} />)}
-          {tab === "trades" && p2pView === "market" && <BuyerOffers balance={props.wallet.available} />}
+          {tab === "trades" && !hidden.has("p2p") && p2pView === "mine" && props.me.sellerStatus === "verified" && <SellerPanel />}
+          {tab === "trades" && !hidden.has("p2p") && (p2pView === "market" || (p2pView === "mine" && props.me.sellerStatus !== "verified")) && (
+            <Marketplace myId={props.userId} balance={props.wallet.available} onAddMoney={() => go("wallet")}
+              onViewTrades={(focus) => { setP2pView("trades"); window.scrollTo({ top: 0 }); if (focus) setTimeout(() => document.getElementById(focus)?.scrollIntoView({ behavior: "smooth" }), 150); }} />
+          )}
 
-          {tab === "trades" && props.trades.length > 0 && (
+          {tab === "trades" && (p2pView === "trades" || hidden.has("p2p")) && props.trades.length === 0 && (
+            <section className="card glass" id="my-trades">
+              <h2>My trades</h2>
+              <div className="empty">No trades yet. When you buy or sell on the marketplace, your orders, chats and refunds show up here.</div>
+              {!hidden.has("p2p") && <div><button type="button" className="btn btn-primary ap-mini" onClick={() => setP2pView("market")}>Browse the marketplace</button></div>}
+            </section>
+          )}
+          {tab === "trades" && (p2pView === "trades" || hidden.has("p2p")) && props.trades.length > 0 && (
             <section className="card glass" id="my-trades" style={{ scrollMarginTop: 12 }}>
               <h2>My trades</h2>
               {(
@@ -475,6 +488,7 @@ function Dashboard(props: Props) {
               )}
             </section>
           )}
+          {tab === "trades" && (p2pView === "trades" || hidden.has("p2p")) && <BuyerOffers balance={props.wallet.available} />}
           <SupportChat />
           {room && <TradeRoom tradeId={room} myId={props.userId} onClose={() => setRoom(null)} onChanged={() => router.refresh()} />}
         </main>

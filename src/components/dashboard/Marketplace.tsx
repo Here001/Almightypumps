@@ -28,7 +28,7 @@ function Avatar({ ad }: { ad: Ad }) {
   return <span className="mk-avatar" aria-hidden="true">{ad.sellerName.trim()[0]?.toUpperCase() ?? "?"}</span>;
 }
 
-export function Marketplace({ myId, balance, onAddMoney, onViewTrades }: { myId: string; balance: number; onAddMoney: () => void; onViewTrades: () => void }) {
+export function Marketplace({ myId, balance, onAddMoney, onViewTrades }: { myId: string; balance: number; onAddMoney: () => void; onViewTrades: (focus?: string) => void }) {
   const { money } = useCurrency();
   const [cats, setCats] = useState<P2PCategory[]>([]);
   const [category, setCategory] = useState("");
@@ -136,7 +136,7 @@ export function Marketplace({ myId, balance, onAddMoney, onViewTrades }: { myId:
         <BuySheet ad={picked} questions={cats.find((c) => c.slug === picked.category)?.questions ?? []} mine={picked.sellerId === myId} balance={balance}
           onClose={() => setPicked(null)} onAddMoney={() => { setPicked(null); onAddMoney(); }}
           onOpenRoom={(id, focus) => { setPicked(null); setRoom({ id, focus }); void load(0); }}
-          onDone={() => { const neg = picked.negotiable; setPicked(null); if (neg) document.getElementById("my-offers")?.scrollIntoView({ behavior: "smooth" }); else onViewTrades(); void load(0); }} />
+          onDone={() => { const neg = picked.negotiable; setPicked(null); onViewTrades(neg ? "my-offers" : undefined); void load(0); }} />
       )}
       {room && <TradeRoom tradeId={room.id} focus={room.focus} onClose={() => { setRoom(null); onViewTrades(); }} onChanged={() => router.refresh()} />}
     </section>

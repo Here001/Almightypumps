@@ -399,7 +399,7 @@ export async function postMessage(db: Db, tradeId: string, senderId: string, bod
 export async function notifyTrade(db: Db, userId: string, subject: string, lines: string[]) {
   try {
     const [u] = await db.select({ email: users.email }).from(users).where(eq(users.id, userId));
-    if (u) await sendNotice([u.email], subject, lines, { href: `${appUrl()}/dashboard#trades`, label: "Open the trade room" });
+    if (u) await sendNotice([u.email], subject, lines, { href: `${appUrl()}/dashboard#my-trades`, label: "Open my trades" });
   } catch (e) {
     console.error("[market] notify", e);
   }
