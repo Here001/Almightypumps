@@ -13,7 +13,11 @@ const schema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("update"),
     title: z.string(), description: z.string(), category: z.string(), deliveryType: z.string(),
-    price: z.union([z.string(), z.number()]), stock: z.coerce.number().int(),
+    price: z.union([z.string(), z.number()]).optional().default(""), stock: z.coerce.number().int(),
+  negotiable: z.boolean().optional().default(false),
+  guidePrice: z.union([z.string(), z.number()]).optional().nullable(),
+  minOffer: z.union([z.string(), z.number()]).optional().nullable(),
+
     minQty: z.coerce.number().int().default(1), maxQty: z.coerce.number().int().default(1),
     answers: z.record(z.string(), z.string().max(2000)).optional(),
   }),
@@ -29,8 +33,12 @@ export const POST = route(async (req: Request, { params }: { params: Promise<{ i
   const input = await body(req, schema);
   const db = getDb();
   if (input.action === "update") {
-    const { action: _a, price, ...rest } = input;
-    return updateListing(db, user.id, id, { ...rest, priceKobo: nairaToKobo(price) });
+    const { action: _a, price, guidePrice, minOffer, ...rest } = input;
+    const opt = (v: string | number | null | undefined) => (v == null || String(v).trim() === "" ? null : nairaToKobo(v));
+    const p = rest.negotiable
+      ? { priceKobo: 0, guidePriceKobo: opt(guidePrice), minOfferKobo: opt(minOffer) }
+      : { priceKobo: opt(price) ?? 0, guidePriceKobo: null, minOfferKobo: null };
+    return updateListing(db, user.id, id, { ...rest, ...p });
   }
   return setListingStatus(db, user.id, id, input.action);
 });

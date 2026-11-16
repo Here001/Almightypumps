@@ -25,6 +25,7 @@ import { ShopCategory } from "./Shop";
 import { Settings } from "./Settings";
 import { SellerPanel } from "./SellerPanel";
 import { Marketplace } from "./Marketplace";
+import { BuyerOffers } from "./Offers";
 import { TradeActions } from "./TradeActions";
 import { TradeRoom } from "./TradeRoom";
 import { useRouter } from "next/navigation";
@@ -450,6 +451,7 @@ function Dashboard(props: Props) {
           {tab === "trades" && !hidden.has("p2p") && (p2pView === "mine" && props.me.sellerStatus === "verified"
             ? <SellerPanel />
             : <Marketplace myId={props.userId} balance={props.wallet.available} onAddMoney={() => go("wallet")} onViewTrades={() => document.getElementById("my-trades")?.scrollIntoView({ behavior: "smooth" })} />)}
+          {tab === "trades" && p2pView === "market" && <BuyerOffers balance={props.wallet.available} />}
 
           {tab === "trades" && props.trades.length > 0 && (
             <section className="card glass" id="my-trades" style={{ scrollMarginTop: 12 }}>

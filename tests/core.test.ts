@@ -552,3 +552,11 @@ test("WhatsApp: connect by email message parsing", () => {
   assert.equal(asSixDigits("1234567"), null);
   assert.equal(asSixDigits("code 123456"), null);
 });
+
+test("negotiable listings need no price; guide and minimum are optional but at least ₦100", () => {
+  const base = { title: "Used iPhone 12", description: "Clean phone, 128GB, battery 89%, comes with box.", category: "gadgets", deliveryType: "physical", priceKobo: 0, stock: 1, minQty: 1, maxQty: 1 };
+  assert.ok(!checkListing({ ...base }, ["gadgets"]).ok);
+  assert.ok(checkListing({ ...base, negotiable: true }, ["gadgets"]).ok);
+  assert.ok(checkListing({ ...base, negotiable: true, guidePriceKobo: 50_000_000, minOfferKobo: 40_000_000 }, ["gadgets"]).ok);
+  assert.ok(!checkListing({ ...base, negotiable: true, guidePriceKobo: 500 }, ["gadgets"]).ok);
+});

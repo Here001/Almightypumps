@@ -7,10 +7,12 @@ import { useCurrency } from "./Currency";
 import type { Question } from "@/core/listingQuestions";
 import { ShopPhoto } from "./ShopPhoto";
 import { TradeRoom } from "./TradeRoom";
+import { SellerOffers } from "./Offers";
 import { ESCROW_DEFAULTS } from "@/core/escrow";
 
 type Listing = {
-  id: string; title: string; description: string; category: string; deliveryType: string; price: number; stock: number;
+  id: string; title: string; description: string; category: string; deliveryType: string; price: number | null; stock: number;
+  negotiable: boolean; guidePrice: number | null; minOffer: number | null; openOffers: number;
   minQty: number; maxQty: number; status: "active" | "paused" | "pending" | "declined"; reviewNote: string | null; sold: number; openOrders: number;
   answers: Record<string, string>; images: string[];
 };
@@ -93,6 +95,8 @@ export function SellerPanel() {
         />
       )}
 
+      <SellerOffers onChanged={async () => { await load(); router.refresh(); }} />
+
       {toFulfil.length > 0 && (
         <section className="card glass">
           <h2>Orders to deliver</h2>
@@ -115,10 +119,10 @@ export function SellerPanel() {
                     <div className="ap-service-meta" style={{ marginTop: 6 }}>
                       <span className={`status ${STATUS[l.status].tone}`}>{STATUS[l.status].label}</span>
                       <span className="ap-tag">{catName(l.category)}</span>
-                      <span className="muted">{l.stock} in stock · {l.sold} sold{l.openOrders ? ` · ${l.openOrders} open order${l.openOrders === 1 ? "" : "s"}` : ""}</span>
+                      <span className="muted">{l.stock} in stock · {l.sold} sold{l.openOrders ? ` · ${l.openOrders} open order${l.openOrders === 1 ? "" : "s"}` : ""}{l.openOffers ? ` · ${l.openOffers} offer${l.openOffers === 1 ? "" : "s"} waiting` : ""}</span>
                     </div>
                   </div>
-                  <strong>{money(l.price)}</strong>
+                  <strong style={{ textAlign: "right" }}>{l.negotiable ? <>Negotiable{l.guidePrice ? <span className="muted" style={{ display: "block", fontSize: 12, fontWeight: 400 }}>around {money(l.guidePrice)}</span> : null}</> : money(l.price ?? 0)}</strong>
                 </div>
                 {l.reviewNote && (l.status === "pending" || l.status === "declined") && <div className="muted ap-row-sub">{l.status === "declined" ? "Reason: " : ""}{l.reviewNote}</div>}
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -255,9 +259,11 @@ function ListingForm({ listing, categories, onCancel, onSaved }: { listing?: Lis
   const [answers, setAnswers] = useState<Record<string, string>>(listing?.answers ?? {});
   const [f, setF] = useState({
     title: listing?.title ?? "", description: listing?.description ?? "", category: listing?.category ?? "",
-    deliveryType: listing?.deliveryType ?? "digital", price: listing ? String(listing.price / 100) : "",
+    deliveryType: listing?.deliveryType ?? "digital", price: listing?.price ? String(listing.price / 100) : "",
+    guidePrice: listing?.guidePrice ? String(listing.guidePrice / 100) : "", minOffer: listing?.minOffer ? String(listing.minOffer / 100) : "",
     stock: String(listing?.stock ?? 1), minQty: String(listing?.minQty ?? 1), maxQty: String(listing?.maxQty ?? 1),
   });
+  const [negotiable, setNegotiable] = useState(listing?.negotiable ?? false);
   const [busy, setBusy] = useState(false);
   const [problems, setProblems] = useState<string[]>([]);
   const [photos, setPhotos] = useState<Photo[]>(() => (listing?.images ?? []).map((url) => ({ url })));
@@ -276,8 +282,8 @@ function ListingForm({ listing, categories, onCancel, onSaved }: { listing?: Lis
         setProblems([]);
         try {
           const r = listing
-            ? await api<{ id?: string; message: string }>(`/api/seller/listings/${listing.id}`, { action: "update", ...f, answers })
-            : await api<{ id?: string; message: string }>("/api/market/listings", { ...f, answers });
+            ? await api<{ id?: string; message: string }>(`/api/seller/listings/${listing.id}`, { action: "update", ...f, negotiable, answers })
+            : await api<{ id?: string; message: string }>("/api/market/listings", { ...f, negotiable, answers });
           const id = listing?.id ?? r.id ?? "";
           const photoErr = await savePhotos(id, listing?.images ?? [], photos);
           await onSaved(photoErr ? `${r.message} Some photos weren't saved: ${photoErr}` : r.message);
@@ -358,9 +364,26 @@ function ListingForm({ listing, categories, onCancel, onSaved }: { listing?: Lis
               {Object.entries(DELIVERY_LABELS).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
             </select></div>
         </div>
+        <div className="field">
+          <span style={{ fontWeight: 600, fontSize: 14 }}>Price</span>
+          <div className="seg" role="group" aria-label="Price type" style={{ alignSelf: "flex-start" }}>
+            <button type="button" aria-pressed={!negotiable} onClick={() => setNegotiable(false)}>Fixed price</button>
+            <button type="button" aria-pressed={negotiable} onClick={() => setNegotiable(true)}>Negotiable</button>
+          </div>
+          {negotiable && <span className="muted" style={{ fontSize: 12 }}>No price is set. Buyers make offers, and their money is held while you decide. You can accept, decline or send a counter-offer.</span>}
+        </div>
+        {negotiable && (
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <div className="field" style={{ flex: "1 1 180px" }}><label htmlFor="lf-guide">Guide price each (₦) <span className="muted">(optional)</span></label>
+              <input id="lf-guide" className="input" inputMode="decimal" value={f.guidePrice} onChange={set("guidePrice")} placeholder="Shown as “around ₦…”" /></div>
+            <div className="field" style={{ flex: "1 1 180px" }}><label htmlFor="lf-minoffer">Lowest offer you&apos;ll consider (₦) <span className="muted">(optional)</span></label>
+              <input id="lf-minoffer" className="input" inputMode="decimal" value={f.minOffer} onChange={set("minOffer")} placeholder="Hidden from buyers" />
+              <span className="muted" style={{ fontSize: 12 }}>Offers below this are turned down automatically.</span></div>
+          </div>
+        )}
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <div className="field" style={{ flex: "1 1 140px" }}><label htmlFor="lf-price">Price each (₦)</label>
-            <input id="lf-price" className="input" inputMode="decimal" value={f.price} onChange={set("price")} required /></div>
+          {!negotiable && <div className="field" style={{ flex: "1 1 140px" }}><label htmlFor="lf-price">Price each (₦)</label>
+            <input id="lf-price" className="input" inputMode="decimal" value={f.price} onChange={set("price")} required /></div>}
           <div className="field" style={{ flex: "1 1 90px" }}><label htmlFor="lf-stock">In stock</label>
             <input id="lf-stock" className="input" inputMode="numeric" value={f.stock} onChange={set("stock")} required /></div>
           <div className="field" style={{ flex: "1 1 90px" }}><label htmlFor="lf-min">Min per order</label>
@@ -368,7 +391,7 @@ function ListingForm({ listing, categories, onCancel, onSaved }: { listing?: Lis
           <div className="field" style={{ flex: "1 1 90px" }}><label htmlFor="lf-max">Max per order</label>
             <input id="lf-max" className="input" inputMode="numeric" value={f.maxQty} onChange={set("maxQty")} /></div>
         </div>
-        {fee > 0 && <p className="muted" style={{ fontSize: 13 }}>For each sale you receive {charge(priceKobo - fee)} after our 7% escrow fee.</p>}
+        {!negotiable && fee > 0 && <p className="muted" style={{ fontSize: 13 }}>For each sale you receive {charge(priceKobo - fee)} after our 7% escrow fee.</p>}
         <p className="muted" style={{ fontSize: 13 }}>Some ads are checked by our team before going live. Fake documents, counterfeits, accounts, weapons and drugs aren&apos;t allowed.</p>
         {problems.length > 0 && <div className="form-error" role="alert">{problems.join(" ")}</div>}
         <div style={{ display: "flex", gap: 8 }}>

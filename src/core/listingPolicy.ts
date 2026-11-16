@@ -56,7 +56,12 @@ export type ListingInput = {
   description: string;
   category: string;
   deliveryType: string;
+  /** Price per item (ignored when negotiable). */
   priceKobo: number;
+  /** No fixed price: buyers make offers (optional guide price shown, optional hidden minimum). */
+  negotiable?: boolean;
+  guidePriceKobo?: number | null;
+  minOfferKobo?: number | null;
   stock: number;
   minQty: number;
   maxQty: number;
@@ -71,7 +76,11 @@ export function checkListing(l: ListingInput, categories: readonly string[] = CA
   if (description.length < 20 || description.length > 4000) problems.push("Description must be between 20 and 4,000 characters.");
   if (!categories.includes(l.category)) problems.push("Choose a valid category.");
   if (!(DELIVERY_TYPES as readonly string[]).includes(l.deliveryType)) problems.push("Choose how the item is delivered.");
-  if (!Number.isSafeInteger(l.priceKobo) || l.priceKobo < 10_000) problems.push("Price must be at least ₦100.");
+  if (l.negotiable) {
+    const ok = (v: number | null | undefined) => v == null || (Number.isSafeInteger(v) && v >= 10_000);
+    if (!ok(l.guidePriceKobo)) problems.push("The guide price must be at least ₦100, or leave it empty.");
+    if (!ok(l.minOfferKobo)) problems.push("The lowest offer must be at least ₦100, or leave it empty.");
+  } else if (!Number.isSafeInteger(l.priceKobo) || l.priceKobo < 10_000) problems.push("Price must be at least ₦100.");
   if (!Number.isInteger(l.stock) || l.stock < 0) problems.push("Stock must be zero or more.");
   if (!Number.isInteger(l.minQty) || l.minQty < 1) problems.push("Minimum per order must be at least 1.");
   if (!Number.isInteger(l.maxQty) || l.maxQty < l.minQty) problems.push("Maximum per order must be at least the minimum.");

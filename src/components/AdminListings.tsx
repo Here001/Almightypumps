@@ -5,7 +5,7 @@ import { api, naira } from "./api";
 import { AdGallery } from "./dashboard/Marketplace";
 
 type Item = {
-  id: string; title: string; description: string; category: string; price: number; stock: number;
+  id: string; title: string; description: string; category: string; price: number | null; negotiable: boolean; guidePrice: number | null; stock: number;
   reviewNote: string | null; createdAt: string; sellerName: string; sellerEmail: string; images: string[];
 };
 
@@ -54,7 +54,7 @@ export function AdminListings() {
                 <div className="ap-row-title" style={{ fontWeight: 700 }}>{it.title}</div>
                 <div className="muted ap-row-sub">{it.category} · stock {it.stock} · by {it.sellerName} ({it.sellerEmail}) · {new Date(it.createdAt).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Lagos" })}</div>
               </div>
-              <strong>{naira(it.price)}</strong>
+              <strong>{it.negotiable ? `Negotiable${it.guidePrice ? ` (around ${naira(it.guidePrice)})` : ""}` : naira(it.price ?? 0)}</strong>
             </div>
             {it.images?.length > 0 && <AdGallery images={it.images} title={it.title} />}
             <p style={{ fontSize: 14, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{it.description}</p>

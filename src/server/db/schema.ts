@@ -207,7 +207,8 @@ export const listings = pgTable("listings", {
   description: text("description").notNull(),
   category: text("category").notNull(),
   deliveryType: text("delivery_type").notNull(),
-  price: money("price").notNull(),
+  /** Price per item; null for a negotiable ad. */
+  price: money("price"),
   stock: integer("stock").notNull(),
   minQty: integer("min_qty").notNull().default(1),
   maxQty: integer("max_qty").notNull().default(1),
@@ -216,6 +217,10 @@ export const listings = pgTable("listings", {
   reviewNote: text("review_note"),
   /** Seller's answers to the category questions ({questionId: answer}). */
   answers: jsonb("answers").$type<Record<string, string>>().notNull().default({}),
+  /** Negotiable ads (migration 0036): buyers make offers instead of buying at a fixed price. */
+  negotiable: boolean("negotiable").notNull().default(false),
+  guidePrice: money("guide_price"),
+  minOffer: money("min_offer"),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 
@@ -780,4 +785,23 @@ export const whatsappAiUsage = pgTable("whatsapp_ai_usage", {
   inputTokens: bigint("input_tokens", { mode: "number" }).notNull().default(0),
   outputTokens: bigint("output_tokens", { mode: "number" }).notNull().default(0),
   costMicroUsd: bigint("cost_micro_usd", { mode: "number" }).notNull().default(0),
+});
+
+/** Offers on negotiable P2P ads (migration 0036). The buyer's money is held while the offer is open. */
+export const offers = pgTable("offers", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  publicId: serial("public_id").unique(),
+  listingId: uuid("listing_id").notNull().references(() => listings.id),
+  buyerId: uuid("buyer_id").notNull().references(() => users.id),
+  sellerId: uuid("seller_id").notNull().references(() => users.id),
+  quantity: integer("quantity").notNull(),
+  unitPrice: money("unit_price").notNull(),
+  counterPrice: money("counter_price"),
+  status: text("status").$type<"pending" | "countered" | "accepted" | "declined" | "withdrawn" | "expired">().notNull().default("pending"),
+  holdId: uuid("hold_id").notNull().references(() => holds.id),
+  note: text("note"),
+  tradeId: uuid("trade_id").references(() => trades.id),
+  expiresAt: ts("expires_at").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
 });

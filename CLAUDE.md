@@ -91,6 +91,16 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   (`requires_review` → ads go to pending). Sellers pick a category first in the ad form and answer its
   questions; answers are stored in `listings.answers`, policy-checked, and shown to buyers.
   `prepareListing` in `market.ts` does all checks for create and update.
+- NEGOTIABLE P2P ADS (2026-11-16, owner's request; owner chose "make an offer" with money held + optional guide price; migration 0036):
+  listings.price is NULL for negotiable ads; `negotiable`, `guide_price` (shown as "asking around"), `min_offer` (hidden; lower
+  offers refused with a generic message). Seller ad form has a Fixed price / Negotiable switch. Buyers tap "Make offer" (price per
+  item + qty + note) → `makeOffer` in `src/server/offers.ts` HOLDS unit×qty (hold purpose escrow), one open offer per buyer per ad,
+  max 5 open per buyer. Seller (SellerOffers in `Offers.tsx`, top of the Seller panel): Accept (the SAME hold becomes a normal PAID
+  escrow trade, stock reduced), Decline (release), Counter (must be higher; 24h for the buyer). Buyer ("My offers" on the P2P tab,
+  BuyerOffers): accept counter (old hold released + new hold placed in one transaction, fails if wallet short) → trade; decline
+  counter; withdraw. Offers expire after 24h (`expireOffers` in the escrow cron and on read) → money back. Emails via `notifyTrade`
+  (exported from market.ts). APIs: POST /api/market/listings/[id]/offer, GET /api/market/offers, POST /api/market/offers/[id]
+  {accept|decline|counter|withdraw|accept_counter|decline_counter}. buy() refuses negotiable ads. Neon dev has 0036; main not yet.
 - P2P tab for everyone = Marketplace (`Marketplace.tsx`, layout inspired by Bybit P2P: seller, badge,
   orders/completion, price, limits, stock, orange Buy (same style as .btn-primary)) → buy sheet (answers, quantity, escrow). Verified
   sellers also get "My ads & sales". "Become a seller" lives only in Settings. Buyers' "My trades" has
@@ -479,7 +489,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
     usd auto, Instagram Likes/Live viewers 100% rules. NOT copied: dev's P2P category renamed "Accounts"
     (account sales are blocked); live keeps "Digital products". Re-star 3 TikTok follower services
     (Owlet ids 8277, 24221, 8619) after the first live sync. No users yet (owner signs up, then promote to admin).
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0035 applied (main too: 0035 applied 2026-11-12 with owner's yes). Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0036 applied (main: up to 0035, applied 2026-11-12 with owner's yes). Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

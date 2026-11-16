@@ -718,3 +718,5 @@ html[data-theme="light"] .app-shell .adm-nav a[aria-current="page"] { background
 .app-shell .bt-box, .app-shell .nc-box, .app-shell .mp-box, .app-shell .doc-group, .app-shell .es-order { border: 0; background: rgb(var(--ov) / .04); border-radius: 12px; }
 html:has(.app-shell) body { background: #0E1015; }
 html[data-theme="light"]:has(.app-shell) body { background: var(--bg); }
+.seg button { padding: 8px 14px; border-radius: 999px; border: 0; background: none; font: inherit; font-size: 13px; color: var(--muted); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: rgb(var(--ov) / 0.122); color: var(--fg); font-weight: 600; }

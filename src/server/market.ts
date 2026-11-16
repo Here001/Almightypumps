@@ -35,6 +35,13 @@ async function prepareListing(db: Db, input: ListingInput & { answers?: unknown 
   return { answers, review };
 }
 
+/** Fixed price, or negotiable (no price; optional guide price shown to buyers and hidden lowest offer). */
+function priceFields(input: ListingInput) {
+  return input.negotiable
+    ? { price: null, negotiable: true, guidePrice: input.guidePriceKobo ?? null, minOffer: input.minOfferKobo ?? null }
+    : { price: input.priceKobo, negotiable: false, guidePrice: null, minOffer: null };
+}
+
 export async function createListing(db: Db, sellerId: string, input: ListingInput & { answers?: unknown }) {
   const [seller] = await db.select({ sellerStatus: users.sellerStatus }).from(users).where(eq(users.id, sellerId));
   if (!seller) throw notFound("Account");
@@ -50,7 +57,7 @@ export async function createListing(db: Db, sellerId: string, input: ListingInpu
       description: input.description.trim(),
       category: input.category,
       deliveryType: input.deliveryType,
-      price: input.priceKobo,
+      ...priceFields(input),
       stock: input.stock,
       minQty: input.minQty,
       maxQty: input.maxQty,
@@ -69,7 +76,7 @@ export async function listingsForReview(db: Db, status: "pending" | "declined" =
   return db
     .select({
       id: listings.id, title: listings.title, description: listings.description, category: listings.category,
-      price: listings.price, stock: listings.stock, reviewNote: listings.reviewNote, createdAt: listings.createdAt,
+      price: listings.price, negotiable: listings.negotiable, guidePrice: listings.guidePrice, stock: listings.stock, reviewNote: listings.reviewNote, createdAt: listings.createdAt,
       sellerName: users.name, sellerEmail: users.email, images: imageUrlsSql,
     })
     .from(listings)
@@ -98,7 +105,9 @@ export async function browseListings(db: Db, opts: { category?: string; q?: stri
     const like = `%${w.replace(/[\\%_]/g, (c) => "\\" + c)}%`;
     filters.push(sql`(${listings.title} ILIKE ${like} OR ${listings.description} ILIKE ${like})`);
   }
-  const order = opts.sort === "price_asc" ? [asc(listings.price)] : opts.sort === "price_desc" ? [desc(listings.price)] : [desc(listings.createdAt)];
+  // Negotiable ads sort by their guide price (or last, if they have none).
+  const shown = sql`coalesce(${listings.price}, ${listings.guidePrice})`;
+  const order = opts.sort === "price_asc" ? [sql`${shown} asc nulls last`] : opts.sort === "price_desc" ? [sql`${shown} desc nulls last`] : [desc(listings.createdAt)];
   const limit = Math.min(opts.limit ?? 30, 100);
   const rows = await db
     .select({
@@ -109,6 +118,8 @@ export async function browseListings(db: Db, opts: { category?: string; q?: stri
       categoryName: listingCategories.name,
       deliveryType: listings.deliveryType,
       price: listings.price,
+      negotiable: listings.negotiable,
+      guidePrice: listings.guidePrice,
       stock: listings.stock,
       minQty: listings.minQty,
       maxQty: listings.maxQty,
@@ -157,6 +168,7 @@ async function buyTx(db: Db, buyerId: string, listingId: string, quantity: numbe
       throw badRequest(`Choose a quantity between ${l.minQty} and ${l.maxQty}.`);
     }
     if (quantity > l.stock) throw badRequest(`Only ${l.stock} left in stock.`);
+    if (l.negotiable || l.price == null) throw badRequest("This ad is negotiable: make an offer instead.");
 
     const amount = l.price * quantity;
     const buyerWallet = await walletIdForUser(tx, buyerId);
@@ -288,7 +300,10 @@ export async function runEscrowTimers(db: Db, now = new Date()) {
   for (const { id } of dueCancel) {
     try { await act(db, id, "AUTO_CANCEL", { userId: null }); result.cancelled++; } catch (e) { result.errors.push(`${id}: ${(e as Error).message}`); }
   }
-  return result;
+  // Offers on negotiable ads that nobody answered in time: give the buyer's money back.
+  const { expireOffers } = await import("./offers");
+  const expired = await expireOffers(db, now).catch((e) => { result.errors.push(`offers: ${(e as Error).message}`); return 0; });
+  return { ...result, offersExpired: expired };
 }
 
 export async function tradeForUser(db: Db, tradeId: string, userId: string, isAdmin = false) {
@@ -336,7 +351,7 @@ export async function postMessage(db: Db, tradeId: string, senderId: string, bod
 }
 
 /** Email one customer about their trade (fire and forget). */
-async function notifyTrade(db: Db, userId: string, subject: string, lines: string[]) {
+export async function notifyTrade(db: Db, userId: string, subject: string, lines: string[]) {
   try {
     const [u] = await db.select({ email: users.email }).from(users).where(eq(users.id, userId));
     if (u) await sendNotice([u.email], subject, lines, { href: `${appUrl()}/dashboard#trades`, label: "Open the trade room" });
@@ -367,11 +382,13 @@ export async function myListings(db: Db, sellerId: string) {
   return db
     .select({
       id: listings.id, title: listings.title, description: listings.description, category: listings.category,
-      deliveryType: listings.deliveryType, price: listings.price, stock: listings.stock, minQty: listings.minQty,
+      deliveryType: listings.deliveryType, price: listings.price, negotiable: listings.negotiable, guidePrice: listings.guidePrice,
+      minOffer: listings.minOffer, stock: listings.stock, minQty: listings.minQty,
       maxQty: listings.maxQty, status: listings.status, reviewNote: listings.reviewNote, createdAt: listings.createdAt,
       answers: listings.answers, images: imageUrlsSql,
       sold: sql<number>`(SELECT coalesce(sum(t.quantity), 0)::int FROM trades t WHERE t.listing_id = "listings"."id" AND t.status = 'COMPLETED')`,
       openOrders: sql<number>`(SELECT count(*)::int FROM trades t WHERE t.listing_id = "listings"."id" AND t.status IN ('PAID', 'SHIPPED', 'DISPUTED'))`,
+      openOffers: sql<number>`(SELECT count(*)::int FROM offers o WHERE o.listing_id = "listings"."id" AND o.status IN ('pending', 'countered'))`,
     })
     .from(listings)
     .where(and(eq(listings.sellerId, sellerId), sql`${listings.status} <> 'removed'`))
@@ -388,7 +405,7 @@ export async function updateListing(db: Db, sellerId: string, listingId: string,
     .update(listings)
     .set({
       title: input.title.trim(), description: input.description.trim(), category: input.category, deliveryType: input.deliveryType,
-      price: input.priceKobo, stock: input.stock, minQty: input.minQty, maxQty: input.maxQty, answers: check.answers,
+      ...priceFields(input), stock: input.stock, minQty: input.minQty, maxQty: input.maxQty, answers: check.answers,
       status: needsReview ? "pending" : l.status,
       reviewNote: needsReview ? (check.review.join(" ") || "Edited after review; checking again.") : null,
     })

@@ -9,7 +9,7 @@ import type { P2PCategory } from "./SellerPanel";
 
 type Ad = {
   id: string; title: string; description: string; category: string; categoryName: string | null; deliveryType: string;
-  price: number; stock: number; minQty: number; maxQty: number; answers: Record<string, string>; images: string[];
+  price: number | null; negotiable: boolean; guidePrice: number | null; stock: number; minQty: number; maxQty: number; answers: Record<string, string>; images: string[];
   sellerId: string; sellerName: string; sellerVerified: boolean; sellerAvatar: string | null; sellerOrders: number; sellerClosed: number;
 };
 const DELIVERY: Record<string, string> = { digital: "Instant digital", physical: "Physical item", service: "Service" };
@@ -115,11 +115,12 @@ export function Marketplace({ myId, balance, onAddMoney, onViewTrades }: { myId:
               </div>
               <div className="mk-bottom">
                 <div>
-                  <div className="mk-price">{money(a.price)}</div>
+                  <div className="mk-price">{a.negotiable ? "Negotiable" : money(a.price ?? 0)}</div>
+                  {a.negotiable && a.guidePrice ? <div className="mk-meta"><span>Asking around</span> {money(a.guidePrice)}</div> : null}
                   <div className="mk-meta"><span>Limits</span> {a.minQty === a.maxQty ? a.minQty : `${a.minQty}–${a.maxQty}`} per order</div>
                   <div className="mk-meta"><span>In stock</span> {a.stock.toLocaleString("en-NG")}</div>
                 </div>
-                {mine ? <span className="ap-tag">Your ad</span> : <button type="button" className="mk-buy" onClick={() => setPicked(a)}>Buy</button>}
+                {mine ? <span className="ap-tag">Your ad</span> : <button type="button" className="mk-buy" onClick={() => setPicked(a)}>{a.negotiable ? "Make offer" : "Buy"}</button>}
               </div>
             </li>
           );
@@ -131,7 +132,7 @@ export function Marketplace({ myId, balance, onAddMoney, onViewTrades }: { myId:
       {picked && (
         <BuySheet ad={picked} questions={cats.find((c) => c.slug === picked.category)?.questions ?? []} mine={picked.sellerId === myId} balance={balance}
           onClose={() => setPicked(null)} onAddMoney={() => { setPicked(null); onAddMoney(); }}
-          onDone={() => { setPicked(null); onViewTrades(); void load(0); }} />
+          onDone={() => { const neg = picked.negotiable; setPicked(null); if (neg) document.getElementById("my-offers")?.scrollIntoView({ behavior: "smooth" }); else onViewTrades(); void load(0); }} />
       )}
     </section>
   );
@@ -143,6 +144,8 @@ function BuySheet({ ad, questions, mine, balance, onClose, onAddMoney, onDone }:
   const router = useRouter();
   const { money, charge } = useCurrency();
   const [qty, setQty] = useState(ad.minQty);
+  const [offer, setOffer] = useState(ad.guidePrice ? String(ad.guidePrice / 100) : "");
+  const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -157,7 +160,9 @@ function BuySheet({ ad, questions, mine, balance, onClose, onAddMoney, onDone }:
   }, [onClose]);
 
   const maxQ = Math.min(ad.maxQty, ad.stock);
-  const total = ad.price * qty;
+  const offerKobo = Math.round(Number(offer.replace(/[₦,\s]/g, "")) * 100) || 0;
+  const unit = ad.negotiable ? offerKobo : (ad.price ?? 0);
+  const total = unit * qty;
   const short = total > balance ? total - balance : 0;
   const answered = questions.filter((q) => ad.answers?.[q.id]);
 
@@ -173,8 +178,12 @@ function BuySheet({ ad, questions, mine, balance, onClose, onAddMoney, onDone }:
         </div>
         {done ? (
           <>
-            <div className="form-ok" role="status">Paid into escrow. The seller has 72 hours to deliver. Your money is only released to them when you confirm (or 48 hours after delivery if you don&apos;t respond).</div>
-            <button type="button" className="btn btn-primary" onClick={onDone}>Track this order</button>
+            {ad.negotiable ? (
+              <div className="form-ok" role="status">Offer sent. {charge(total)} is held from your wallet while the seller decides (up to 24 hours). If they decline or don&apos;t answer, it comes straight back. Follow it under “My offers”.</div>
+            ) : (
+              <div className="form-ok" role="status">Paid into escrow. The seller has 72 hours to deliver. Your money is only released to them when you confirm (or 48 hours after delivery if you don&apos;t respond).</div>
+            )}
+            <button type="button" className="btn btn-primary" onClick={onDone}>{ad.negotiable ? "See my offers" : "Track this order"}</button>
           </>
         ) : (
           <>
@@ -193,23 +202,40 @@ function BuySheet({ ad, questions, mine, balance, onClose, onAddMoney, onDone }:
                     <button type="button" className="ap-close" onClick={() => setQty((v) => Math.max(ad.minQty, v - 1))} disabled={qty <= ad.minQty} aria-label="Less">−</button>
                     <strong aria-live="polite">{qty}</strong>
                     <button type="button" className="ap-close" onClick={() => setQty((v) => Math.min(maxQ, v + 1))} disabled={qty >= maxQ} aria-label="More">+</button>
-                    <span className="muted" style={{ fontSize: 13 }}>× {money(ad.price)}</span>
+                    {!ad.negotiable && <span className="muted" style={{ fontSize: 13 }}>× {money(ad.price ?? 0)}</span>}
                   </div>
                 </div>
+                {ad.negotiable && (
+                  <>
+                    <div className="field">
+                      <label htmlFor="mk-offer">Your offer per item (₦)</label>
+                      <input id="mk-offer" className="input" inputMode="decimal" value={offer} onChange={(e) => setOffer(e.target.value)} placeholder={ad.guidePrice ? `Seller asks around ${money(ad.guidePrice)}` : "Enter your price"} />
+                      {ad.guidePrice ? <span className="muted" style={{ fontSize: 12 }}>The seller is asking around {money(ad.guidePrice)} each.</span> : <span className="muted" style={{ fontSize: 12 }}>This price is negotiable. Offer what you think is fair.</span>}
+                    </div>
+                    <div className="field">
+                      <label htmlFor="mk-note">Message to the seller <span className="muted">(optional)</span></label>
+                      <input id="mk-note" className="input" maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Can you deliver to Ikeja?" />
+                    </div>
+                  </>
+                )}
                 <div className="ap-total"><span>Total</span><strong>{money(total)}</strong></div>
-                <p className="muted" style={{ fontSize: 13 }}>🔒 Your money is held safely in escrow until you confirm you received the item.</p>
+                <p className="muted" style={{ fontSize: 13 }}>{ad.negotiable ? "Your offer amount is held from your wallet while the seller decides. If they accept, it goes into escrow until you confirm you received the item." : "Your money is held safely in escrow until you confirm you received the item."}</p>
                 {error && <div className="form-error" role="alert">{error}</div>}
                 {short > 0 ? (
                   <>
-                    <div className="form-error" role="alert">Your balance is {charge(balance)}. Add {charge(short)} more to buy this.</div>
+                    <div className="form-error" role="alert">Your balance is {charge(balance)}. Add {charge(short)} more to {ad.negotiable ? "make this offer" : "buy this"}.</div>
                     <button type="button" className="btn btn-primary" onClick={onAddMoney}>Add money</button>
                   </>
                 ) : (
-                  <button type="button" className="mk-buy mk-buy-lg" disabled={busy} onClick={async () => {
+                  <button type="button" className="mk-buy mk-buy-lg" disabled={busy || (ad.negotiable && offerKobo < 10_000)} onClick={async () => {
                     setBusy(true);
                     setError(null);
                     try {
-                      await api(`/api/market/listings/${ad.id}/buy`, { quantity: qty });
+                      if (ad.negotiable) {
+                        await api(`/api/market/listings/${ad.id}/offer`, { price: offer, quantity: qty, note: note.trim() || undefined });
+                        window.dispatchEvent(new Event("ap:offers"));
+                      }
+                      else await api(`/api/market/listings/${ad.id}/buy`, { quantity: qty });
                       setDone(true);
                       router.refresh();
                     } catch (e) {
@@ -217,7 +243,7 @@ function BuySheet({ ad, questions, mine, balance, onClose, onAddMoney, onDone }:
                     } finally {
                       setBusy(false);
                     }
-                  }}>{busy ? "Paying…" : `Buy for ${charge(total)}`}</button>
+                  }}>{busy ? (ad.negotiable ? "Sending…" : "Paying…") : ad.negotiable ? (offerKobo >= 10_000 ? `Offer ${charge(total)}` : "Enter your offer") : `Buy for ${charge(total)}`}</button>
                 )}
               </>
             )}
