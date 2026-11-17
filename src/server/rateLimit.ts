@@ -191,8 +191,9 @@ export function callerKey(req: Request): string {
 
 /** The caller's IP as Vercel reports it. */
 export function clientIp(req: Request): string {
-  const fwd = req.headers.get("x-forwarded-for");
-  return (fwd?.split(",")[0] ?? req.headers.get("x-real-ip") ?? "unknown").trim();
+  // x-vercel-forwarded-for / x-real-ip are set by Vercel itself and can't be faked by the caller; x-forwarded-for is the fallback.
+  const fwd = req.headers.get("x-vercel-forwarded-for") ?? req.headers.get("x-real-ip") ?? req.headers.get("x-forwarded-for");
+  return (fwd?.split(",")[0] ?? "unknown").trim() || "unknown";
 }
 
 /** Count one request for one rule; false when over the limit. */

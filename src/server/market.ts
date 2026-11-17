@@ -98,7 +98,8 @@ export async function reviewListing(db: Db, listingId: string, decision: "approv
 }
 
 export async function browseListings(db: Db, opts: { category?: string; q?: string; sort?: "new" | "price_asc" | "price_desc"; limit?: number; offset?: number }) {
-  const filters = [eq(listings.status, "active"), sql`${listings.stock} > 0`];
+  // Only ads from sellers who are still verified and not suspended are on sale.
+  const filters = [eq(listings.status, "active"), sql`${listings.stock} > 0`, eq(users.sellerStatus, "verified"), sql`${users.suspendedAt} is null`];
   if (opts.category) filters.push(eq(listings.category, opts.category));
   const words = (opts.q ?? "").toLowerCase().split(/\s+/).filter((w) => w.length >= 2).slice(0, 6);
   for (const w of words) {
@@ -164,6 +165,7 @@ async function buyTx(db: Db, buyerId: string, listingId: string, quantity: numbe
     const [l] = await tx.select().from(listings).where(eq(listings.id, listingId)).for("update");
     if (!l || l.status !== "active") throw notFound("Listing");
     if (l.sellerId === buyerId) throw badRequest("You can't buy your own listing.");
+    await assertSellerCanSell(tx, l.sellerId);
     if (!Number.isInteger(quantity) || quantity < l.minQty || quantity > l.maxQty) {
       throw badRequest(`Choose a quantity between ${l.minQty} and ${l.maxQty}.`);
     }
@@ -183,6 +185,12 @@ async function buyTx(db: Db, buyerId: string, listingId: string, quantity: numbe
     await tx.insert(tradeEvents).values({ tradeId: t.id, actorId: buyerId, action: "PAY", fromStatus: null, toStatus: "PAID", note: "Funds locked in escrow" });
     return t;
   });
+}
+
+/** A suspended or no-longer-verified seller can't take new orders or offers (their open trades carry on). */
+export async function assertSellerCanSell(tx: Pick<Db, "select">, sellerId: string) {
+  const [s] = await tx.select({ status: users.sellerStatus, suspendedAt: users.suspendedAt }).from(users).where(eq(users.id, sellerId));
+  if (!s || s.status !== "verified" || s.suspendedAt) throw badRequest("This seller isn't taking orders right now.");
 }
 
 /** Apply an action to a trade and move money if the state machine says so. */

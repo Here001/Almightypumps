@@ -27,6 +27,10 @@ export function toAppError(e: unknown): AppError {
   if (e instanceof LedgerError) return new AppError(e.code === "INSUFFICIENT_FUNDS" ? 402 : 409, e.code, e.message);
   if (e instanceof EscrowError) return new AppError(409, e.code, e.message);
   if (e instanceof MoneyError) return new AppError(400, e.code, e.message);
+  // A malformed id (not a UUID / number) reaching the database is just "not found", not a server fault.
+  const pg = (e as { code?: string; cause?: { code?: string } } | null);
+  const pgCode = pg?.code ?? pg?.cause?.code;
+  if (pgCode === "22P02" || pgCode === "22003") return notFound();
   console.error(e);
   return new AppError(500, "INTERNAL", "Something went wrong on our side. Please try again in a moment.");
 }

@@ -171,6 +171,16 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   sql.raw is smm.ts `excluded.<constant column>`. 24 payloads (OR 1=1, UNION, stacked DROP/UPDATE, error-based, pg_sleep time-based)
   × 34 inputs (auth, searches, ids, forms, reseller API, admin searches), 806 requests: no bypass, no leak, no delay, no 500, data intact.
   Searches escape LIKE wildcards (support inbox fixed the same day). Script: scratchpad sqli.js pattern (rotate x-forwarded-for, many sessions).
+- PENTEST (2026-11-17, owner's request, LOCAL copy only; scripts scratchpad pen1/pen2/pen3.js): all 81 static API routes anonymous
+  → 401/403; user on admin routes → 403; forged sessions (alg none, swapped sub, weak keys) → 401; cross-site POSTs → 403; unsigned
+  cron/webhooks → 401; IDOR on trades/offers/ads/files refused; mass assignment (role, seller status) ignored; bad amounts refused;
+  races (12 buys with money for 1, 8 withdrawals, refund-vs-payout) → exactly one wins, ledger consistent; uploads allow-listed +
+  magic bytes; no secrets in git history or client bundle; `npm audit` clean. FIXED: suspended / no-longer-verified sellers' ads
+  were still on sale (browse filter + `assertSellerCanSell` in buy, makeOffer, openTrade); malformed ids gave 500 (pg 22P02/22003 →
+  404 in `toAppError`); API JSON now `Cache-Control: no-store`; `clientIp` prefers x-vercel-forwarded-for / x-real-ip; jwtVerify pinned
+  to HS256; length caps on chat, ad and withdrawal fields; extra Permissions-Policy entries. ADVICE given to the owner: authenticator
+  2FA on Vercel/Neon/GitHub/Flutterwave/Zoho/cron-job.org, CSP still allows inline scripts (nonce = later job), licensed escrow
+  partner, delete unused TURNSTILE_* env vars, preview uses live TextVerified/eSIM keys.
 - Providers from the admin (migration 0017, /admin/providers `AddProvider` + card "Edit"): paste any standard
   SMM panel (API v2) URL + key → "Test connection" (balance + service count) → save. Keys are stored
   AES-256-GCM encrypted in `smm_providers.api_key_enc` (`src/server/secretBox.ts`, key derived from

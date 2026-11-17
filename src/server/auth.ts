@@ -104,7 +104,7 @@ async function sessionRemembered(): Promise<boolean> {
   const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return true;
   try {
-    const { payload } = await jwtVerify(token, key());
+    const { payload } = await jwtVerify(token, key(), { algorithms: ["HS256"] });
     return payload.r !== 0;
   } catch {
     return true;
@@ -121,7 +121,7 @@ export async function currentUser(): Promise<SessionUser | null> {
   const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return null;
   try {
-    const { payload } = await jwtVerify(token, key());
+    const { payload } = await jwtVerify(token, key(), { algorithms: ["HS256"] });
     if (!payload.sub) return null;
     const [u] = await getDb()
       .select({ id: users.id, name: users.name, email: users.email, phone: users.phone, role: users.role, sellerStatus: users.sellerStatus, v: users.sessionVersion, suspendedAt: users.suspendedAt })

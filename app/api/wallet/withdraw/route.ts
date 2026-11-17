@@ -8,9 +8,9 @@ import { rateLimit } from "@/server/rateLimit";
 
 const schema = z.object({
   amount: z.union([z.string(), z.number()]),
-  bankCode: z.string(),
-  accountNumber: z.string(),
-  accountName: z.string(),
+  bankCode: z.string().max(12),
+  accountNumber: z.string().max(20),
+  accountName: z.string().max(120),
 });
 
 export const POST = route(async (req: Request) => {

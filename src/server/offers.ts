@@ -10,7 +10,7 @@ import type { Db, Tx } from "./db";
 import { listings, offers, sellerProfiles, tradeEvents, trades, users } from "./db/schema";
 import { badRequest, forbidden, notFound } from "./errors";
 import { linkHold, placeHold, settleHold, walletIdForUser } from "./wallet";
-import { notifyTrade } from "./market";
+import { assertSellerCanSell, notifyTrade } from "./market";
 
 const OFFER_HOURS = 24;
 const MAX_OPEN_PER_BUYER = 5;
@@ -34,6 +34,7 @@ export async function makeOffer(db: Db, buyerId: string, listingId: string, inpu
     if (!l || l.status !== "active") throw notFound("Listing");
     if (!l.negotiable) throw badRequest("This ad has a fixed price. Buy it at that price instead.");
     if (l.sellerId === buyerId) throw badRequest("You can't make an offer on your own ad.");
+    await assertSellerCanSell(tx, l.sellerId);
     const q = input.quantity;
     if (!Number.isInteger(q) || q < l.minQty || q > l.maxQty) throw badRequest(`Choose a quantity between ${l.minQty} and ${l.maxQty}.`);
     if (q > l.stock) throw badRequest(`Only ${l.stock} left in stock.`);
@@ -60,6 +61,7 @@ export async function makeOffer(db: Db, buyerId: string, listingId: string, inpu
 /** Turn an agreed offer into a normal escrow trade, keeping the same held money. */
 async function openTrade(tx: Tx, o: OfferRow, l: ListingRow, unit: number, actorId: string) {
   if (l.status !== "active") throw badRequest("This ad isn't live any more, so the offer can't be accepted.");
+  await assertSellerCanSell(tx, o.sellerId);
   if (o.quantity > l.stock) throw badRequest(`Only ${l.stock} left in stock. Decline the offer or update your stock.`);
   const [t] = await tx.insert(trades).values({
     listingId: l.id, buyerId: o.buyerId, sellerId: o.sellerId, quantity: o.quantity, amount: unit * o.quantity,

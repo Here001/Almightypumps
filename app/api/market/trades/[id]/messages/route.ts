@@ -14,7 +14,7 @@ export const GET = route(async (_req: Request, { params }: { params: Promise<{ i
   return tradeForUser(getDb(), id, user.id, user.role === "admin");
 });
 
-const schema = z.object({ body: z.string() });
+const schema = z.object({ body: z.string().max(2000) });
 
 export const POST = route(async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params;

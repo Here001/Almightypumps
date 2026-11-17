@@ -29,10 +29,11 @@ const nextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "X-Frame-Options", value: "DENY" },
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()" },
           // Always use https on this domain (browsers remember it for 2 years).
           { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
           { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
+          { key: "X-Permitted-Cross-Domain-Policies", value: "none" },
           // Where the page may load things from. Blocks injected scripts from other sites, framing, and form hijacking.
           { key: "Content-Security-Policy", value: CSP },
         ],

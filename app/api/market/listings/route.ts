@@ -22,10 +22,10 @@ export const GET = route(async (req: Request) => {
 });
 
 const schema = z.object({
-  title: z.string(),
-  description: z.string(),
-  category: z.string(),
-  deliveryType: z.string(),
+  title: z.string().max(200),
+  description: z.string().max(6000),
+  category: z.string().max(80),
+  deliveryType: z.string().max(40),
   price: z.union([z.string(), z.number()]).optional().default(""),
   negotiable: z.boolean().optional().default(false),
   guidePrice: z.union([z.string(), z.number()]).optional().nullable(),

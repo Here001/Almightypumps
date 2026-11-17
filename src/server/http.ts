@@ -51,13 +51,14 @@ export function route<A extends unknown[]>(fn: (...args: A) => Promise<unknown>)
       if (args[0] instanceof Request) await throttle(args[0]);
       const data = await fn(...args);
       if (data instanceof Response) return data;
-      return NextResponse.json({ ok: true, data });
+      // Account data must never sit in a browser or proxy cache.
+      return NextResponse.json({ ok: true, data }, { headers: { "Cache-Control": "no-store" } });
     } catch (e) {
       const err = toAppError(e);
       const retry = err.status === 429 ? (err.details as { retryAfterSec?: number } | undefined)?.retryAfterSec : undefined;
       return NextResponse.json(
         { ok: false, error: { code: err.code, message: err.message, details: err.details } },
-        { status: err.status, headers: retry ? { "Retry-After": String(retry) } : undefined },
+        { status: err.status, headers: { "Cache-Control": "no-store", ...(retry ? { "Retry-After": String(retry) } : {}) } },
       );
     }
   };

@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 const schema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("update"),
-    title: z.string(), description: z.string(), category: z.string(), deliveryType: z.string(),
+    title: z.string().max(200), description: z.string().max(6000), category: z.string().max(80), deliveryType: z.string().max(40),
     price: z.union([z.string(), z.number()]).optional().default(""), stock: z.coerce.number().int(),
   negotiable: z.boolean().optional().default(false),
   guidePrice: z.union([z.string(), z.number()]).optional().nullable(),
