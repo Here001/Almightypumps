@@ -213,7 +213,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   Doesn't work (reason required) → customer emailed + sees it; "Order for this phone" fills the order form's IMEI. The same IMEI
   answered in the last 90 days is answered instantly for anyone; one answer clears every pending check of that IMEI. The `esim`
   admin badge = pending orders + pending phone checks. MANUAL because the supplier has no API (an automatic paid IMEI service was
-  mentioned to the owner as a later option). Neon dev has 0038; main not yet.
+  mentioned to the owner as a later option). Neon dev and main have 0038 (main 2026-11-24, owner's yes).
 - Login security (2026-11-04): `PasswordInput.tsx` eye toggle on all password fields; "Remember me" on /login =
   30-day cookie + JWT claim r=1, otherwise a browser-session cookie with a 12h token (`startSession(userId, remember)`;
   password change / log-out-others keep the current choice); remembered email in localStorage `ap_login_email`
@@ -529,7 +529,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
 
 ## Infrastructure state (as of 2026-11-03)
 - GitHub: `Here001/Almightypumps` (private). `main` = LIVE (fast-forwarded to dev 55d73ca, then 130dee2 provider tools, cdd5cf6 eSIMs,
-  757c38f login security, 8e08ee4 legal pages/homepage copy/support@, e42f52c gift cards/airtime/travel eSIMs + email codes, then forgot password + bank/crypto top-ups + admin redesign + supplier-out-of-money queue + sell gift cards & crypto + turn-off-by-price tool + phone comfort + SEO pages + brand logo + invites/ad photos/trade room/documents/7% fee (2026-11-04) + bank transfer/photo storage/Send-Receive a Package/admin users/wallet collapse + services on/off + tile order + no-auto-refund supplier waits + support chat + order alert emails + admin emails for every badge (2026-11-05) + name-change approval + withdrawal bank-name check (2026-11-08) + security limits/quotas/cost control (2026-11-09) + Services tile descriptions/Help button + WhatsApp agent (off) + Impeccable design pass (2026-11-12) + homepage tidy + reseller API off + negotiable offers, Fund wallet switches, admin tabs, Track/Chat buttons, cancel/report/dispute, My trades switch + sections (2026-11-16) + pentest hardening (2026-11-17), each with the owner's yes); `dev` = day-to-day work. Promote later changes only with an explicit yes.
+  757c38f login security, 8e08ee4 legal pages/homepage copy/support@, e42f52c gift cards/airtime/travel eSIMs + email codes, then forgot password + bank/crypto top-ups + admin redesign + supplier-out-of-money queue + sell gift cards & crypto + turn-off-by-price tool + phone comfort + SEO pages + brand logo + invites/ad photos/trade room/documents/7% fee (2026-11-04) + bank transfer/photo storage/Send-Receive a Package/admin users/wallet collapse + services on/off + tile order + no-auto-refund supplier waits + support chat + order alert emails + admin emails for every badge (2026-11-05) + name-change approval + withdrawal bank-name check (2026-11-08) + security limits/quotas/cost control (2026-11-09) + Services tile descriptions/Help button + WhatsApp agent (off) + Impeccable design pass (2026-11-12) + homepage tidy + reseller API off + negotiable offers, Fund wallet switches, admin tabs, Track/Chat buttons, cancel/report/dispute, My trades switch + sections (2026-11-16) + pentest hardening (2026-11-17) + free eSIM phone check (2026-11-24), each with the owner's yes); `dev` = day-to-day work. Promote later changes only with an explicit yes.
 - Neon: project **almighty-pumps** (`jolly-dust-18900048`, AWS eu-central-1).
   PLAN: Free plan ran out of compute on 2026-11-12 (crons keep both branches awake 24/7); owner upgraded the org to the paid
   Launch plan the same day. Live compute autoscaling is 0.25–8 CU (cost can be capped by lowering the max; ask the owner first).
@@ -539,7 +539,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
     usd auto, Instagram Likes/Live viewers 100% rules. NOT copied: dev's P2P category renamed "Accounts"
     (account sales are blocked); live keeps "Digital products". Re-star 3 TikTok follower services
     (Owlet ids 8277, 24221, 8619) after the first live sync. No users yet (owner signs up, then promote to admin).
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0038 applied (main: up to 0037; 0036–0037 applied 2026-11-16 with owner's yes). Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0038 applied (main: up to 0038; 0038 applied 2026-11-24 with owner's yes). Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).
