@@ -8,7 +8,7 @@ import { alertAdmins } from "./adminAlerts";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import QRCode from "qrcode";
 import { z } from "zod";
-import { brandQrSvg, buildLpa, checkImei, formatUs, monthsLabel, usNumber } from "@/core/esim";
+import { brandQrSvg, buildLpa, checkImei, formatUs, monthsLabel, usNumber, usStateName } from "@/core/esim";
 import type { Db } from "./db";
 import { esimOrders, esimPlans, esimPrices, users } from "./db/schema";
 import { badRequest, notFound } from "./errors";
@@ -113,7 +113,7 @@ export async function plansForSale(db: Db) {
 }
 
 export const orderSchema = z.discriminatedUnion("numberMode", [
-  z.object({ priceId: z.string().uuid(), imei: z.string(), numberMode: z.literal("new") }),
+  z.object({ priceId: z.string().uuid(), imei: z.string(), numberMode: z.literal("new"), state: z.string().max(2).optional() }),
   z.object({
     priceId: z.string().uuid(), imei: z.string(), numberMode: z.literal("keep"),
     port: z.object({
@@ -137,6 +137,9 @@ export async function placeEsimOrder(db: Db, userId: string, input: z.output<typ
   let portEnc: string | null = null;
   let portNumber: string | null = null;
   let amount = row.price.price;
+  // New number: which US state it should come from (the area code).
+  const usState = input.numberMode === "new" ? (input.state ?? "").toUpperCase() : null;
+  if (input.numberMode === "new" && !usStateName(usState)) throw badRequest("Choose the US state you want your number from.");
   if (input.numberMode === "keep") {
     if (!row.plan.allowKeepNumber) throw badRequest("Keeping an existing number isn't offered on this plan.");
     const n = usNumber(input.port.number);
@@ -154,13 +157,13 @@ export async function placeEsimOrder(db: Db, userId: string, input: z.output<typ
     const holdId = await placeHold(tx, wallet, amount, "esim_order", { memo: `eSIM: ${label}` });
     const [o] = await tx.insert(esimOrders).values({
       userId, planId: row.plan.id, planName: row.plan.name, dataLabel: row.price.dataLabel, months: row.price.months,
-      amount, holdId, imei: imei.imei, numberMode: input.numberMode, portEnc, portNumber,
+      amount, holdId, imei: imei.imei, numberMode: input.numberMode, usState, portEnc, portNumber,
     }).returning();
     await linkHold(tx, holdId, o.id);
     return { id: o.id, publicId: o.publicId, amount, label };
   });
   alertAdmins(db, `New US eSIM order: ${placed.label}`, [
-    `Order #${placed.publicId}: ${placed.label}${input.numberMode === "keep" ? " (keep their number: port-in details in the admin)" : " (new number)"}.`,
+    `Order #${placed.publicId}: ${placed.label}${input.numberMode === "keep" ? " (keep their number: port-in details in the admin)" : ` (new number from ${usStateName(usState)})`}.`,
     "Set it up with your supplier, then deliver the number and activation code (or refund).",
   ], "/admin/esim", { customerId: userId, amountKobo: placed.amount });
   return placed;
@@ -178,7 +181,7 @@ export async function myEsimOrders(db: Db, userId: string) {
   const rows = await db.select().from(esimOrders).where(eq(esimOrders.userId, userId)).orderBy(desc(esimOrders.createdAt)).limit(20);
   return Promise.all(rows.map(async (o) => ({
     id: o.id, publicId: o.publicId, label: `${o.planName} ${o.dataLabel} · ${monthsLabel(o.months)}`, amount: o.amount,
-    status: o.status, numberMode: o.numberMode, keepNumber: o.portNumber ? formatUs(o.portNumber) : null,
+    status: o.status, numberMode: o.numberMode, usState: usStateName(o.usState), keepNumber: o.portNumber ? formatUs(o.portNumber) : null,
     phoneNumber: o.phoneNumber ? formatUs(o.phoneNumber) : null, lpa: o.status === "delivered" ? o.lpa : null,
     qr: o.status === "delivered" ? await qrDataUrl(o) : null, note: o.customerNote, refundReason: o.status === "refunded" ? o.adminNote : null,
     createdAt: o.createdAt, imeiEnd: o.imei.slice(-4),
@@ -199,7 +202,7 @@ export async function adminEsimOrders(db: Db, status: "pending" | "delivered" | 
     }
     return {
       id: o.id, publicId: o.publicId, plan: o.planName, dataLabel: o.dataLabel, months: o.months, amount: o.amount,
-      status: o.status, imei: o.imei, numberMode: o.numberMode, port: port ? { ...port, number: port.number ? formatUs(port.number) : "" } : null,
+      status: o.status, imei: o.imei, numberMode: o.numberMode, usState: usStateName(o.usState), port: port ? { ...port, number: port.number ? formatUs(port.number) : "" } : null,
       phoneNumber: o.phoneNumber ? formatUs(o.phoneNumber) : null, lpa: o.lpa, hasQrImage: Boolean(o.qrImage),
       qr: o.status === "delivered" ? await qrDataUrl(o) : null,
       customerNote: o.customerNote, adminNote: o.adminNote, createdAt: o.createdAt, updatedAt: o.updatedAt,

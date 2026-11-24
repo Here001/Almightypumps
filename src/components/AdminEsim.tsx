@@ -11,7 +11,7 @@ type Plan = {
 };
 type Order = {
   id: string; publicId: number; plan: string; dataLabel: string; months: number; amount: number; status: string; imei: string;
-  numberMode: "new" | "keep"; port: Record<string, string> | null; phoneNumber: string | null; lpa: string | null; qr: string | null;
+  numberMode: "new" | "keep"; usState: string | null; port: Record<string, string> | null; phoneNumber: string | null; lpa: string | null; qr: string | null;
   customerNote: string | null; adminNote: string | null; createdAt: string; updatedAt: string;
   customer: { name: string; email: string; phone: string | null };
 };
@@ -127,7 +127,7 @@ function OrderCard({ o, onDone }: { o: Order; onDone: (text: string) => Promise<
         <dt>Customer</dt><dd>{o.customer.name}<br /><span className="muted">{o.customer.email}{o.customer.phone ? ` · ${o.customer.phone}` : ""}</span></dd>
         <dt>Ordered</dt><dd>{when(o.createdAt)}</dd>
         <dt>IMEI</dt><dd><code className="ap-code">{o.imei}</code> <Copy text={o.imei} /></dd>
-        <dt>Number</dt><dd>{o.numberMode === "new" ? "New number" : <strong>Keep existing number</strong>}</dd>
+        <dt>Number</dt><dd>{o.numberMode === "new" ? <>New number{o.usState ? <> from <strong>{o.usState}</strong></> : ""}</> : <strong>Keep existing number</strong>}</dd>
         {o.port && Object.entries({ "Number to keep": o.port.number, Carrier: o.port.carrier, "Account no.": o.port.accountNumber, PIN: o.port.pin, ZIP: o.port.zip, "Account holder": o.port.name })
           .filter(([, v]) => v).map(([k, v]) => <Fragment key={k}><dt>{k}</dt><dd><code className="ap-code">{v}</code> <Copy text={v} /></dd></Fragment>)}
         {o.status !== "pending" && <><dt>Updated</dt><dd>{when(o.updatedAt)}</dd></>}

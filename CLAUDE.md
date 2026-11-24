@@ -223,6 +223,9 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   iPhones and Android: "message us in Help for the APN"; the supplier's name isn't shown). Phone-check wording: pending = "With our
   team" + "you'll get the answer by email". Next bumped to 15.5.29 (security advisories). AUTOMATIC IMEI CHECKS researched for the
   owner (imeicheck.com ~$0.06 iPhone lock check, imei.info from ~$0.02 model lookup; no AT&T API): waiting for the owner's decision.
+- eSIM STATE (2026-11-24, owner's request; migration 0039 `esim_orders.us_state`): customers getting a NEW number must pick
+  the US state they want it from (`US_STATES` in src/core/esim.ts, select `#es-state` in Esim.tsx; not asked when keeping a
+  number). Shown to the admin on the order ("New number from Texas") and in the new-order email. Neon dev has 0039; main not yet.
 - Login security (2026-11-04): `PasswordInput.tsx` eye toggle on all password fields; "Remember me" on /login =
   30-day cookie + JWT claim r=1, otherwise a browser-session cookie with a 12h token (`startSession(userId, remember)`;
   password change / log-out-others keep the current choice); remembered email in localStorage `ap_login_email`
@@ -548,7 +551,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
     usd auto, Instagram Likes/Live viewers 100% rules. NOT copied: dev's P2P category renamed "Accounts"
     (account sales are blocked); live keeps "Digital products". Re-star 3 TikTok follower services
     (Owlet ids 8277, 24221, 8619) after the first live sync. No users yet (owner signs up, then promote to admin).
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0038 applied (main: up to 0038; 0038 applied 2026-11-24 with owner's yes). Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0039 applied (main: up to 0038; 0038 applied 2026-11-24 with owner's yes). Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

@@ -2,14 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { appleInstallUrl, checkImei, monthsLabel, splitLpa, usNumber } from "@/core/esim";
+import { US_STATES, appleInstallUrl, checkImei, monthsLabel, splitLpa, usNumber } from "@/core/esim";
 import { api } from "../api";
 import { useCurrency } from "./Currency";
 
 type Price = { id: string; dataLabel: string; months: number; price: number };
 type Plan = { id: string; name: string; network: string; description: string; allowKeepNumber: boolean; keepNumberFee: number; data: string[]; prices: Price[] };
 type Order = {
-  id: string; publicId: number; label: string; amount: number; status: "pending" | "delivered" | "refunded"; numberMode: "new" | "keep";
+  id: string; publicId: number; label: string; amount: number; status: "pending" | "delivered" | "refunded"; numberMode: "new" | "keep"; usState?: string | null;
   keepNumber: string | null; phoneNumber: string | null; lpa: string | null; qr: string | null; note: string | null; refundReason: string | null;
   createdAt: string; imeiEnd: string;
 };
@@ -36,6 +36,7 @@ export function Esim({ balance, onAddMoney }: { balance: number; onAddMoney: () 
   const [priceId, setPriceId] = useState("");
   const [imei, setImei] = useState("");
   const [keep, setKeep] = useState(false);
+  const [usState, setUsState] = useState("");
   const [port, setPort] = useState({ number: "", carrier: "", accountNumber: "", pin: "", zip: "", name: "" });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -58,6 +59,7 @@ export function Esim({ balance, onAddMoney }: { balance: number; onAddMoney: () 
   const imeiCheck = imei ? checkImei(imei) : null;
   const imeiOk = imeiCheck && "imei" in imeiCheck;
   const portOk = !keep || (usNumber(port.number) && port.carrier.trim().length >= 2 && port.accountNumber.trim() && port.pin.trim() && /^\d{5}$/.test(port.zip) && port.name.trim().length >= 2);
+  const stateOk = keep || usState !== "";
   const short = total > balance ? total - balance : 0;
   const setP = (k: keyof typeof port) => (e: React.ChangeEvent<HTMLInputElement>) => setPort((x) => ({ ...x, [k]: e.target.value }));
 
@@ -66,7 +68,7 @@ export function Esim({ balance, onAddMoney }: { balance: number; onAddMoney: () 
     setBusy(true);
     setMsg(null);
     try {
-      await api("/api/esim/orders", keep ? { priceId: chosen.id, imei, numberMode: "keep", port } : { priceId: chosen.id, imei, numberMode: "new" });
+      await api("/api/esim/orders", keep ? { priceId: chosen.id, imei, numberMode: "keep", port } : { priceId: chosen.id, imei, numberMode: "new", state: usState });
       setMsg({ ok: true, text: `Order placed. ${charge(total)} is set aside from your wallet. We're preparing your eSIM; you'll find it below when it's ready.` });
       setImei("");
       setPort({ number: "", carrier: "", accountNumber: "", pin: "", zip: "", name: "" });
@@ -138,7 +140,16 @@ export function Esim({ balance, onAddMoney }: { balance: number; onAddMoney: () 
             {plan.allowKeepNumber ? (
               <label className="ap-toggle"><input type="checkbox" checked={keep} onChange={(e) => setKeep(e.target.checked)} /><span>Keep my existing US number{plan.keepNumberFee ? ` (+${money(plan.keepNumberFee)})` : ""}</span></label>
             ) : null}
-            {!keep ? <p className="muted" style={{ fontSize: 14 }}>You&apos;ll get a new US phone number with your eSIM.</p> : (
+            {!keep ? (
+              <div className="field">
+                <label htmlFor="es-state">Which US state do you want your number from?</label>
+                <select id="es-state" className="input" value={usState} onChange={(e) => setUsState(e.target.value)}>
+                  <option value="">Choose a state</option>
+                  {US_STATES.map(([code, name]) => <option key={code} value={code}>{name}</option>)}
+                </select>
+                <span className="muted" style={{ fontSize: 13 }}>You&apos;ll get a new US phone number with that state&apos;s area code. If none is free there, we&apos;ll use the nearest one.</span>
+              </div>
+            ) : (
               <div className="ap-subform" style={{ gap: 10 }}>
                 <p className="muted" style={{ fontSize: 13 }}>We move your number from your current carrier. Get these from your carrier&apos;s app or customer care. Don&apos;t cancel your old line until the new eSIM works.</p>
                 <div className="field"><label htmlFor="es-pn">Number to keep</label><input id="es-pn" className="input" inputMode="tel" value={port.number} onChange={setP("number")} placeholder="(312) 555-0123" /></div>
@@ -164,11 +175,11 @@ export function Esim({ balance, onAddMoney }: { balance: number; onAddMoney: () 
                 <button type="button" className="btn btn-primary" onClick={onAddMoney}>Add money</button>
               </>
             ) : (
-              <button type="button" className="btn btn-primary" disabled={busy || !chosen || !imeiOk || !portOk} onClick={() => void order()}>
+              <button type="button" className="btn btn-primary" disabled={busy || !chosen || !imeiOk || !portOk || !stateOk} onClick={() => void order()}>
                 {busy ? "Placing order…" : chosen ? `Order eSIM for ${charge(total)}` : "Choose a plan"}
               </button>
             )}
-            {chosen && (!imeiOk || !portOk) && <p className="muted" style={{ fontSize: 12 }}>{!imeiOk ? "Enter a valid IMEI to continue." : "Fill in all the details for keeping your number."}</p>}
+            {chosen && (!imeiOk || !portOk || !stateOk) && <p className="muted" style={{ fontSize: 12 }}>{!imeiOk ? "Enter a valid IMEI to continue." : !stateOk ? "Choose the US state for your number." : "Fill in all the details for keeping your number."}</p>}
           </>
         )}
       </section>
@@ -187,7 +198,7 @@ function EsimOrder({ o, money }: { o: Order; money: (k: number) => string }) {
       </button>
       {open && (
         <div className="es-order-body">
-          {o.status === "pending" && <p className="muted" style={{ fontSize: 14 }}>We&apos;re setting up your eSIM{o.numberMode === "keep" && o.keepNumber ? ` and moving ${o.keepNumber}` : ""}. You&apos;ll see the QR code here when it&apos;s ready. {money(o.amount)} is set aside, not yet charged.</p>}
+          {o.status === "pending" && <p className="muted" style={{ fontSize: 14 }}>We&apos;re setting up your eSIM{o.numberMode === "keep" && o.keepNumber ? ` and moving ${o.keepNumber}` : o.usState ? ` with a ${o.usState} number` : ""}. You&apos;ll see the QR code here when it&apos;s ready. {money(o.amount)} is set aside, not yet charged.</p>}
           {o.status === "refunded" && <div className="form-ok" role="status">{money(o.amount)} was returned to your wallet.{o.refundReason ? ` Reason: ${o.refundReason}` : ""}</div>}
           {o.status === "delivered" && (
             <>

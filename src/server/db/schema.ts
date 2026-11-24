@@ -493,6 +493,7 @@ export const esimOrders = pgTable("esim_orders", {
   holdId: uuid("hold_id").notNull().references(() => holds.id),
   imei: text("imei").notNull(),
   numberMode: text("number_mode").$type<"new" | "keep">().notNull(),
+  usState: text("us_state"),
   portEnc: text("port_enc"),
   portNumber: text("port_number"),
   status: text("status").$type<"pending" | "delivered" | "refunded">().notNull().default("pending"),
