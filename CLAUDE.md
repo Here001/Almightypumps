@@ -214,6 +214,15 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   answered in the last 90 days is answered instantly for anyone; one answer clears every pending check of that IMEI. The `esim`
   admin badge = pending orders + pending phone checks. MANUAL because the supplier has no API (an automatic paid IMEI service was
   mentioned to the owner as a later option). Neon dev and main have 0038 (main 2026-11-24, owner's yes).
+- eSIM DELIVERY BY QR UPLOAD + OUR LOGO + INSTALL GUIDE (2026-11-24, owner's request after the first real Airvoice order): the
+  deliver form's first/default choice is now "Upload QR code" (it existed as "QR picture" but was missed). The admin's browser reads
+  the code inside the picture (`readQr` in AdminEsim.tsx, `jsqr` 1.4.0 pinned) and sends it as the LPA, so the customer gets OUR
+  QR (level H, AP mark in the middle: `brandQrSvg` in src/core/esim.ts, tested; verified to scan to the supplier's exact code),
+  one-tap iPhone install and copy buttons; if the picture can't be read it is shown as it is (admin is told). `InstallGuide` in
+  Esim.tsx shows with every delivered order: IMEI-locked / install once / message Help, iPhone + Android steps incl. APN (older
+  iPhones and Android: "message us in Help for the APN"; the supplier's name isn't shown). Phone-check wording: pending = "With our
+  team" + "you'll get the answer by email". Next bumped to 15.5.29 (security advisories). AUTOMATIC IMEI CHECKS researched for the
+  owner (imeicheck.com ~$0.06 iPhone lock check, imei.info from ~$0.02 model lookup; no AT&T API): waiting for the owner's decision.
 - Login security (2026-11-04): `PasswordInput.tsx` eye toggle on all password fields; "Remember me" on /login =
   30-day cookie + JWT claim r=1, otherwise a browser-session cookie with a 12h token (`startSession(userId, remember)`;
   password change / log-out-others keep the current choice); remembered email in localStorage `ap_login_email`

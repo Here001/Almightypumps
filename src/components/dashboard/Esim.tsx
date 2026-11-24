@@ -212,7 +212,7 @@ function EsimOrder({ o, money }: { o: Order; money: (k: number) => string }) {
                 </dl>
               )}
               {o.note && <p style={{ fontSize: 14, whiteSpace: "pre-wrap" }}>{o.note}</p>}
-              <p className="muted" style={{ fontSize: 12 }}>Install the eSIM only once. Turn on Data Roaming for it if you&apos;re outside the US.</p>
+              <InstallGuide imeiEnd={o.imeiEnd} />
             </>
           )}
         </div>
@@ -221,9 +221,46 @@ function EsimOrder({ o, money }: { o: Order; money: (k: number) => string }) {
   );
 }
 
+/** How to install the eSIM, shown with every delivered order. */
+function InstallGuide({ imeiEnd }: { imeiEnd: string }) {
+  return (
+    <div className="es-guide">
+      <div className="es-guide-warn" role="note">
+        <strong>Important</strong>
+        <ul>
+          <li>This eSIM only activates on the phone whose IMEI ends in <b>{imeiEnd}</b>.</li>
+          <li>Install it <b>once</b>. Don&apos;t remove or delete the eSIM, and don&apos;t download it again.</li>
+          <li>Any problem installing or with service? Tap <b>Help</b> and message us straight away, before trying again.</li>
+        </ul>
+      </div>
+      <details open>
+        <summary>Install on iPhone</summary>
+        <ol>
+          <li>Open <b>Settings</b> → <b>Cellular</b> (or Mobile Service).</li>
+          <li>Tap <b>Add eSIM</b>.</li>
+          <li>Pick the plan if your phone already shows it, or choose <b>Use QR Code</b> and scan the code above from another screen. On this iPhone you can also tap “Install on this iPhone”.</li>
+          <li>Follow the steps on the phone and choose this line as your primary network.</li>
+          <li>Internet settings (APN): on iOS 17 or newer, open the eSIM in Cellular settings and turn on <b>Carrier Settings</b>. On iOS 16 or older, message us in Help for the APN profile. Without this step you may have no service.</li>
+        </ol>
+      </details>
+      <details>
+        <summary>Install on Android</summary>
+        <ol>
+          <li>Open <b>Settings</b> → <b>Network &amp; Internet</b> (Connections on Samsung).</li>
+          <li>Open <b>SIM manager</b> / SIMs and tap <b>Add eSIM</b>.</li>
+          <li>Pick the plan if your phone already shows it, or scan the QR code above from another screen.</li>
+          <li>Follow the steps on the phone and turn the eSIM on.</li>
+          <li>Internet settings (APN): message us in Help for the APN settings and enter them under Access Point Names. Without this step you may have no service.</li>
+        </ol>
+      </details>
+      <p className="muted" style={{ fontSize: 12, margin: 0 }}>Outside the US? Turn on Data Roaming for this eSIM.</p>
+    </div>
+  );
+}
+
 type Check = { id: string; publicId: number; imei: string; status: "pending" | "compatible" | "incompatible"; note: string | null; createdAt: string; again?: boolean };
 const CHECK: Record<Check["status"], { label: string; tone: string }> = {
-  pending: { label: "Checking…", tone: "info" }, compatible: { label: "Works", tone: "ok" }, incompatible: { label: "Doesn't work", tone: "bad" },
+  pending: { label: "With our team", tone: "info" }, compatible: { label: "Works", tone: "ok" }, incompatible: { label: "Doesn't work", tone: "bad" },
 };
 
 /** Free: ask us to check a phone before paying anything. No wallet balance needed. */
@@ -279,6 +316,7 @@ function PhoneCheck({ onUse, canOrder }: { onUse: (imei: string) => void; canOrd
                 <div style={{ minWidth: 0 }}><div className="ap-row-title selectable">IMEI {c.imei}</div><div className="muted ap-row-sub">Sent {new Date(c.createdAt).toLocaleDateString("en-NG", { day: "numeric", month: "short" })}</div></div>
                 <span className={`status ${CHECK[c.status].tone}`}>{CHECK[c.status].label}</span>
               </div>
+              {c.status === "pending" && <div className="muted ap-row-sub">Sent to our team. You&apos;ll get the answer by email, usually within a few hours.</div>}
               {c.note && <div className="ap-row-sub">{c.note}</div>}
               {c.status === "compatible" && canOrder && <div><button type="button" className="btn btn-ghost ap-mini" onClick={() => onUse(c.imei)}>Order for this phone</button></div>}
             </li>

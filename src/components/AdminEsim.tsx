@@ -59,6 +59,23 @@ async function toDataUrl(file: File): Promise<string> {
   }
 }
 
+/** Read the activation code out of a QR picture (in the browser). null = couldn't read it. */
+async function readQr(dataUrl: string): Promise<string | null> {
+  try {
+    const { default: jsQR } = await import("jsqr");
+    const img = new Image();
+    img.src = dataUrl;
+    await img.decode();
+    const c = document.createElement("canvas");
+    c.width = img.naturalWidth; c.height = img.naturalHeight;
+    const ctx = c.getContext("2d")!;
+    ctx.drawImage(img, 0, 0);
+    const d = ctx.getImageData(0, 0, c.width, c.height);
+    const text = jsQR(d.data, d.width, d.height)?.data?.trim() ?? "";
+    return /^LPA:1\$[^$\s]+\$[^\s]*$/i.test(text) ? text : null;
+  } catch { return null; }
+}
+
 function Orders() {
   const [status, setStatus] = useState<"pending" | "delivered" | "refunded">("pending");
   const [orders, setOrders] = useState<Order[] | null>(null);
@@ -86,7 +103,8 @@ function Orders() {
 function OrderCard({ o, onDone }: { o: Order; onDone: (text: string) => Promise<void> }) {
   const [f, setF] = useState({ phoneNumber: "", lpa: "", smdp: "", code: "", note: "" });
   const [qrImage, setQrImage] = useState<string | null>(null);
-  const [mode, setMode] = useState<"lpa" | "parts" | "image">("lpa");
+  const [mode, setMode] = useState<"lpa" | "parts" | "image">("image");
+  const [scanned, setScanned] = useState<string | null>(null);
   const [refunding, setRefunding] = useState(false);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
@@ -123,7 +141,7 @@ function OrderCard({ o, onDone }: { o: Order; onDone: (text: string) => Promise<
       {o.status === "pending" && !refunding && (
         <form className="ap-subform" style={{ gap: 10 }} onSubmit={(e) => {
           e.preventDefault();
-          void send({ action: "deliver", id: o.id, delivery: { phoneNumber: f.phoneNumber, lpa: mode === "lpa" ? f.lpa : undefined, smdp: mode === "parts" ? f.smdp : undefined, code: mode === "parts" ? f.code : undefined, qrImage: mode === "image" ? qrImage ?? undefined : undefined, note: f.note || undefined } },
+          void send({ action: "deliver", id: o.id, delivery: { phoneNumber: f.phoneNumber, lpa: mode === "lpa" ? f.lpa : mode === "image" && scanned ? scanned : undefined, smdp: mode === "parts" ? f.smdp : undefined, code: mode === "parts" ? f.code : undefined, qrImage: mode === "image" && !scanned ? qrImage ?? undefined : undefined, note: f.note || undefined } },
             `#E-${o.publicId} delivered. The customer can install it now.`);
         }}>
           <strong style={{ fontSize: 15 }}>Deliver this eSIM</strong>
@@ -131,9 +149,9 @@ function OrderCard({ o, onDone }: { o: Order; onDone: (text: string) => Promise<
           <div className="field"><label htmlFor={`pn-${o.id}`}>The eSIM&apos;s US phone number</label>
             <input id={`pn-${o.id}`} className="input" inputMode="tel" value={f.phoneNumber} onChange={set("phoneNumber")} placeholder="(312) 216-9314" required /></div>
           <div className="ap-chips" role="group" aria-label="How the supplier gave the eSIM">
+            <button type="button" className="ap-chip" aria-pressed={mode === "image"} onClick={() => setMode("image")}>Upload QR code</button>
             <button type="button" className="ap-chip" aria-pressed={mode === "lpa"} onClick={() => setMode("lpa")}>Activation code (LPA:1$…)</button>
             <button type="button" className="ap-chip" aria-pressed={mode === "parts"} onClick={() => setMode("parts")}>SM-DP+ address + code</button>
-            <button type="button" className="ap-chip" aria-pressed={mode === "image"} onClick={() => setMode("image")}>QR picture</button>
           </div>
           {mode === "lpa" && <div className="field"><label htmlFor={`lpa-${o.id}`}>Activation code</label>
             <input id={`lpa-${o.id}`} className="input" value={f.lpa} onChange={set("lpa")} placeholder="LPA:1$smdp.example.com$ABC-123" autoComplete="off" spellCheck={false} /></div>}
@@ -141,12 +159,16 @@ function OrderCard({ o, onDone }: { o: Order; onDone: (text: string) => Promise<
             <div className="field" style={{ flex: "1 1 200px" }}><label htmlFor={`sm-${o.id}`}>SM-DP+ address</label><input id={`sm-${o.id}`} className="input" value={f.smdp} onChange={set("smdp")} placeholder="smdp.example.com" spellCheck={false} /></div>
             <div className="field" style={{ flex: "1 1 200px" }}><label htmlFor={`cd-${o.id}`}>Activation code</label><input id={`cd-${o.id}`} className="input" value={f.code} onChange={set("code")} spellCheck={false} /></div>
           </div>}
-          {mode === "image" && <div className="field"><label htmlFor={`qi-${o.id}`}>QR code picture (screenshot from the supplier)</label>
-            <input id={`qi-${o.id}`} className="input" type="file" accept="image/*" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { setQrImage(await toDataUrl(file)); } catch { setErr("Couldn't read that picture."); } } }} />
+          {mode === "image" && <div className="field"><label htmlFor={`qi-${o.id}`}>QR code picture from your supplier (save or screenshot it from their email)</label>
+            <input id={`qi-${o.id}`} className="input" type="file" accept="image/*" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { try { const url = await toDataUrl(file); setQrImage(url); setScanned(await readQr(url)); setErr(null); } catch { setErr("Couldn't read that picture."); } } }} />
             {qrImage && (
               // eslint-disable-next-line @next/next/no-img-element -- local preview
               <img src={qrImage} alt="QR preview" width={140} height={140} style={{ objectFit: "contain", background: "#fff", borderRadius: 8 }} />
-            )}</div>}
+            )}
+            {qrImage && (scanned
+              ? <div className="form-ok" role="status">QR code read. The customer gets a fresh QR code with the Almighty Pumps logo (not your supplier&apos;s), plus one-tap install and copy buttons.</div>
+              : <div className="form-error" role="status">We couldn&apos;t read the code inside this picture, so the customer will see the picture exactly as it is (with any logo on it). For a cleaner result, upload a sharper picture of the QR code.</div>)}
+            </div>}
           <div className="field"><label htmlFor={`nt-${o.id}`}>Message to the customer (optional)</label>
             <textarea id={`nt-${o.id}`} className="input" rows={2} value={f.note} onChange={set("note")} placeholder="e.g. Your plan renews on 4 Feb. Keep data roaming on." /></div>
           {err && <div className="form-error" role="alert">{err}</div>}

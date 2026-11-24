@@ -8,7 +8,7 @@ import { alertAdmins } from "./adminAlerts";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import QRCode from "qrcode";
 import { z } from "zod";
-import { buildLpa, checkImei, formatUs, monthsLabel, usNumber } from "@/core/esim";
+import { brandQrSvg, buildLpa, checkImei, formatUs, monthsLabel, usNumber } from "@/core/esim";
 import type { Db } from "./db";
 import { esimOrders, esimPlans, esimPrices, users } from "./db/schema";
 import { badRequest, notFound } from "./errors";
@@ -168,7 +168,8 @@ export async function placeEsimOrder(db: Db, userId: string, input: z.output<typ
 
 /** QR picture for an activation code (SVG), or the uploaded one. */
 async function qrDataUrl(o: { lpa: string | null; qrImage: Buffer | null; qrType: string | null }) {
-  if (o.lpa) return `data:image/svg+xml;base64,${Buffer.from(await QRCode.toString(o.lpa, { type: "svg", margin: 1, errorCorrectionLevel: "M" })).toString("base64")}`;
+  // Our own QR (Almighty Pumps mark in the middle). Level H keeps it scannable with the centre covered.
+  if (o.lpa) return `data:image/svg+xml;base64,${Buffer.from(brandQrSvg(await QRCode.toString(o.lpa, { type: "svg", margin: 2, errorCorrectionLevel: "H" }))).toString("base64")}`;
   if (o.qrImage && o.qrType) return `data:${o.qrType};base64,${Buffer.from(o.qrImage).toString("base64")}`;
   return null;
 }

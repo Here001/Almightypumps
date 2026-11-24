@@ -52,3 +52,20 @@ export function splitLpa(lpa: string): { smdp: string; code: string } | null {
 export const appleInstallUrl = (lpa: string) => `https://esimsetup.apple.com/esim_qrcode_provisioning?carddata=${encodeURIComponent(lpa)}`;
 
 export const monthsLabel = (m: number) => (m === 1 ? "1 month" : `${m} months`);
+
+/**
+ * Put the Almighty Pumps mark in the middle of a QR code SVG (as made by the `qrcode` library). The code must be
+ * generated with error correction "H" so the covered centre (about a fifth of the width) doesn't stop it scanning.
+ */
+export function brandQrSvg(svg: string): string {
+  const m = /viewBox="0 0 (\d+(?:\.\d+)?) (\d+(?:\.\d+)?)"/.exec(svg);
+  if (!m || !svg.includes("</svg>")) return svg;
+  const n = Number(m[1]);
+  const box = n * 0.22, pad = box * 0.1, at = (n - box) / 2, k = (box - pad * 2) / 200;
+  const mark = `<g shape-rendering="geometricPrecision"><rect x="${at - pad}" y="${at - pad}" width="${box + pad * 2}" height="${box + pad * 2}" rx="${box * 0.2}" fill="#ffffff"/>`
+    + `<rect x="${at}" y="${at}" width="${box}" height="${box}" rx="${box * 0.18}" fill="#0E1116"/>`
+    + `<g transform="translate(${at + pad} ${at + pad}) scale(${k})"><polygon points="20,175 120,20 120,175" fill="#F4F2EE"/>`
+    + `<path d="M120 20 H145 A50 50 0 0 1 145 120 H120 Z M120 46 H145 A24 24 0 0 1 145 94 H120 Z" fill="#F4F2EE" fill-rule="evenodd"/>`
+    + `<polyline points="52,162 82,124 112,162" fill="none" stroke="#FF5A1F" stroke-width="13" stroke-linejoin="miter"/></g></g>`;
+  return svg.replace("</svg>", `${mark}</svg>`);
+}

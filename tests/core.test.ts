@@ -573,3 +573,11 @@ test("cancellation requests: seller agrees (refund) or refuses (dispute), before
   assert.throws(() => transition(shipped, "ESCALATE", "buyer", now), EscrowError);
   assert.throws(() => transition({ ...paid, status: "COMPLETED" }, "ESCALATE", "system", now), EscrowError);
 });
+
+test("brandQrSvg puts the AP mark in the middle and leaves other SVGs alone", async () => {
+  const { brandQrSvg } = await import("../src/core/esim.ts");
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 41 41" shape-rendering="crispEdges"><path d="M0 0h41v41H0z"/></svg>';
+  const out = brandQrSvg(svg);
+  assert.ok(out.includes("#FF5A1F") && out.endsWith("</svg>") && out.startsWith(svg.slice(0, -6)));
+  assert.equal(brandQrSvg("<svg></svg>"), "<svg></svg>");
+});

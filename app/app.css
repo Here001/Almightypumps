@@ -766,3 +766,11 @@ html[data-theme="light"]:has(.app-shell) body { background: var(--bg); }
 .app-shell .ap-row .status { white-space: nowrap; flex-shrink: 0; align-self: flex-start; height: auto; }
 .app-shell .mt-groups { display: flex; flex-wrap: nowrap; gap: 6px; }
 .app-shell .mt-groups .ap-chip { flex: 1 1 0; min-width: 0; justify-content: center; text-align: center; padding-inline: 6px; font-size: 14px; white-space: nowrap; }
+
+/* eSIM install guide (2026-11-24) */
+.es-guide { display: flex; flex-direction: column; gap: 10px; font-size: 14px; }
+.es-guide-warn { padding: 12px 14px; border: 1px solid rgb(251 191 36 / 0.55); border-radius: 12px; background: rgb(251 191 36 / 0.06); }
+.es-guide ul, .es-guide ol { margin: 6px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+.es-guide details { border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; }
+.es-guide summary { font-weight: 600; cursor: pointer; }
+.es-qr img { background: #fff; border-radius: 12px; }
