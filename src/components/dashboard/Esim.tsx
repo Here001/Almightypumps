@@ -91,6 +91,8 @@ export function Esim({ balance, onAddMoney }: { balance: number; onAddMoney: () 
         </section>
       )}
 
+      <PhoneCheck canOrder={Boolean(plan)} onUse={(v) => { setImei(v); document.getElementById("es-imei")?.scrollIntoView({ behavior: "smooth", block: "center" }); }} />
+
       <section className="card glass">
         <h2>Get a US eSIM</h2>
         {error && <div className="form-error" role="alert">{error}</div>}
@@ -216,5 +218,73 @@ function EsimOrder({ o, money }: { o: Order; money: (k: number) => string }) {
         </div>
       )}
     </li>
+  );
+}
+
+type Check = { id: string; publicId: number; imei: string; status: "pending" | "compatible" | "incompatible"; note: string | null; createdAt: string; again?: boolean };
+const CHECK: Record<Check["status"], { label: string; tone: string }> = {
+  pending: { label: "Checking…", tone: "info" }, compatible: { label: "Works", tone: "ok" }, incompatible: { label: "Doesn't work", tone: "bad" },
+};
+
+/** Free: ask us to check a phone before paying anything. No wallet balance needed. */
+function PhoneCheck({ onUse, canOrder }: { onUse: (imei: string) => void; canOrder: boolean }) {
+  const [list, setList] = useState<Check[]>([]);
+  const [imei, setImei] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const load = () => api<Check[]>("/api/esim/imei-check").then(setList).catch(() => {});
+  const waiting = list.some((c) => c.status === "pending");
+  useEffect(() => { void load(); }, []);
+  // While a phone is being checked, look for the answer every minute.
+  useEffect(() => {
+    if (!waiting) return;
+    const t = setInterval(() => { if (document.visibilityState === "visible") void load(); }, 60_000);
+    return () => clearInterval(t);
+  }, [waiting]);
+  const v = imei ? checkImei(imei) : null;
+  const ok = v && "imei" in v;
+
+  async function send() {
+    setBusy(true); setMsg(null);
+    try {
+      const c = await api<Check>("/api/esim/imei-check", { imei });
+      setImei("");
+      setMsg({ ok: c.status !== "incompatible", text: c.status === "pending"
+        ? (c.again ? "We're already checking this phone. You'll get an email as soon as we have the answer." : "Sent. We'll check this phone and email you the answer, usually within a few hours. It's free.")
+        : c.status === "compatible" ? "Good news: this phone works with our US eSIM." : `Sorry, this phone won't work with our US eSIM.${c.note ? ` ${c.note}` : ""}` });
+      await load();
+    } catch (e) { setMsg({ ok: false, text: (e as Error).message }); }
+    finally { setBusy(false); }
+  }
+
+  return (
+    <section className="card glass">
+      <h2>Check my phone first (free)</h2>
+      <p className="muted" style={{ fontSize: 14, margin: 0 }}>Not sure your phone will work? Send us its IMEI and we&apos;ll check it before you pay anything. You don&apos;t need money in your wallet.</p>
+      <div className="field">
+        <label htmlFor="pc-imei">IMEI number (14–16 digits)</label>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <input id="pc-imei" className="input" style={{ flex: "1 1 200px" }} inputMode="numeric" autoComplete="off" value={imei} onChange={(e) => setImei(e.target.value.replace(/[^\d\s-]/g, ""))} placeholder="e.g. 35 123456 789012 3" />
+          <button type="button" className="btn btn-primary" disabled={busy || !ok} onClick={() => void send()}>{busy ? "Sending…" : "Check my phone"}</button>
+        </div>
+        {v && "error" in v && imei.replace(/\D/g, "").length >= 14 && <span className="form-error" role="alert" style={{ padding: "6px 10px" }}>{v.error}</span>}
+        <a className="ap-link" href="tel:*%2306%23" style={{ fontSize: 13 }}>Dial *#06# to get your IMEI</a>
+      </div>
+      {msg && <div className={msg.ok ? "form-ok" : "form-error"} role="status">{msg.text}</div>}
+      {list.length > 0 && (
+        <ul className="ap-list">
+          {list.map((c) => (
+            <li key={c.id} className="ap-row" style={{ flexDirection: "column", alignItems: "stretch", gap: 6 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
+                <div style={{ minWidth: 0 }}><div className="ap-row-title selectable">IMEI {c.imei}</div><div className="muted ap-row-sub">Sent {new Date(c.createdAt).toLocaleDateString("en-NG", { day: "numeric", month: "short" })}</div></div>
+                <span className={`status ${CHECK[c.status].tone}`}>{CHECK[c.status].label}</span>
+              </div>
+              {c.note && <div className="ap-row-sub">{c.note}</div>}
+              {c.status === "compatible" && canOrder && <div><button type="button" className="btn btn-ghost ap-mini" onClick={() => onUse(c.imei)}>Order for this phone</button></div>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }

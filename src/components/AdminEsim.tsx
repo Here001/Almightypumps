@@ -24,14 +24,15 @@ function Copy({ text }: { text: string }) {
 }
 
 export function AdminEsim() {
-  const [tab, setTab] = useState<"orders" | "plans">("orders");
+  const [tab, setTab] = useState<"orders" | "checks" | "plans">("orders");
   return (
     <>
       <div className="ap-chips" role="group" aria-label="Section">
         <button type="button" className="ap-chip" aria-pressed={tab === "orders"} onClick={() => setTab("orders")}>Orders</button>
+        <button type="button" className="ap-chip" aria-pressed={tab === "checks"} onClick={() => setTab("checks")}>Phones to check</button>
         <button type="button" className="ap-chip" aria-pressed={tab === "plans"} onClick={() => setTab("plans")}>Plans & prices</button>
       </div>
-      {tab === "orders" ? <Orders /> : <Plans />}
+      {tab === "orders" ? <Orders /> : tab === "checks" ? <PhoneChecks /> : <Plans />}
     </>
   );
 }
@@ -279,6 +280,72 @@ function PlanEditor({ plan, onClose }: { plan: Plan; onClose: (msg?: string) => 
           <button type="button" className="btn btn-ghost" onClick={() => void onClose()}>Cancel</button>
         </div>
       </form>
+    </section>
+  );
+}
+
+type PhoneCheckRow = { id: string; publicId: number; imei: string; status: "pending" | "compatible" | "incompatible"; note: string | null; createdAt: string; checkedAt: string | null; userId: string; name: string; email: string };
+
+/** Customers who asked (for free) whether their phone works. Check the IMEI with the supplier, then answer. */
+function PhoneChecks() {
+  const [which, setWhich] = useState<"pending" | "done">("pending");
+  const [rows, setRows] = useState<PhoneCheckRow[] | null>(null);
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState<string | null>(null);
+  const [msg, setMsg] = useState<Msg>(null);
+  const load = useCallback(async () => {
+    try { setRows(await api<PhoneCheckRow[]>(`/api/admin/imei-checks?status=${which}`)); } catch (e) { setMsg({ ok: false, text: (e as Error).message }); }
+  }, [which]);
+  useEffect(() => { setRows(null); void load(); }, [load]);
+
+  async function answer(r: PhoneCheckRow, works: boolean) {
+    setBusy(r.id); setMsg(null);
+    try {
+      await api("/api/admin/imei-checks", { id: r.id, works, note: notes[r.id]?.trim() || undefined });
+      setMsg({ ok: true, text: `#C-${r.publicId}: the customer was told it ${works ? "works" : "doesn't work"}.` });
+      await load();
+    } catch (e) { setMsg({ ok: false, text: (e as Error).message }); }
+    finally { setBusy(null); }
+  }
+
+  return (
+    <section className="card glass">
+      <h2>{which === "pending" ? "Phones to check" : "Answered phone checks"}</h2>
+      <p className="muted" style={{ fontSize: 14, margin: 0 }}>Customers send their IMEI for free before ordering. Check it with your supplier, then tap an answer: they get an email and see it in the app.</p>
+      <div className="ap-chips" role="group" aria-label="Status">
+        <button type="button" className="ap-chip" aria-pressed={which === "pending"} onClick={() => setWhich("pending")}>To check</button>
+        <button type="button" className="ap-chip" aria-pressed={which === "done"} onClick={() => setWhich("done")}>Answered</button>
+      </div>
+      {msg && <div className={msg.ok ? "form-ok" : "form-error"} role={msg.ok ? "status" : "alert"}>{msg.text}</div>}
+      {!rows && <p className="muted" role="status">Loading…</p>}
+      {rows && rows.length === 0 && <div className="empty">{which === "pending" ? "No phones waiting to be checked." : "Nothing answered yet."}</div>}
+      {rows && rows.length > 0 && (
+        <ul className="ap-list">
+          {rows.map((r) => (
+            <li key={r.id} className="ap-row" style={{ flexDirection: "column", alignItems: "stretch", gap: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+                <div style={{ minWidth: 0 }}>
+                  <div className="ap-row-title" style={{ fontWeight: 600 }}><span className="selectable">{r.imei}</span> <Copy text={r.imei} /></div>
+                  <div className="muted ap-row-sub">#C-{r.publicId} · {when(r.createdAt)} · <a className="ap-link" href={`/admin/users/${r.userId}`}>{r.name}</a> · <span className="selectable">{r.email}</span></div>
+                </div>
+                {r.status !== "pending" && <span className={`status ${r.status === "compatible" ? "ok" : "bad"}`}>{r.status === "compatible" ? "Works" : "Doesn't work"}</span>}
+              </div>
+              {r.status === "pending" ? (
+                <>
+                  <div className="field" style={{ margin: 0 }}>
+                    <label htmlFor={`pc-${r.id}`} className="muted" style={{ fontSize: 13 }}>Note for the customer (needed if it doesn&apos;t work)</label>
+                    <input id={`pc-${r.id}`} className="input" maxLength={500} value={notes[r.id] ?? ""} onChange={(e) => setNotes((n) => ({ ...n, [r.id]: e.target.value }))} placeholder="e.g. Phone is locked to a network / has no eSIM" />
+                  </div>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <button type="button" className="btn btn-primary ap-mini" disabled={busy === r.id} onClick={() => void answer(r, true)}>Works</button>
+                    <button type="button" className="btn btn-ghost ap-mini" disabled={busy === r.id} onClick={() => void answer(r, false)}>Doesn&apos;t work</button>
+                  </div>
+                </>
+              ) : r.note && <div className="ap-row-sub">{r.note}</div>}
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

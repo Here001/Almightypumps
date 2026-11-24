@@ -35,6 +35,8 @@ export const LIMITS = {
   emailCodeUserDay: { max: 20, windowSec: DAY },
   emailCodeIp: { max: 60, windowSec: HOUR },           // codes emailed from one network
   emailCodeCheck: { max: 60, windowSec: 15 * MIN },    // code guesses from one network (each code also allows only 5 tries)
+  imeiCheck: { max: 6, windowSec: HOUR },              // free phone checks for US eSIMs
+  imeiCheckDay: { max: 12, windowSec: DAY },
   nameChange: { max: 12, windowSec: HOUR },
   nameChangeDay: { max: 20, windowSec: DAY },
   apiKey: { max: 10, windowSec: HOUR },
@@ -109,6 +111,8 @@ export const LIMIT_LABELS: Record<LimitName, string> = {
   emailCodeUserDay: "Login codes emailed to one account (daily)",
   emailCodeIp: "Login codes requested from one network",
   emailCodeCheck: "Code guesses from one network",
+  imeiCheck: "Free eSIM phone checks",
+  imeiCheckDay: "Free eSIM phone checks (daily)",
   nameChange: "Name change requests",
   nameChangeDay: "Name change requests (daily)",
   apiKey: "Reseller API keys created",

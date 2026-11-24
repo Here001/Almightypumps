@@ -19,7 +19,7 @@ export async function adminCounts(db: Db): Promise<AdminCounts> {
     (select count(*) from withdrawals where status = 'requested')::int as withdrawals,
     (select count(*) from trades where status = 'DISPUTED')::int as disputes,
     (select count(*) from seller_reports where status = 'open')::int as reports,
-    (select count(*) from esim_orders where status = 'pending')::int as esim,
+    ((select count(*) from esim_orders where status = 'pending') + (select count(*) from imei_checks where status = 'pending'))::int as esim,
     (select count(*) from shop_orders where status = 'pending')::int as shop,
     (select count(*) from users where seller_status = 'pending')::int as sellers,
     (select count(*) from listings where status = 'pending')::int as listings,

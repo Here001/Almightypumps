@@ -206,6 +206,14 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
   Admin queue: copy IMEI/port details, deliver with US number + activation code (LPA:1$…, or SM-DP+ + code,
   or uploaded QR picture) + note → capture to `revenue:esim`; or refund with a reason. Customer sees number,
   QR (generated server-side with `qrcode` 1.5.4), iPhone one-tap install link, SM-DP+/code with copy buttons.
+- FREE PHONE CHECK FOR US eSIMs (2026-11-24, owner: "check their IMEI without loading funds"; migration 0038 `imei_checks`,
+  `src/server/imeiChecks.ts`): top of the US phone line screen = "Check my phone first (free)" (`PhoneCheck` in Esim.tsx; IMEI
+  validated like orders; no wallet balance needed; max 3 pending; limit `imeiCheck` 6/h, 12/day) → POST /api/esim/imei-check →
+  admins emailed → Admin › eSIMs › "Phones to check" chip (`PhoneChecks` in AdminEsim.tsx, /api/admin/imei-checks): Works /
+  Doesn't work (reason required) → customer emailed + sees it; "Order for this phone" fills the order form's IMEI. The same IMEI
+  answered in the last 90 days is answered instantly for anyone; one answer clears every pending check of that IMEI. The `esim`
+  admin badge = pending orders + pending phone checks. MANUAL because the supplier has no API (an automatic paid IMEI service was
+  mentioned to the owner as a later option). Neon dev has 0038; main not yet.
 - Login security (2026-11-04): `PasswordInput.tsx` eye toggle on all password fields; "Remember me" on /login =
   30-day cookie + JWT claim r=1, otherwise a browser-session cookie with a 12h token (`startSession(userId, remember)`;
   password change / log-out-others keep the current choice); remembered email in localStorage `ap_login_email`
@@ -531,7 +539,7 @@ Hosting on Vercel (functions in `fra1` next to the Frankfurt database).
     usd auto, Instagram Likes/Live viewers 100% rules. NOT copied: dev's P2P category renamed "Accounts"
     (account sales are blocked); live keeps "Digital products". Re-star 3 TikTok follower services
     (Owlet ids 8277, 24221, 8619) after the first live sync. No users yet (owner signs up, then promote to admin).
-  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0037 applied (main: up to 0037; 0036–0037 applied 2026-11-16 with owner's yes). Provider "Owlet"
+  - `dev` branch (`br-dawn-silence-ban4sxrz`): 0000–0038 applied (main: up to 0037; 0036–0037 applied 2026-11-16 with owner's yes). Provider "Owlet"
     (`https://the-owlet.com/api/v2`, WITH the hyphen; theowlet.com is a different site, NGN, key env `SMM_PROVIDER_1_KEY`, markup 50%, owner
     adjusts it in /admin/providers). Owner's admin account: femiotedola227@gmail.com (signed up on the
     preview 2026-11-03; preview signup, DB and tracking confirmed working).

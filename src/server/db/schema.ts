@@ -248,6 +248,19 @@ export const trades = pgTable("trades", {
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 
+/** Free "check my phone" requests for US eSIMs (drizzle/0038). */
+export const imeiChecks = pgTable("imei_checks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  publicId: serial("public_id").unique(),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  imei: text("imei").notNull(),
+  status: text("status").$type<"pending" | "compatible" | "incompatible">().notNull().default("pending"),
+  note: text("note"),
+  checkedBy: uuid("checked_by").references(() => users.id),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  checkedAt: ts("checked_at"),
+});
+
 export const sellerReports = pgTable("seller_reports", {
   id: uuid("id").primaryKey().defaultRandom(),
   publicId: serial("public_id").unique(),
