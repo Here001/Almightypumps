@@ -44,7 +44,8 @@ body.f-16x9 .mid { font-size: calc(var(--u) * 7.4); }
 body.f-16x9 .pos-left .big { font-size: calc(var(--u) * 9.6); }
 body.f-1x1 .big { font-size: calc(var(--u) * 10.5); }
 body.f-1x1 .mid { font-size: calc(var(--u) * 7.2); }
-body.f-1x1 .pos-left .big { font-size: calc(var(--u) * 8.4); }
+body.f-1x1 .pos-left { right: 44%; }
+body.f-1x1 .pos-left .big { font-size: calc(var(--u) * 7.6); }
 
 .holo-text .w { color: #FFE4D6; text-shadow: 0 0 calc(var(--u) * 2.4) rgb(255 120 60 / .8); }
 .holo-text .hl { color: var(--accent); }

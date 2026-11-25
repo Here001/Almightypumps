@@ -135,7 +135,7 @@ export const SCENES = {
     const labels = (s.callouts || []).map((c) => { const m = makeLabel(typeof c === "string" ? { title: c } : c, fmt(ctx, 1.9, 2.1, 2.2)); m.visible = false; ctx.stage.scene.add(m); return m; });
     const lineMat = new THREE.LineBasicMaterial({ color: new THREE.Color(BRAND.accent).multiplyScalar(2), transparent: true, toneMapped: false });
     const links = labels.map(() => { const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]); const l = new THREE.Line(g, lineMat.clone()); l.visible = false; ctx.stage.scene.add(l); return l; });
-    const base = fmt(ctx, [0, -1.3, 0], [0, -1.15, 0], [2.0, -0.2, 0]);
+    const base = fmt(ctx, [0, -1.3, 0], [0, -1.15, 0], [1.3, -0.2, 0]);
     const from = s.from || 0, rate = s.rate || 1;
     const clipTime = (t) => from + t * rate;
     return {
@@ -217,7 +217,7 @@ export const SCENES = {
       const n = items.length;
       if (n === 1) return [0, fmt(ctx, 0.2, -0.4, -0.3), 0];
       if (ctx.stage.portrait) return [0, 1.2 - i * 3.0, 0];
-      return [(i - (n - 1) / 2) * fmt(ctx, 0, 2.55, 3.6), -0.2, 0];
+      return [(i - (n - 1) / 2) * fmt(ctx, 0, 2.2, 3.6), -0.2, 0];
     };
     return {
       el, objects: rings, speed: 0.4,
