@@ -1,0 +1,61 @@
+{
+  "name": "04-esim-check",
+  "world": "holoroom",
+  "palette": [
+    "#FF5A1F",
+    "#3B8BFF"
+  ],
+  "transition": "whip",
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.4,
+      "lines": [
+        "Will a US eSIM work",
+        "on *your phone?*"
+      ],
+      "world": "warp"
+    },
+    {
+      "type": "phone",
+      "duration": 6,
+      "clip": "1a-phone-check.mp4",
+      "title": "Check it *free* first",
+      "callouts": [
+        {
+          "title": "Type your IMEI"
+        },
+        {
+          "title": "No wallet money needed"
+        },
+        {
+          "title": "We check it for you"
+        }
+      ],
+      "kicker": "US phone line",
+      "from": 0,
+      "rate": 1.6
+    },
+    {
+      "type": "stats",
+      "duration": 3,
+      "title": "Before you pay",
+      "items": [
+        {
+          "value": 0,
+          "prefix": "₦",
+          "label": "to check your phone",
+          "ring": 1
+        }
+      ]
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Check your phone *today*",
+      "button": "Sign up free",
+      "finish": "chrome",
+      "transition": "glitch"
+    }
+  ]
+}

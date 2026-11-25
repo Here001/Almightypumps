@@ -1,0 +1,73 @@
+{
+  "name": "08-airtime-waves",
+  "world": "waves",
+  "palette": [
+    "#FF5A1F",
+    "#21D07A"
+  ],
+  "transition": "glitch",
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.2,
+      "lines": [
+        "Out of data?",
+        "*Top up now.*"
+      ]
+    },
+    {
+      "type": "carousel",
+      "duration": 4.4,
+      "title": "Every network",
+      "items": [
+        {
+          "title": "MTN",
+          "text": "Airtime and data"
+        },
+        {
+          "title": "Airtel",
+          "text": "Airtime and data"
+        },
+        {
+          "title": "Glo",
+          "text": "Airtime and data"
+        },
+        {
+          "title": "9mobile",
+          "text": "Airtime and data"
+        }
+      ],
+      "kicker": "Airtime & data"
+    },
+    {
+      "type": "steps",
+      "duration": 3.6,
+      "title": "Recharge in *seconds*",
+      "steps": [
+        "Pick the network",
+        "Enter the number",
+        "Pay from your wallet"
+      ]
+    },
+    {
+      "type": "stats",
+      "duration": 2.8,
+      "title": "Networks covered",
+      "items": [
+        {
+          "value": 4,
+          "label": "Nigerian networks",
+          "ring": 1
+        }
+      ]
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Recharge *anytime*",
+      "button": "Sign up free",
+      "finish": "chrome",
+      "transition": "whip"
+    }
+  ]
+}

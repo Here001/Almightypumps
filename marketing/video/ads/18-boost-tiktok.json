@@ -1,0 +1,58 @@
+{
+  "name": "18-boost-tiktok",
+  "world": "warp",
+  "palette": [
+    "#FF2E63",
+    "#25F4EE"
+  ],
+  "transition": "glitch",
+  "sound": {
+    "bpm": 124
+  },
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.4,
+      "lines": [
+        "Your videos deserve",
+        "*more views.*"
+      ]
+    },
+    {
+      "type": "steps",
+      "duration": 3.6,
+      "title": "Boost in *3 taps*",
+      "steps": [
+        "Pick TikTok",
+        "Paste your video link",
+        "Choose how many views"
+      ],
+      "world": "nebula",
+      "palette": [
+        "#FF2E63",
+        "#25F4EE"
+      ]
+    },
+    {
+      "type": "hologram",
+      "duration": 3.4,
+      "lines": [
+        "Pay in Naira.",
+        "*Pay on delivery.*"
+      ],
+      "world": "holoroom",
+      "palette": [
+        "#FF2E63",
+        "#25F4EE"
+      ]
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Boost your next video",
+      "button": "Sign up free",
+      "finish": "chrome",
+      "transition": "whip"
+    }
+  ]
+}

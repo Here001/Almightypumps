@@ -1,0 +1,37 @@
+{
+  "name": "30-sting-tunnel",
+  "world": "tunnel",
+  "palette": [
+    "#FF5A1F",
+    "#FFFFFF"
+  ],
+  "transition": "flash",
+  "sound": {
+    "bpm": 128
+  },
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.0,
+      "lines": [
+        "Boost.",
+        "Verify.",
+        "*Trade.*"
+      ]
+    },
+    {
+      "type": "logo",
+      "duration": 3.4,
+      "finish": "chrome",
+      "tagline": "One Naira wallet for *everything.*"
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Create your *free* account",
+      "button": "Sign up free",
+      "finish": "chrome",
+      "transition": "glitch"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "name": "28-creator-aurora",
+  "world": "aurora",
+  "palette": [
+    "#FF5A1F",
+    "#FF4FD8"
+  ],
+  "transition": "flash",
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.2,
+      "lines": [
+        "New page?",
+        "*Start strong.*"
+      ]
+    },
+    {
+      "type": "headline",
+      "duration": 3.0,
+      "lines": [
+        "Followers. Likes.",
+        "*Views.*"
+      ],
+      "sub": "For Instagram, TikTok, YouTube, Facebook and more.",
+      "kicker": "Boost Account"
+    },
+    {
+      "type": "steps",
+      "duration": 3.6,
+      "title": "Three taps",
+      "steps": [
+        "Pick a service",
+        "Paste your link",
+        "Pay from your wallet"
+      ]
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Boost your page",
+      "button": "Sign up free",
+      "finish": "chrome",
+      "transition": "whip"
+    }
+  ]
+}

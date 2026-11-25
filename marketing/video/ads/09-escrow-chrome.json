@@ -1,0 +1,70 @@
+{
+  "name": "09-escrow-chrome",
+  "world": "chrome",
+  "palette": [
+    "#FF5A1F",
+    "#7C5CFF"
+  ],
+  "transition": "glitch",
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.4,
+      "lines": [
+        "Buying from",
+        "a *stranger* online?"
+      ]
+    },
+    {
+      "type": "hologram",
+      "duration": 3.4,
+      "lines": [
+        "Your money waits",
+        "*in escrow.*"
+      ],
+      "kicker": "P2P marketplace",
+      "world": "holoroom",
+      "palette": [
+        "#FF5A1F",
+        "#7C5CFF"
+      ]
+    },
+    {
+      "type": "steps",
+      "duration": 4,
+      "title": "How a trade works",
+      "steps": [
+        "You pay into escrow",
+        "The seller ships",
+        "You confirm, they get paid"
+      ]
+    },
+    {
+      "type": "stats",
+      "duration": 4,
+      "title": "Protected by the clock",
+      "items": [
+        {
+          "value": 72,
+          "suffix": "h",
+          "label": "for the seller to ship, or you're refunded",
+          "ring": 1
+        },
+        {
+          "value": 48,
+          "suffix": "h",
+          "label": "to inspect what you got",
+          "ring": 0.67
+        }
+      ]
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Trade *safely*",
+      "button": "Sign up free",
+      "finish": "chrome",
+      "transition": "whip"
+    }
+  ]
+}

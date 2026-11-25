@@ -1,0 +1,93 @@
+{
+  "name": "01-brand",
+  "world": "nebula",
+  "palette": [
+    "#FF5A1F",
+    "#6B3BFF"
+  ],
+  "transition": "glitch",
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.0,
+      "lines": [
+        "Your Naira",
+        "can do *more.*"
+      ],
+      "world": "warp"
+    },
+    {
+      "type": "logo",
+      "duration": 3.6,
+      "finish": "chrome",
+      "tagline": "Boost. Verify. *Trade.*"
+    },
+    {
+      "type": "carousel",
+      "duration": 5.0,
+      "title": "Everything you need *online*",
+      "items": [
+        {
+          "title": "Boost Account",
+          "text": "Followers, likes, views"
+        },
+        {
+          "title": "Verification codes",
+          "text": "US numbers for sign-ups"
+        },
+        {
+          "title": "US & travel eSIMs",
+          "text": "Stay connected abroad"
+        },
+        {
+          "title": "Gift cards & airtime",
+          "text": "Paid in Naira"
+        },
+        {
+          "title": "P2P marketplace",
+          "text": "Escrow on every trade"
+        }
+      ],
+      "kicker": "One wallet"
+    },
+    {
+      "type": "phone",
+      "duration": 5.0,
+      "clip": "2-gift-card.mp4",
+      "title": "Bought in *seconds*",
+      "callouts": [
+        {
+          "title": "Pay from your wallet"
+        },
+        {
+          "title": "Code shows instantly"
+        },
+        {
+          "title": "Paid in Naira"
+        }
+      ],
+      "kicker": "Gift cards",
+      "from": 1,
+      "rate": 2.2
+    },
+    {
+      "type": "hologram",
+      "duration": 3.4,
+      "lines": [
+        "Your money is held",
+        "*until it's delivered.*"
+      ],
+      "world": "holoroom",
+      "kicker": "Pay on delivery",
+      "transition": "flash"
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Create your *free* account",
+      "button": "Sign up free",
+      "finish": "chrome",
+      "transition": "whip"
+    }
+  ]
+}

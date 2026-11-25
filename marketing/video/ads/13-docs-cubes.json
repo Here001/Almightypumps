@@ -1,0 +1,57 @@
+{
+  "name": "13-docs-cubes",
+  "world": "cubes",
+  "palette": [
+    "#FF5A1F",
+    "#E8E8F0"
+  ],
+  "transition": "glitch",
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.4,
+      "lines": [
+        "Invoices. Receipts. CVs.",
+        "*Free.*"
+      ]
+    },
+    {
+      "type": "carousel",
+      "duration": 4.2,
+      "title": "Make it in minutes",
+      "items": [
+        {
+          "title": "Invoices",
+          "text": "Send to your customers"
+        },
+        {
+          "title": "Receipts",
+          "text": "Proof of payment"
+        },
+        {
+          "title": "CVs",
+          "text": "Look sharp, get hired"
+        }
+      ],
+      "kicker": "Business Documents"
+    },
+    {
+      "type": "steps",
+      "duration": 3.6,
+      "title": "How it works",
+      "steps": [
+        "Fill in the form",
+        "See it live",
+        "Download or print"
+      ]
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Make your first invoice",
+      "button": "Sign up free",
+      "finish": "chrome",
+      "transition": "whip"
+    }
+  ]
+}

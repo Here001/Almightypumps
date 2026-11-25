@@ -1,0 +1,16 @@
+{
+  "name": "almightypumps-video",
+  "private": true,
+  "description": "Almighty Pumps branded video maker (separate from the website; not deployed).",
+  "type": "module",
+  "scripts": {
+    "render": "node render.mjs",
+    "render:all": "node render.mjs --all"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  },
+  "dependencies": {
+    "three": "0.170.0"
+  }
+}
