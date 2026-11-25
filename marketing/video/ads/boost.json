@@ -1,0 +1,12 @@
+{
+  "name": "boost",
+  "scenes": [
+    { "type": "headline", "duration": 3, "kicker": "Boost Account", "lines": ["Your posts deserve", "*more eyes.*"] },
+    { "type": "steps", "duration": 3.6, "title": "How it works", "steps": ["Pick your platform", "Paste your link", "Watch it grow"] },
+    { "type": "list", "duration": 4, "title": "Works for", "items": [
+      { "title": "Instagram" }, { "title": "TikTok" }, { "title": "YouTube" }, { "title": "Facebook" }, { "title": "X and more" }
+    ] },
+    { "type": "headline", "duration": 3.5, "lines": ["Pay in Naira.", "*Pay on delivery.*"], "sub": "Your money is held until the order is delivered. Not delivered? It's refunded to your wallet." },
+    { "type": "cta", "duration": 3.5, "title": "Start growing *today*", "button": "Sign up free", "url": "almightypumps.com" }
+  ]
+}

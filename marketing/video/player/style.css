@@ -1,0 +1,97 @@
+/* Almighty Pumps video look: same colours and fonts as the website (app/app.css, src/components/BrandMark.tsx). */
+@font-face { font-family: "Geist"; src: url("../fonts/geist-latin-wght-normal.woff2") format("woff2"); font-weight: 100 900; }
+@font-face { font-family: "Space Grotesk"; src: url("../fonts/space-grotesk-latin-wght-normal.woff2") format("woff2"); font-weight: 300 700; }
+
+:root {
+  --bg: #0E1016;
+  --raised: #161922;
+  --fg: #F4F2EE;
+  --fg-2: #B9BCC6;
+  --accent: #FF5A1F;
+  --hair: rgb(244 242 238 / .10);
+  /* One "unit" = 1% of the shorter side, so every format scales the same way. */
+  --u: 1vmin;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); }
+body { font-family: "Geist", system-ui, sans-serif; color: var(--fg); -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; }
+
+#stage { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+
+/* Background: flat dark, one soft orange glow and a huge faint chevron that drifts. */
+.bg { position: absolute; inset: 0; }
+.glow { position: absolute; width: 140vmax; height: 140vmax; left: 50%; top: 100%; transform: translate(-50%, -50%);
+  background: radial-gradient(closest-side, rgb(255 90 31 / .20), rgb(255 90 31 / .06) 45%, transparent 70%); }
+.bg-chevron { position: absolute; width: 160vmax; left: 50%; top: 50%; transform: translate(-50%, -50%); opacity: .07; overflow: visible; }
+.bg-chevron polyline { fill: none; stroke: var(--fg); stroke-width: 1.2; stroke-linejoin: miter; }
+
+/* Small logo in the corner on every scene except the logo/CTA scenes. Kept inside the safe zone. */
+.corner-logo { position: absolute; top: var(--safe-top); left: var(--pad); display: flex; align-items: center; gap: calc(var(--u) * 1.6); }
+.corner-logo .mark { width: calc(var(--u) * 6); height: calc(var(--u) * 6); background: url("../assets/ap-mark.svg") center / contain no-repeat; }
+.corner-logo .wm { font-family: "Space Grotesk", sans-serif; font-weight: 700; letter-spacing: .14em; font-size: calc(var(--u) * 2.6); }
+
+/* Safe zones: Reels/TikTok/Shorts cover the top and bottom of a 9:16 video with buttons and captions. */
+body { --pad: calc(var(--u) * 8); --safe-top: calc(var(--u) * 7); --safe-bottom: calc(var(--u) * 7); }
+body.f-9x16 { --safe-top: 13vh; --safe-bottom: 22vh; --pad: calc(var(--u) * 9); }
+body.f-16x9 { --pad: 10vw; }
+
+#scenes { position: absolute; left: var(--pad); right: var(--pad); top: calc(var(--safe-top) + var(--u) * 9); bottom: var(--safe-bottom); }
+.scene { position: absolute; inset: 0; display: none; flex-direction: column; justify-content: center; }
+.scene.on { display: flex; }
+
+.hl { color: var(--accent); }
+.word { display: inline-block; white-space: pre; will-change: transform, opacity; }
+
+/* Logo scene */
+.s-logo { align-items: center; text-align: center; gap: calc(var(--u) * 5); }
+.s-logo svg.mark { width: calc(var(--u) * 34); height: calc(var(--u) * 34); overflow: visible; }
+.s-logo .wordmark { font-family: "Space Grotesk", sans-serif; font-weight: 700; letter-spacing: .14em; font-size: calc(var(--u) * 6.4); white-space: nowrap; }
+.s-logo .tagline { font-size: calc(var(--u) * 5); font-weight: 500; color: var(--fg-2); }
+
+/* Headline scene */
+.s-headline { gap: calc(var(--u) * 4); }
+.s-headline .kicker, .s-list .title, .s-steps .title { font-size: calc(var(--u) * 3.8); font-weight: 500; color: var(--accent); }
+.s-headline h1 { font-weight: 650; letter-spacing: -0.03em; line-height: 1.02; font-size: calc(var(--u) * 11); }
+.s-headline h1 .line { display: block; }
+.s-headline .sub { font-size: calc(var(--u) * 4.2); line-height: 1.35; color: var(--fg-2); max-width: 34ch; }
+body.f-16x9 .s-headline h1 { font-size: calc(var(--u) * 12); }
+
+/* List scene: rows with the AP chevron as the bullet */
+.s-list { gap: calc(var(--u) * 3.4); }
+.s-list ul { list-style: none; display: flex; flex-direction: column; gap: calc(var(--u) * 2.4); }
+.s-list li { display: grid; grid-template-columns: calc(var(--u) * 7) 1fr; align-items: center; column-gap: calc(var(--u) * 3);
+  padding: calc(var(--u) * 2.6) calc(var(--u) * 3.2); background: var(--raised); border: 1px solid var(--hair); border-radius: calc(var(--u) * 2.2); }
+.s-list li svg { width: calc(var(--u) * 6); height: calc(var(--u) * 4); overflow: visible; }
+.s-list li svg polyline { fill: none; stroke: var(--accent); stroke-width: 13; stroke-linejoin: miter; }
+.s-list li .it { display: block; font-weight: 600; font-size: calc(var(--u) * 4.4); letter-spacing: -0.01em; }
+.s-list li .ix { display: block; font-size: calc(var(--u) * 3.2); color: var(--fg-2); margin-top: calc(var(--u) * .6); }
+body.f-16x9 .s-list ul { display: grid; grid-template-columns: 1fr 1fr; }
+body.f-1x1 .s-list li { padding: calc(var(--u) * 1.8) calc(var(--u) * 3); }
+body.f-1x1 .s-list ul { gap: calc(var(--u) * 1.6); }
+body.f-1x1 .s-list li .it { font-size: calc(var(--u) * 3.9); }
+body.f-1x1 .s-list li .ix { font-size: calc(var(--u) * 2.9); }
+
+/* Steps scene */
+.s-steps { gap: calc(var(--u) * 5); }
+.s-steps ol { list-style: none; display: flex; flex-direction: column; gap: calc(var(--u) * 4); }
+.s-steps li { display: flex; align-items: center; gap: calc(var(--u) * 4); font-size: calc(var(--u) * 6); font-weight: 600; letter-spacing: -0.02em; }
+.s-steps li .n { flex: none; display: grid; place-items: center; width: calc(var(--u) * 12); height: calc(var(--u) * 12); border-radius: 50%;
+  border: calc(var(--u) * .5) solid var(--accent); color: var(--accent); font-size: calc(var(--u) * 5.4); }
+body.f-16x9 .s-steps ol { flex-direction: row; gap: calc(var(--u) * 5); }
+body.f-16x9 .s-steps li { flex: 1; flex-direction: column; align-items: flex-start; font-size: calc(var(--u) * 5.4); }
+
+/* Call to action */
+.s-cta { align-items: center; text-align: center; gap: calc(var(--u) * 4.6); }
+.s-cta svg.mark { width: calc(var(--u) * 20); height: calc(var(--u) * 20); }
+.s-cta h2 { font-weight: 650; letter-spacing: -0.03em; line-height: 1.05; font-size: calc(var(--u) * 9); max-width: 14ch; }
+.s-cta .btn { display: inline-block; background: var(--accent); color: #fff; font-weight: 600; font-size: calc(var(--u) * 4.6);
+  padding: calc(var(--u) * 3) calc(var(--u) * 6.4); border-radius: calc(var(--u) * 2.2); }
+.s-cta .url { font-family: "Space Grotesk", sans-serif; font-weight: 700; letter-spacing: .06em; font-size: calc(var(--u) * 4.2); color: var(--fg-2); }
+body.f-9x16 .s-list li .it { font-size: calc(var(--u) * 5.2); }
+body.f-9x16 .s-list li .ix { font-size: calc(var(--u) * 3.8); }
+body.f-9x16 .s-list li { padding: calc(var(--u) * 3.4) calc(var(--u) * 3.6); }
+body.f-9x16 .s-headline h1 { font-size: calc(var(--u) * 12.5); }
+body.f-9x16 .s-list li { padding: calc(var(--u) * 2.8) calc(var(--u) * 3.6); }
+body.f-9x16 .s-list ul { gap: calc(var(--u) * 2); }
+body.f-9x16 #scenes { top: calc(var(--safe-top) + var(--u) * 11); }
