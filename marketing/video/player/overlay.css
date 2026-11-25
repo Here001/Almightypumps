@@ -84,3 +84,18 @@ body.f-16x9 .flow li::after { display: none; }
   font-size: calc(var(--u) * 4.8); padding: calc(var(--u) * 3) calc(var(--u) * 7); border-radius: calc(var(--u) * 2.4);
   box-shadow: 0 0 calc(var(--u) * 6) rgb(255 90 31 / .65), inset 0 1px 0 rgb(255 255 255 / .35); text-shadow: none; }
 .url { margin-top: calc(var(--u) * 3); font-family: "Space Grotesk", sans-serif; font-weight: 700; letter-spacing: .08em; font-size: calc(var(--u) * 4.2); color: var(--fg-2); }
+
+/* Talk: speech bubble for the cartoon guide */
+.s-talk .bubble { position: absolute; background: #F4F2EE; color: #11131A; border-radius: calc(var(--u) * 5); padding: calc(var(--u) * 4.2) calc(var(--u) * 5);
+  box-shadow: 0 calc(var(--u) * 2) calc(var(--u) * 8) rgb(0 0 0 / .45), 0 0 0 calc(var(--u) * .7) var(--accent); transform-origin: 50% 100%; }
+.s-talk .bubble::after { content: ""; position: absolute; width: calc(var(--u) * 7); height: calc(var(--u) * 7); background: #F4F2EE;
+  box-shadow: calc(var(--u) * .7) calc(var(--u) * .7) 0 0 var(--accent); border-radius: 0 0 calc(var(--u) * 1.4) 0; }
+.s-talk .say { font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: calc(var(--u) * 7); line-height: 1.08; letter-spacing: -0.03em; word-spacing: .08em; }
+.s-talk .say .hl { color: var(--accent); text-shadow: none; }
+.s-talk .kicker { background: #11131A; margin-bottom: calc(var(--u) * 2); }
+.bub-top .bubble { left: var(--pad); right: var(--pad); top: var(--safe-top); text-align: center; }
+.bub-top .bubble::after { left: 50%; bottom: calc(var(--u) * -3.3); transform: translateX(-50%) rotate(45deg); }
+.bub-right .bubble { left: 44%; right: var(--pad); top: 50%; translate: 0 -60%; transform-origin: 0 60%; }
+.bub-right .bubble::after { left: calc(var(--u) * -3.2); top: 58%; transform: rotate(135deg); }
+body.f-16x9 .s-talk .say { font-size: calc(var(--u) * 6.4); }
+body.f-1x1 .s-talk .say { font-size: calc(var(--u) * 5.6); }

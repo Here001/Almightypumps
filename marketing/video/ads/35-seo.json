@@ -1,0 +1,57 @@
+{
+  "name": "35-seo",
+  "world": "warp",
+  "palette": [
+    "#FF5A1F",
+    "#B38CFF"
+  ],
+  "transition": "whip",
+  "scenes": [
+    {
+      "type": "talk",
+      "duration": 3.2,
+      "enter": true,
+      "gestures": [
+        "pointUp"
+      ],
+      "lines": "Can customers *find you* on Google?",
+      "icons": [
+        "search",
+        "pin",
+        "chart"
+      ]
+    },
+    {
+      "type": "steps",
+      "duration": 3.8,
+      "kicker": "SEO",
+      "title": "How we help you *get found*",
+      "steps": [
+        "We check your site",
+        "We fix what holds it back",
+        "We keep improving it"
+      ]
+    },
+    {
+      "type": "talk",
+      "duration": 3.2,
+      "gestures": [
+        "explain"
+      ],
+      "lines": "No tricks. *Honest SEO work.*",
+      "icons": [
+        "search",
+        "chart"
+      ]
+    },
+    {
+      "type": "cta",
+      "duration": 3.6,
+      "title": "Get your *SEO* sorted",
+      "button": "Email us",
+      "url": "support@almightypumps.com",
+      "finish": "chrome",
+      "transition": "whip"
+    }
+  ]
+}

@@ -334,6 +334,79 @@ export const WORLDS = {
       gx.globalAlpha = 1; tex.needsUpdate = true;
     } };
   },
+  /** A social feed: post cards scrolling up in columns at different depths, like many timelines at once. */
+  feed(ctx, pal) {
+    const g = new THREE.Group();
+    const bg = bgQuad(/* glsl */ `void main(){ vec2 p = (vUv - 0.5) * vec2(uAspect, 1.0);
+      vec3 c = mix(vec3(0.05, 0.05, 0.075), vec3(0.012, 0.012, 0.02), smoothstep(0.0, 0.85, length(p)));
+      c += uA * 0.14 * exp(-length(p - vec2(-0.35, 0.3)) * 2.6) + uB * 0.12 * exp(-length(p - vec2(0.4, -0.25)) * 2.4);
+      gl_FragColor = vec4(c, 1.0); }`);
+    setPal(bg.material, pal); g.add(bg);
+    const main = new THREE.Color(pal[0]).getStyle(), second = new THREE.Color(pal[1]).getStyle();
+    const tex = (v) => {
+      const c = document.createElement("canvas"); c.width = 360; c.height = 460; const x = c.getContext("2d");
+      x.fillStyle = "#262B3B"; x.beginPath(); x.roundRect(0, 0, 360, 460, 34); x.fill();
+      x.strokeStyle = v % 2 ? second : main; x.globalAlpha = 0.6; x.lineWidth = 4; x.stroke(); x.globalAlpha = 1;
+      x.fillStyle = v % 2 ? second : main; x.beginPath(); x.arc(46, 46, 22, 0, 7); x.fill();
+      x.fillStyle = "#3A4052"; x.beginPath(); x.roundRect(82, 30, 150, 14, 7); x.fill(); x.beginPath(); x.roundRect(82, 54, 90, 12, 6); x.fill();
+      const gr = x.createLinearGradient(0, 90, 360, 330); gr.addColorStop(0, v % 2 ? second : main); gr.addColorStop(1, "#262B3A");
+      x.fillStyle = gr; x.globalAlpha = 0.75; x.beginPath(); x.roundRect(20, 88, 320, 250, 20); x.fill(); x.globalAlpha = 1;
+      if (v === 2) { x.fillStyle = "rgba(255,255,255,.85)"; x.beginPath(); x.moveTo(160, 180); x.lineTo(215, 213); x.lineTo(160, 246); x.fill(); }
+      x.strokeStyle = "#C9CCD4"; x.lineWidth = 5;
+      x.beginPath(); x.moveTo(44, 392); x.bezierCurveTo(20, 370, 30, 350, 44, 365); x.bezierCurveTo(58, 350, 68, 370, 44, 392); x.stroke();
+      x.beginPath(); x.roundRect(86, 356, 40, 30, 8); x.stroke();
+      x.beginPath(); x.moveTo(150, 372); x.lineTo(180, 356); x.lineTo(180, 388); x.closePath(); x.stroke();
+      x.fillStyle = "#30364A"; x.beginPath(); x.roundRect(20, 412, 240, 12, 6); x.fill();
+      const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
+    };
+    const r = rng(77), sets = [];
+    const geo = new THREE.PlaneGeometry(1.6, 2.05);
+    for (let v = 0; v < 3; v++) {
+      const N = 26; const m = new THREE.InstancedMesh(geo, new THREE.MeshBasicMaterial({ map: tex(v), transparent: true, color: 0xd2d2d2, toneMapped: false, depthWrite: false }), N);
+      const d = []; for (let i = 0; i < N; i++) { const col = Math.floor(r() * 9) - 4; d.push({ x: col * 2.1 + (r() - 0.5) * 0.4, z: -4 - r() * 24, y: r() * 40, sp: 0.6 + r() * 0.8, rot: (r() - 0.5) * 0.25 }); }
+      g.add(m); sets.push({ m, d });
+    }
+    const fog = new THREE.Fog("#17172A", 8, 34);
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), sc = new THREE.Vector3(1, 1, 1), p3 = new THREE.Vector3();
+    const dd = dust(500, [26, 16, 26], pal[0], 0.05, 23); g.add(dd);
+    return { group: g, env: pal, fog, update(T) {
+      bg.material.uniforms.uAspect.value = ctx.aspect; dd.material.uniforms.uTime.value = T;
+      for (const { m, d } of sets) { d.forEach((o, i) => { p3.set(o.x, ((o.y + T * o.sp * 1.4) % 40) - 20, o.z); e.set(0, o.rot, 0); q.setFromEuler(e); m4.compose(p3, q, sc); m.setMatrixAt(i, m4); }); m.instanceMatrix.needsUpdate = true; }
+    } };
+  },
+
+  /** Blueprint: website wireframes drawing themselves on a fine grid, floating at different depths. */
+  blueprint(ctx, pal) {
+    const g = new THREE.Group();
+    const bg = bgQuad(/* glsl */ `void main(){ vec2 p = (vUv - 0.5) * vec2(uAspect, 1.0) + uCam * 0.02;
+      vec3 c = mix(vec3(0.035, 0.045, 0.075), vec3(0.01, 0.012, 0.022), smoothstep(0.0, 0.9, length(p)));
+      vec2 q = p * 40.0; vec2 gr = abs(fract(q) - 0.5) / fwidth(q); float fine = 1.0 - min(min(gr.x, gr.y), 1.0);
+      vec2 q2 = p * 8.0; vec2 g2 = abs(fract(q2) - 0.5) / fwidth(q2); float big = 1.0 - min(min(g2.x, g2.y), 1.0);
+      c += uB * (fine * 0.05 + big * 0.12);
+      gl_FragColor = vec4(c, 1.0); }`);
+    setPal(bg.material, pal); g.add(bg);
+    const pages = [], r = rng(88);
+    const rect = (pts, x, y, w, h) => { pts.push(x, y, 0, x + w, y, 0, x + w, y, 0, x + w, y - h, 0, x + w, y - h, 0, x, y - h, 0, x, y - h, 0, x, y, 0); };
+    for (let i = 0; i < 14; i++) {
+      const pts = []; const W = 3.2, H = 4.4;
+      rect(pts, 0, 0, W, H); rect(pts, 0.15, -0.15, W - 0.3, 0.3); rect(pts, 0.15, -0.6, W - 0.3, 1.3);
+      for (let k = 0; k < 3; k++) rect(pts, 0.15 + k * 1.0, -2.05, 0.9, 1.0);
+      for (let k = 0; k < 3; k++) rect(pts, 0.15, -3.25 - k * 0.22, 1.6 - k * 0.4, 0.08);
+      rect(pts, 0.15, -4.0, W - 0.3, 0.25);
+      const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3)); geo.translate(-W / 2, H / 2, 0);
+      const col = new THREE.Color(i % 3 ? pal[1] : pal[0]).multiplyScalar(1.4);
+      const l = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.8, toneMapped: false, blending: THREE.AdditiveBlending, depthWrite: false }));
+      const col2 = Math.floor(r() * 7) - 3;
+      l.position.set(col2 * 3.6 + (r() - 0.5), (r() - 0.5) * 16, -6 - r() * 20); l.rotation.set((r() - 0.5) * 0.3, (r() - 0.5) * 0.6, (r() - 0.5) * 0.1);
+      pages.push({ l, n: pts.length / 3, off: r() * 6, sp: 0.15 + r() * 0.15 }); g.add(l);
+    }
+    const dd = dust(600, [26, 16, 26], pal[1], 0.045, 29); g.add(dd);
+    return { group: g, env: pal, update(T, c) {
+      bg.material.uniforms.uAspect.value = ctx.aspect; bg.material.uniforms.uCam.value.set(c.position.x, c.position.y); dd.material.uniforms.uTime.value = T;
+      for (const p of pages) { const k = Math.min(1, ((T * p.sp + p.off / 6) % 1.4)); p.l.geometry.setDrawRange(0, Math.floor(p.n * k / 2) * 2); p.l.position.y += 0; p.l.rotation.y += 0; }
+    } };
+  },
+
 };
 
 export const WORLD_NAMES = Object.keys(WORLDS);
