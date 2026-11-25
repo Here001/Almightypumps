@@ -1,0 +1,76 @@
+{
+  "name": "07-giftcards-gold",
+  "world": "gold",
+  "palette": [
+    "#FFB547",
+    "#FF5A1F"
+  ],
+  "transition": "flash",
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.2,
+      "lines": [
+        "Gift cards",
+        "*in seconds.*"
+      ]
+    },
+    {
+      "type": "phone",
+      "duration": 6,
+      "clip": "2-gift-card.mp4",
+      "title": "Pick. Pay. *Done.*",
+      "callouts": [
+        {
+          "title": "Official vouchers"
+        },
+        {
+          "title": "Paid in Naira"
+        },
+        {
+          "title": "Code in your Orders"
+        }
+      ],
+      "kicker": "Gift Cards & Subscriptions",
+      "from": 0.5,
+      "rate": 2.0
+    },
+    {
+      "type": "carousel",
+      "duration": 4.2,
+      "title": "Shop in",
+      "items": [
+        {
+          "title": "United States",
+          "text": "US gift cards"
+        },
+        {
+          "title": "United Kingdom",
+          "text": "UK gift cards"
+        },
+        {
+          "title": "Canada",
+          "text": "Canadian gift cards"
+        },
+        {
+          "title": "Nigeria",
+          "text": "Local vouchers"
+        }
+      ]
+    },
+    {
+      "type": "logo",
+      "duration": 3.2,
+      "finish": "gold",
+      "tagline": "Gifting, *upgraded.*"
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Buy your first card",
+      "button": "Sign up free",
+      "finish": "gold",
+      "transition": "whip"
+    }
+  ]
+}

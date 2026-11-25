@@ -1,0 +1,57 @@
+{
+  "name": "23-dispute-rain",
+  "world": "datarain",
+  "palette": [
+    "#FF5A1F",
+    "#FF3B5C"
+  ],
+  "transition": "glitch",
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.6,
+      "lines": [
+        "What if the seller",
+        "*doesn't deliver?*"
+      ]
+    },
+    {
+      "type": "steps",
+      "duration": 4.4,
+      "title": "You're covered",
+      "steps": [
+        "Not shipped in 72 hours: refund",
+        "Problem? Raise a dispute",
+        "Our team decides"
+      ],
+      "kicker": "P2P escrow"
+    },
+    {
+      "type": "stats",
+      "duration": 3.6,
+      "title": "Your money stays safe",
+      "items": [
+        {
+          "value": 72,
+          "suffix": "h",
+          "label": "ship deadline",
+          "ring": 1
+        },
+        {
+          "value": 48,
+          "suffix": "h",
+          "label": "to inspect",
+          "ring": 0.67
+        }
+      ]
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Shop the marketplace",
+      "button": "Sign up free",
+      "finish": "chrome",
+      "transition": "whip"
+    }
+  ]
+}

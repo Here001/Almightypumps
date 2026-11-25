@@ -1,0 +1,57 @@
+{
+  "name": "29-roaming-warp",
+  "world": "warp",
+  "palette": [
+    "#FFB547",
+    "#3BA6FF"
+  ],
+  "transition": "whip",
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.2,
+      "lines": [
+        "Travelling soon?",
+        "*Skip roaming.*"
+      ]
+    },
+    {
+      "type": "headline",
+      "duration": 3.0,
+      "lines": [
+        "Buy travel data",
+        "*before you fly.*"
+      ],
+      "sub": "Scan the QR, and switch it on when you land.",
+      "world": "aurora",
+      "palette": [
+        "#3BA6FF",
+        "#FFB547"
+      ],
+      "kicker": "Travel eSIMs"
+    },
+    {
+      "type": "steps",
+      "duration": 3.6,
+      "title": "Ready in minutes",
+      "steps": [
+        "Choose your destination",
+        "Pay in Naira",
+        "Scan and go"
+      ],
+      "world": "nebula",
+      "palette": [
+        "#FFB547",
+        "#3BA6FF"
+      ]
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Get travel data",
+      "button": "Sign up free",
+      "finish": "gold",
+      "transition": "whip"
+    }
+  ]
+}

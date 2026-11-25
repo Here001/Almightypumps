@@ -1,0 +1,43 @@
+{
+  "name": "25-naira-dollar",
+  "world": "waves",
+  "palette": [
+    "#FFB547",
+    "#FF5A1F"
+  ],
+  "transition": "flash",
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.4,
+      "lines": [
+        "Think in dollars?",
+        "*See prices in $.*"
+      ]
+    },
+    {
+      "type": "headline",
+      "duration": 3.0,
+      "lines": [
+        "Switch ₦ / $",
+        "*any time.*"
+      ],
+      "sub": "Your wallet stays in Naira. Charges always show the Naira amount.",
+      "kicker": "Settings"
+    },
+    {
+      "type": "logo",
+      "duration": 3.2,
+      "finish": "gold",
+      "tagline": "One Naira wallet, *your view.*"
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Create your *free* account",
+      "button": "Sign up free",
+      "finish": "chrome",
+      "transition": "whip"
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "name": "11-offer-silk",
+  "world": "silk",
+  "palette": [
+    "#FF5A1F",
+    "#B13BFF"
+  ],
+  "transition": "fade",
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.4,
+      "lines": [
+        "Price too high?",
+        "*Make an offer.*"
+      ]
+    },
+    {
+      "type": "steps",
+      "duration": 4,
+      "title": "Negotiate safely",
+      "steps": [
+        "Send your offer",
+        "The seller accepts or counters",
+        "Your trade starts"
+      ],
+      "kicker": "P2P offers"
+    },
+    {
+      "type": "hologram",
+      "duration": 3.4,
+      "lines": [
+        "Your offer money",
+        "is *held, not spent.*"
+      ],
+      "sub": "Declined or expired after 24 hours? It goes back to your wallet.",
+      "world": "holoroom",
+      "palette": [
+        "#FF5A1F",
+        "#B13BFF"
+      ]
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Find a deal",
+      "button": "Sign up free",
+      "finish": "chrome",
+      "transition": "flash"
+    }
+  ]
+}

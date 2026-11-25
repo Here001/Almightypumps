@@ -1,0 +1,52 @@
+{
+  "name": "20-keep-number",
+  "world": "chrome",
+  "palette": [
+    "#FF5A1F",
+    "#3B8BFF"
+  ],
+  "transition": "flash",
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.6,
+      "lines": [
+        "Moving your",
+        "US number?",
+        "*Keep it.*"
+      ]
+    },
+    {
+      "type": "steps",
+      "duration": 4,
+      "title": "Keep your number",
+      "steps": [
+        "Choose 'keep my number'",
+        "Add your account details",
+        "We move it to your eSIM"
+      ],
+      "kicker": "US eSIM"
+    },
+    {
+      "type": "hologram",
+      "duration": 3.4,
+      "lines": [
+        "Same number.",
+        "*New eSIM.*"
+      ],
+      "world": "holoroom",
+      "palette": [
+        "#FF5A1F",
+        "#3B8BFF"
+      ]
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Move your number",
+      "button": "Sign up free",
+      "finish": "chrome",
+      "transition": "whip"
+    }
+  ]
+}

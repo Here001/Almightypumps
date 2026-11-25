@@ -1,0 +1,63 @@
+{
+  "name": "27-night-owl",
+  "world": "city",
+  "palette": [
+    "#FF5A1F",
+    "#9B5CFF"
+  ],
+  "transition": "whip",
+  "sound": {
+    "bpm": 92
+  },
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.0,
+      "lines": [
+        "2 a.m.?",
+        "*Still open.*"
+      ]
+    },
+    {
+      "type": "carousel",
+      "duration": 5,
+      "title": "Instant, day or night",
+      "items": [
+        {
+          "title": "Boost Account",
+          "text": "Starts automatically"
+        },
+        {
+          "title": "Verification codes",
+          "text": "Get a number now"
+        },
+        {
+          "title": "Gift cards",
+          "text": "Code in seconds"
+        },
+        {
+          "title": "Airtime & data",
+          "text": "Topped up instantly"
+        },
+        {
+          "title": "Travel eSIMs",
+          "text": "QR right after paying"
+        }
+      ]
+    },
+    {
+      "type": "logo",
+      "duration": 3.2,
+      "finish": "chrome",
+      "tagline": "Always *on.*"
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Create your *free* account",
+      "button": "Sign up free",
+      "finish": "chrome",
+      "transition": "whip"
+    }
+  ]
+}

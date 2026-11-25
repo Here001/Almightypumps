@@ -1,0 +1,69 @@
+{
+  "name": "21-esim-state",
+  "world": "grid",
+  "palette": [
+    "#FF5A1F",
+    "#3BA6FF"
+  ],
+  "transition": "glitch",
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.6,
+      "lines": [
+        "Want a number from",
+        "*a US state you pick?*"
+      ]
+    },
+    {
+      "type": "carousel",
+      "duration": 4.6,
+      "title": "Pick your state",
+      "items": [
+        {
+          "title": "Texas",
+          "text": "New US number"
+        },
+        {
+          "title": "California",
+          "text": "New US number"
+        },
+        {
+          "title": "New York",
+          "text": "New US number"
+        },
+        {
+          "title": "Florida",
+          "text": "New US number"
+        },
+        {
+          "title": "Illinois",
+          "text": "New US number"
+        }
+      ],
+      "kicker": "US eSIM"
+    },
+    {
+      "type": "stats",
+      "duration": 3,
+      "title": "Usually ready in",
+      "items": [
+        {
+          "value": "30–45",
+          "static": true,
+          "suffix": " min",
+          "label": "after you order",
+          "ring": 0.75
+        }
+      ]
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Get your US line",
+      "button": "Sign up free",
+      "finish": "chrome",
+      "transition": "whip"
+    }
+  ]
+}

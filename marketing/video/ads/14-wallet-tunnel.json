@@ -1,0 +1,94 @@
+{
+  "name": "14-wallet-tunnel",
+  "world": "tunnel",
+  "palette": [
+    "#FF5A1F",
+    "#FFB547"
+  ],
+  "transition": "flash",
+  "sound": {
+    "bpm": 120
+  },
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.4,
+      "lines": [
+        "Fund once.",
+        "*Spend everywhere.*"
+      ]
+    },
+    {
+      "type": "carousel",
+      "duration": 4.2,
+      "title": "Add money with",
+      "items": [
+        {
+          "title": "Card",
+          "text": "Visa, Mastercard, Verve"
+        },
+        {
+          "title": "Bank transfer",
+          "text": "From any Nigerian bank"
+        },
+        {
+          "title": "USSD",
+          "text": "Pay with your bank code"
+        }
+      ],
+      "kicker": "Naira wallet"
+    },
+    {
+      "type": "stats",
+      "duration": 3,
+      "title": "Start small",
+      "items": [
+        {
+          "value": 1000,
+          "prefix": "₦",
+          "label": "minimum top-up",
+          "ring": 0.3
+        }
+      ]
+    },
+    {
+      "type": "carousel",
+      "duration": 4.6,
+      "title": "Then spend on",
+      "items": [
+        {
+          "title": "Boost Account",
+          "text": "Followers, likes, views"
+        },
+        {
+          "title": "Verification codes",
+          "text": "US numbers for sign-ups"
+        },
+        {
+          "title": "US & travel eSIMs",
+          "text": "Stay connected abroad"
+        },
+        {
+          "title": "Gift cards & airtime",
+          "text": "Paid in Naira"
+        },
+        {
+          "title": "P2P marketplace",
+          "text": "Escrow on every trade"
+        },
+        {
+          "title": "Send a package",
+          "text": "Any country to any country"
+        }
+      ]
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Create your *free* account",
+      "button": "Sign up free",
+      "finish": "chrome",
+      "transition": "whip"
+    }
+  ]
+}

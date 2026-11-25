@@ -1,0 +1,52 @@
+{
+  "name": "12-package-city",
+  "world": "city",
+  "palette": [
+    "#FF5A1F",
+    "#FFD34D"
+  ],
+  "transition": "whip",
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.2,
+      "lines": [
+        "Send a package",
+        "*anywhere.*"
+      ]
+    },
+    {
+      "type": "steps",
+      "duration": 4,
+      "title": "Door to door",
+      "steps": [
+        "Enter both addresses",
+        "Compare courier prices",
+        "Book and track it"
+      ],
+      "kicker": "Send / Receive a Package"
+    },
+    {
+      "type": "headline",
+      "duration": 3.0,
+      "lines": [
+        "Any country",
+        "to *any country.*"
+      ],
+      "sub": "Track it on our tracking page.",
+      "world": "grid",
+      "palette": [
+        "#FF5A1F",
+        "#FFD34D"
+      ]
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Ship your package",
+      "button": "Sign up free",
+      "finish": "chrome",
+      "transition": "glitch"
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "name": "26-one-app",
+  "world": "cubes",
+  "palette": [
+    "#FF5A1F",
+    "#7C5CFF"
+  ],
+  "transition": "glitch",
+  "sound": {
+    "bpm": 110
+  },
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.2,
+      "lines": [
+        "Stop juggling",
+        "*six apps.*"
+      ]
+    },
+    {
+      "type": "carousel",
+      "duration": 5.6,
+      "title": "All in one place",
+      "items": [
+        {
+          "title": "Boost Account",
+          "text": "Followers, likes, views"
+        },
+        {
+          "title": "Verification codes",
+          "text": "US numbers for sign-ups"
+        },
+        {
+          "title": "US & travel eSIMs",
+          "text": "Stay connected abroad"
+        },
+        {
+          "title": "Gift cards & airtime",
+          "text": "Paid in Naira"
+        },
+        {
+          "title": "P2P marketplace",
+          "text": "Escrow on every trade"
+        },
+        {
+          "title": "Send a package",
+          "text": "Any country to any country"
+        }
+      ]
+    },
+    {
+      "type": "stats",
+      "duration": 3.6,
+      "title": "Your toolkit",
+      "items": [
+        {
+          "value": 1,
+          "label": "account",
+          "ring": 1
+        },
+        {
+          "value": 1,
+          "label": "Naira wallet",
+          "ring": 1
+        },
+        {
+          "value": 6,
+          "label": "services",
+          "ring": 1
+        }
+      ]
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Create your *free* account",
+      "button": "Sign up free",
+      "finish": "chrome",
+      "transition": "whip"
+    }
+  ]
+}

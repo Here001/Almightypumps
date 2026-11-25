@@ -1,0 +1,57 @@
+{
+  "name": "16-security-holo",
+  "world": "holoroom",
+  "palette": [
+    "#FF5A1F",
+    "#2EE6C5"
+  ],
+  "transition": "glitch",
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.2,
+      "lines": [
+        "Your account,",
+        "*locked down.*"
+      ]
+    },
+    {
+      "type": "carousel",
+      "duration": 4.8,
+      "title": "Built-in protection",
+      "items": [
+        {
+          "title": "Log out everywhere",
+          "text": "One tap in Settings"
+        },
+        {
+          "title": "Strong passwords",
+          "text": "Weak ones are refused"
+        },
+        {
+          "title": "Escrow",
+          "text": "On every P2P trade"
+        },
+        {
+          "title": "Pay on delivery",
+          "text": "Refunded if it fails"
+        }
+      ],
+      "kicker": "Security"
+    },
+    {
+      "type": "logo",
+      "duration": 3,
+      "finish": "holo",
+      "tagline": "Safe by *design.*"
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Join *safely*",
+      "button": "Sign up free",
+      "finish": "chrome",
+      "transition": "whip"
+    }
+  ]
+}

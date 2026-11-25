@@ -1,0 +1,58 @@
+{
+  "name": "03-verify-rain",
+  "world": "datarain",
+  "palette": [
+    "#FF5A1F",
+    "#2EE6C5"
+  ],
+  "transition": "glitch",
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.4,
+      "lines": [
+        "Need a US number",
+        "*for a code?*"
+      ]
+    },
+    {
+      "type": "steps",
+      "duration": 3.6,
+      "title": "Get it in *3 steps*",
+      "steps": [
+        "Pick the app",
+        "Get a US number",
+        "Your code arrives"
+      ],
+      "kicker": "Verification codes"
+    },
+    {
+      "type": "hologram",
+      "duration": 3.4,
+      "lines": [
+        "Only pay when",
+        "*the code arrives.*"
+      ],
+      "world": "holoroom",
+      "palette": [
+        "#FF5A1F",
+        "#2EE6C5"
+      ],
+      "sub": "No code? Your money goes back to your wallet."
+    },
+    {
+      "type": "logo",
+      "duration": 2.8,
+      "finish": "gold",
+      "tagline": "Verification codes, *sorted.*"
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Get your code *now*",
+      "button": "Sign up free",
+      "finish": "chrome",
+      "transition": "whip"
+    }
+  ]
+}

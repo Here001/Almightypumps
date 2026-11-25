@@ -1,0 +1,68 @@
+{
+  "name": "05-esim-ready",
+  "world": "aurora",
+  "palette": [
+    "#FF5A1F",
+    "#2BE3A0"
+  ],
+  "transition": "flash",
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.4,
+      "lines": [
+        "A real",
+        "*US number*",
+        "on your phone."
+      ]
+    },
+    {
+      "type": "phone",
+      "duration": 5.5,
+      "clip": "1c-esim-ready.mp4",
+      "title": "Ready to *scan*",
+      "callouts": [
+        {
+          "title": "Scan the QR"
+        },
+        {
+          "title": "One-tap iPhone install"
+        },
+        {
+          "title": "Install guide included"
+        }
+      ],
+      "kicker": "US eSIM",
+      "from": 0,
+      "rate": 1.5
+    },
+    {
+      "type": "stats",
+      "duration": 3.2,
+      "title": "Delivered by our team",
+      "items": [
+        {
+          "value": "30–45",
+          "static": true,
+          "suffix": " min",
+          "label": "usual delivery time",
+          "ring": 0.75
+        }
+      ]
+    },
+    {
+      "type": "logo",
+      "duration": 3,
+      "finish": "chrome",
+      "tagline": "US eSIMs, *made simple.*"
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Get your US line *now*",
+      "button": "Sign up free",
+      "finish": "chrome",
+      "transition": "whip"
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "name": "19-verify-nebula",
+  "world": "nebula",
+  "palette": [
+    "#FF5A1F",
+    "#1FD1FF"
+  ],
+  "transition": "whip",
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.4,
+      "lines": [
+        "An app wants",
+        "*a US number?*"
+      ]
+    },
+    {
+      "type": "logo",
+      "duration": 3.2,
+      "finish": "chrome",
+      "tagline": "Verification codes in *minutes.*"
+    },
+    {
+      "type": "steps",
+      "duration": 3.6,
+      "title": "Simple as",
+      "steps": [
+        "Pick the app",
+        "Copy your US number",
+        "Paste the code you get"
+      ]
+    },
+    {
+      "type": "stats",
+      "duration": 3,
+      "title": "Fair by default",
+      "items": [
+        {
+          "value": 0,
+          "prefix": "₦",
+          "label": "charged if no code arrives",
+          "ring": 1
+        }
+      ]
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Get verified *now*",
+      "button": "Sign up free",
+      "finish": "chrome",
+      "transition": "whip"
+    }
+  ]
+}

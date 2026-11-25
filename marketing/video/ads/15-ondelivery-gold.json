@@ -1,0 +1,63 @@
+{
+  "name": "15-ondelivery-gold",
+  "world": "gold",
+  "palette": [
+    "#FFB547",
+    "#FF5A1F"
+  ],
+  "transition": "fade",
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.4,
+      "lines": [
+        "Not delivered?",
+        "*Not charged.*"
+      ]
+    },
+    {
+      "type": "hologram",
+      "duration": 3.4,
+      "lines": [
+        "We hold your money",
+        "*until it's delivered.*"
+      ],
+      "world": "holoroom",
+      "palette": [
+        "#FF5A1F",
+        "#FFB547"
+      ]
+    },
+    {
+      "type": "carousel",
+      "duration": 4.6,
+      "title": "Pay on delivery for",
+      "items": [
+        {
+          "title": "Boost Account",
+          "text": "Refunded if it fails"
+        },
+        {
+          "title": "Verification codes",
+          "text": "Pay when the code arrives"
+        },
+        {
+          "title": "Gift cards & airtime",
+          "text": "Charged once delivered"
+        },
+        {
+          "title": "Travel eSIMs",
+          "text": "Charged once delivered"
+        }
+      ]
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Try it *risk-free*",
+      "button": "Sign up free",
+      "finish": "gold",
+      "transition": "whip"
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "name": "02-boost-grid",
+  "world": "grid",
+  "palette": [
+    "#FF5A1F",
+    "#FF2E88"
+  ],
+  "transition": "glitch",
+  "sound": {
+    "bpm": 112
+  },
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.2,
+      "lines": [
+        "Post.",
+        "Boost.",
+        "*Blow.*"
+      ]
+    },
+    {
+      "type": "logo",
+      "duration": 3.2,
+      "finish": "chrome",
+      "tagline": "Grow your page *the easy way*"
+    },
+    {
+      "type": "steps",
+      "duration": 3.6,
+      "title": "How *Boost* works",
+      "steps": [
+        "Pick your platform",
+        "Paste your link",
+        "Watch it grow"
+      ],
+      "kicker": "Boost Account"
+    },
+    {
+      "type": "carousel",
+      "duration": 4.6,
+      "title": "Works for",
+      "items": [
+        {
+          "title": "Instagram",
+          "text": "Followers, likes, views"
+        },
+        {
+          "title": "TikTok",
+          "text": "Views and followers"
+        },
+        {
+          "title": "YouTube",
+          "text": "Views and subscribers"
+        },
+        {
+          "title": "Facebook",
+          "text": "Page likes and followers"
+        },
+        {
+          "title": "X and more",
+          "text": "Pick from the list"
+        }
+      ]
+    },
+    {
+      "type": "hologram",
+      "duration": 3.4,
+      "lines": [
+        "Not delivered?",
+        "*Refunded* to your wallet."
+      ],
+      "kicker": "Pay on delivery",
+      "world": "holoroom",
+      "palette": [
+        "#FF5A1F",
+        "#FF2E88"
+      ],
+      "transition": "flash"
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Start growing *today*",
+      "button": "Sign up free",
+      "finish": "chrome",
+      "transition": "whip"
+    }
+  ]
+}

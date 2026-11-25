@@ -1,0 +1,73 @@
+{
+  "name": "22-giftcard-tunnel",
+  "world": "tunnel",
+  "palette": [
+    "#FFB547",
+    "#FF5A1F"
+  ],
+  "transition": "whip",
+  "sound": {
+    "bpm": 118
+  },
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.2,
+      "lines": [
+        "The perfect gift?",
+        "*A gift card.*"
+      ]
+    },
+    {
+      "type": "phone",
+      "duration": 5.5,
+      "clip": "2-gift-card.mp4",
+      "title": "Delivered *in seconds*",
+      "callouts": [
+        {
+          "title": "Choose the brand"
+        },
+        {
+          "title": "Pick the amount"
+        },
+        {
+          "title": "Copy the code"
+        }
+      ],
+      "world": "gold",
+      "from": 2,
+      "rate": 2.0
+    },
+    {
+      "type": "carousel",
+      "duration": 4.4,
+      "title": "Popular picks",
+      "items": [
+        {
+          "title": "Amazon",
+          "text": "Shop anything"
+        },
+        {
+          "title": "Google Play",
+          "text": "Apps and games"
+        },
+        {
+          "title": "PlayStation",
+          "text": "Games and add-ons"
+        },
+        {
+          "title": "And more",
+          "text": "US, UK, Canada, Nigeria"
+        }
+      ]
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Send a gift card",
+      "button": "Sign up free",
+      "finish": "gold",
+      "transition": "whip"
+    }
+  ]
+}

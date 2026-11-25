@@ -1,0 +1,67 @@
+{
+  "name": "10-seller-city",
+  "world": "city",
+  "palette": [
+    "#FF5A1F",
+    "#3B6BFF"
+  ],
+  "transition": "whip",
+  "sound": {
+    "bpm": 96
+  },
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.2,
+      "lines": [
+        "Got something",
+        "*to sell?*"
+      ]
+    },
+    {
+      "type": "steps",
+      "duration": 4,
+      "title": "Sell on Almighty Pumps",
+      "steps": [
+        "Get verified",
+        "Post your ad",
+        "Get paid after delivery"
+      ],
+      "kicker": "Become a seller"
+    },
+    {
+      "type": "stats",
+      "duration": 3,
+      "title": "Fair and simple",
+      "items": [
+        {
+          "value": 7,
+          "suffix": "%",
+          "label": "fee only when you make a sale",
+          "ring": 0.07
+        }
+      ]
+    },
+    {
+      "type": "hologram",
+      "duration": 3.4,
+      "lines": [
+        "Buyers pay first.",
+        "*You ship with confidence.*"
+      ],
+      "world": "holoroom",
+      "palette": [
+        "#FF5A1F",
+        "#3B6BFF"
+      ]
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Open your shop *today*",
+      "button": "Sign up free",
+      "finish": "chrome",
+      "transition": "glitch"
+    }
+  ]
+}

@@ -1,9 +1,0 @@
-{
-  "name": "verify",
-  "scenes": [
-    { "type": "headline", "duration": 3, "kicker": "Get Verification Code", "lines": ["Need a US number", "*for a code?*"] },
-    { "type": "steps", "duration": 3.6, "title": "How it works", "steps": ["Pick the app", "Get a US number", "Your code arrives"] },
-    { "type": "headline", "duration": 3.5, "lines": ["Only pay when", "*the code arrives.*"], "sub": "No code? Your money goes straight back to your wallet." },
-    { "type": "cta", "duration": 3.5, "title": "Get your code *now*", "button": "Sign up free", "url": "almightypumps.com" }
-  ]
-}

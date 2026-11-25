@@ -1,0 +1,57 @@
+{
+  "name": "06-travel-warp",
+  "world": "warp",
+  "palette": [
+    "#FF5A1F",
+    "#3BA6FF"
+  ],
+  "transition": "whip",
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.2,
+      "lines": [
+        "Landing abroad?",
+        "*Data ready.*"
+      ]
+    },
+    {
+      "type": "steps",
+      "duration": 3.6,
+      "title": "Travel eSIM in *3 steps*",
+      "steps": [
+        "Pick your country",
+        "Pay in Naira",
+        "Scan the QR"
+      ],
+      "kicker": "Travel data",
+      "world": "nebula",
+      "palette": [
+        "#3BA6FF",
+        "#FF5A1F"
+      ]
+    },
+    {
+      "type": "hologram",
+      "duration": 3.4,
+      "lines": [
+        "Delivered",
+        "*instantly.*"
+      ],
+      "sub": "Your QR code shows right after you pay.",
+      "world": "holoroom",
+      "palette": [
+        "#FF5A1F",
+        "#3BA6FF"
+      ]
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Travel *connected*",
+      "button": "Sign up free",
+      "finish": "chrome",
+      "transition": "flash"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "name": "17-support-aurora",
+  "world": "aurora",
+  "palette": [
+    "#FF5A1F",
+    "#2BB8FF"
+  ],
+  "transition": "fade",
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.0,
+      "lines": [
+        "Stuck?",
+        "*Tap Help.*"
+      ]
+    },
+    {
+      "type": "steps",
+      "duration": 3.6,
+      "title": "We've got you",
+      "steps": [
+        "Tap the Help button",
+        "Chat with our team",
+        "Get it sorted"
+      ],
+      "kicker": "Support chat"
+    },
+    {
+      "type": "headline",
+      "duration": 3.0,
+      "lines": [
+        "Real people.",
+        "*Real answers.*"
+      ],
+      "sub": "Questions about an order? Message us right in the app."
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Create your *free* account",
+      "button": "Sign up free",
+      "finish": "chrome",
+      "transition": "whip"
+    }
+  ]
+}

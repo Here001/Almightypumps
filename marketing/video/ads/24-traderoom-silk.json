@@ -1,0 +1,64 @@
+{
+  "name": "24-traderoom-silk",
+  "world": "silk",
+  "palette": [
+    "#FF5A1F",
+    "#2EE6C5"
+  ],
+  "transition": "fade",
+  "scenes": [
+    {
+      "type": "hook",
+      "duration": 2.4,
+      "lines": [
+        "Every trade",
+        "has its *own room.*"
+      ]
+    },
+    {
+      "type": "carousel",
+      "duration": 4.8,
+      "title": "Inside the trade room",
+      "items": [
+        {
+          "title": "Live countdown",
+          "text": "Know every deadline"
+        },
+        {
+          "title": "Chat",
+          "text": "Talk to the other side"
+        },
+        {
+          "title": "Delivery details",
+          "text": "Proof from the seller"
+        },
+        {
+          "title": "Timeline",
+          "text": "Every step recorded"
+        }
+      ],
+      "kicker": "P2P"
+    },
+    {
+      "type": "hologram",
+      "duration": 3.4,
+      "lines": [
+        "Track it.",
+        "*Chat it.* Confirm it."
+      ],
+      "world": "holoroom",
+      "palette": [
+        "#FF5A1F",
+        "#2EE6C5"
+      ]
+    },
+    {
+      "type": "cta",
+      "duration": 3.4,
+      "title": "Start trading",
+      "button": "Sign up free",
+      "finish": "chrome",
+      "transition": "whip"
+    }
+  ]
+}
