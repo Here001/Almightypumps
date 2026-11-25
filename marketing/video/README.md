@@ -72,6 +72,22 @@ are left empty because TikTok and Reels put buttons and captions there.
 
 Keep the claims true (no invented prices, customer numbers or reviews), the same rule as the website.
 
+## Cartoon ads: Kung Fu Kunle
+
+Scripts with `"player": "toon"` use a separate 2D cartoon player in `player-toon/` (no 3D, so it renders much
+faster). Its star is Kunle, an original Nigerian kung fu character drawn in code (`kunle.js`: a small bone rig with
+named poses such as guard, chop, kick, punch, crane, fly, salute and thumb). `worlds.js` has six cartoon backgrounds:
+`rock`, `rooftop`, `dojo`, `street`, `market`, `brand`. `ads/31-kunle-heroes.json` is the first one.
+
+| type | what happens | fields |
+| --- | --- | --- |
+| `intro` | Kunle flies in and lands, title pops | `kicker`, `lines`, `caption` |
+| `breaker` | he breaks a problem, the product appears | `attack` (chop, kick, punches), `label` (painted on the board), `burst`, `reveal` (esim, giftcard, airtime), `title`, `title2`, `badge`, `chips`, `caption` |
+| `escrow` | money goes into a shield, he seals it | `title`, `title2`, `steps`, `burst`, `caption` |
+| `outro` | logo slam, salute, button and web address | `title`, `button`, `url` |
+
+Every scene also takes `world` and `duration`. `caption` is the English subtitle of the voiceover.
+
 ## How it works
 
 `player/` is a web page that draws one frame for any moment in time (`window.seek(seconds)`):
