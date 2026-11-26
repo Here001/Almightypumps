@@ -99,3 +99,4 @@ body.f-16x9 .flow li::after { display: none; }
 .bub-right .bubble::after { left: calc(var(--u) * -3.2); top: 58%; transform: rotate(135deg); }
 body.f-16x9 .s-talk .say { font-size: calc(var(--u) * 6.4); }
 body.f-1x1 .s-talk .say { font-size: calc(var(--u) * 5.6); }
+.url.contacts { display: flex; flex-direction: column; gap: calc(var(--u) * 1.4); letter-spacing: .04em; }

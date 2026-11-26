@@ -62,10 +62,11 @@ set its own `world`, `palette` and `transition`. Put `*stars*` around words to m
 | `stats` | rings that fill while numbers count up | `title`, `kicker`, `items` (`value`, `label`, `prefix`, `suffix`, `ring` 0–1, `static`) |
 | `hologram` | hologram logo on a projector, scan lines | `lines`, `kicker`, `sub` |
 | `steps` | numbered steps joined by a glowing line | `title`, `kicker`, `steps` (3) |
-| `cta` | logo lands with a shockwave, button and web address | `title`, `button`, `url`, `finish` |
+| `cta` | logo lands with a shockwave, button and web address | `title`, `button`, `url` (or `contacts`, a list of lines), `finish` |
+| `talk` | cartoon guide talks; speech bubble fills word by word | `lines`, `gesture`/`gestures` (wave, point, pointUp, present, thumbs, explain, cheer), `icons` (heart, chat, play, gear, pin, browser, search, chart, calendar, code), `enter`, `kicker` |
 
 Worlds: `nebula`, `grid`, `chrome`, `city`, `aurora`, `warp`, `holoroom`, `waves`, `gold`, `tunnel`,
-`cubes`, `silk`, `datarain`.
+`cubes`, `silk`, `datarain`, `feed` (scrolling social posts), `blueprint` (website wireframes).
 
 Keep lines short: about 20 characters per big line reads well on a phone. In 9:16 the top 13% and bottom 21%
 are left empty because TikTok and Reels put buttons and captions there.

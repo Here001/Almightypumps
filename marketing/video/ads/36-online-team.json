@@ -50,10 +50,13 @@
       "type": "cta",
       "duration": 3.6,
       "title": "Let's grow *your brand*",
-      "button": "Email us",
-      "url": "support@almightypumps.com",
+      "button": "Email or WhatsApp us",
       "finish": "chrome",
-      "transition": "whip"
+      "transition": "whip",
+      "contacts": [
+        "support@almightypumps.com",
+        "WhatsApp: number coming"
+      ]
     }
   ]
 }

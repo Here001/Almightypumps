@@ -295,7 +295,7 @@ export const SCENES = {
 
   /** Closing call to action: chrome logo lands with a shock ring; button pulses. */
   cta(s, ctx) {
-    const el = div("sc s-cta", `<div class="txt pos-bottom center"><h2 class="mid">${words(s.title || "Create your *free* account")}</h2><div class="btn">${esc(s.button || "Sign up free")}</div><div class="url">${esc(s.url || "almightypumps.com")}</div></div>`);
+    const el = div("sc s-cta", `<div class="txt pos-bottom center"><h2 class="mid">${words(s.title || "Create your *free* account")}</h2><div class="btn">${esc(s.button || "Sign up free")}</div>${s.contacts ? `<div class="url contacts">${s.contacts.map((c) => `<span>${esc(c)}</span>`).join("")}</div>` : `<div class="url">${esc(s.url || "almightypumps.com")}</div>`}</div>`);
     const ws = [...el.querySelectorAll("h2 .w")], btn = el.querySelector(".btn"), url = el.querySelector(".url");
     const { logo } = ctx.props;
     const shock = new THREE.Mesh(new THREE.TorusGeometry(1, 0.02, 8, 128), new THREE.MeshBasicMaterial({ color: new THREE.Color(BRAND.accent).multiplyScalar(3), transparent: true, toneMapped: false, blending: THREE.AdditiveBlending, depthWrite: false }));
