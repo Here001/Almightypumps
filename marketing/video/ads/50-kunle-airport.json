@@ -1,0 +1,64 @@
+{
+  "name": "50-kunle-airport",
+  "player": "toon",
+  "sound": {
+    "bpm": 112,
+    "key": 45
+  },
+  "scenes": [
+    {
+      "type": "intro",
+      "world": "airport",
+      "duration": 2.8,
+      "entry": "slide",
+      "kicker": "Kung Fu Kunle",
+      "lines": [
+        "Flight",
+        "*boarding?*"
+      ],
+      "caption": "Flight boarding soon?",
+      "pidgin": "Your flight don dey board?"
+    },
+    {
+      "type": "scroll",
+      "world": "airport",
+      "duration": 5.2,
+      "title": [
+        "Travel data",
+        "*in 3 moves*"
+      ],
+      "heading": "Travel eSIM",
+      "steps": [
+        "Pick the country you're going to",
+        "Pay from your Naira wallet",
+        "Scan the QR code and fly"
+      ],
+      "caption": "Travel data in three moves: pick a country, pay, scan the QR.",
+      "pidgin": "Travel data for three moves: pick country, pay, scan the QR."
+    },
+    {
+      "type": "outro",
+      "world": "brand",
+      "duration": 5.4,
+      "title": [
+        "Land",
+        "*connected.*"
+      ],
+      "button": "Create free account",
+      "url": "almightypumps.com",
+      "contacts": [
+        {
+          "icon": "mail",
+          "text": "support@almightypumps.com"
+        },
+        {
+          "icon": "chat",
+          "text": "WhatsApp +234 708 665 1436"
+        }
+      ],
+      "caption": "",
+      "vo": "Almighty Pumps. Create your free account at almightypumps.com.",
+      "pidgin": "Almighty Pumps. Open free account for almightypumps.com."
+    }
+  ]
+}

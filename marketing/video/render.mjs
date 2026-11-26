@@ -66,7 +66,7 @@ async function renderOne(ad, name, format, clips) {
   const page = await browser.newPage({ viewport: { width: w * scale, height: h * scale }, deviceScaleFactor: 1 });
   page.on("pageerror", (e) => console.error(`[page] ${e.message}`));
   page.on("console", (m) => { if (m.type() === "error" || m.type() === "warning") console.error(`[page ${m.type()}] ${m.text()}`); });
-  await page.goto(`http://127.0.0.1:${port}/player/index.html`);
+  await page.goto(`http://127.0.0.1:${port}/${ad.player === "toon" ? "player-toon" : "player"}/index.html`);
   await page.waitForFunction(() => typeof window.loadAd === "function");
   const { duration, cues } = await page.evaluate(([a, f, c]) => window.loadAd(a, f, { clips: c }), [ad, format, clips]);
 

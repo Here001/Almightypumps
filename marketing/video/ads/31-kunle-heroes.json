@@ -1,0 +1,125 @@
+{
+  "name": "31-kunle-heroes",
+  "player": "toon",
+  "sound": {
+    "bpm": 112,
+    "key": 45
+  },
+  "scenes": [
+    {
+      "type": "intro",
+      "world": "rock",
+      "duration": 3.4,
+      "kicker": "Almighty Pumps presents",
+      "lines": [
+        "Kung Fu",
+        "*Kunle*"
+      ],
+      "caption": "Got wahala? Call Kung Fu Kunle."
+    },
+    {
+      "type": "breaker",
+      "world": "rooftop",
+      "duration": 5.2,
+      "attack": "chop",
+      "label": "No US number",
+      "burst": "KIA!",
+      "reveal": "esim",
+      "title": [
+        "Need a",
+        "*US number?*"
+      ],
+      "title2": [
+        "US eSIM",
+        "*sorted*"
+      ],
+      "badge": "Usually ready in 30–45 min",
+      "caption": "Need a US number? Get a US eSIM. Usually ready in 30 to 45 minutes."
+    },
+    {
+      "type": "breaker",
+      "world": "dojo",
+      "duration": 4.8,
+      "attack": "kick",
+      "burst": "WHAM!",
+      "reveal": "giftcard",
+      "title": [
+        "Gift for",
+        "*a friend?*"
+      ],
+      "title2": [
+        "Gift cards &",
+        "*subscriptions*"
+      ],
+      "badge": "Your code shows in the app",
+      "caption": "Gift cards and subscriptions. Pay from your Naira wallet, your code shows in the app."
+    },
+    {
+      "type": "breaker",
+      "world": "street",
+      "duration": 4.8,
+      "attack": "punches",
+      "label": "Low airtime",
+      "burst": "POW!",
+      "reveal": "airtime",
+      "chips": [
+        "MTN",
+        "Airtel",
+        "Glo",
+        "9mobile"
+      ],
+      "title": [
+        "Airtime",
+        "*finished?*"
+      ],
+      "title2": [
+        "Airtime &",
+        "*data*"
+      ],
+      "caption": "Airtime and data for MTN, Airtel, Glo and 9mobile."
+    },
+    {
+      "type": "escrow",
+      "world": "market",
+      "duration": 5.6,
+      "burst": "SAFE!",
+      "title": [
+        "Buying from",
+        "*a stranger?*"
+      ],
+      "title2": [
+        "Escrow keeps",
+        "*your money safe*"
+      ],
+      "steps": [
+        "Your money is held",
+        "Seller delivers",
+        "You check it",
+        "Then the seller is paid"
+      ],
+      "caption": "Buying from a stranger? Escrow holds your money while you check your order."
+    },
+    {
+      "type": "outro",
+      "world": "brand",
+      "duration": 5.4,
+      "title": [
+        "One app.",
+        "*No wahala.*"
+      ],
+      "button": "Create free account",
+      "url": "almightypumps.com",
+      "caption": "",
+      "contacts": [
+        {
+          "icon": "mail",
+          "text": "support@almightypumps.com"
+        },
+        {
+          "icon": "chat",
+          "text": "WhatsApp +234 708 665 1436"
+        }
+      ]
+    }
+  ]
+}

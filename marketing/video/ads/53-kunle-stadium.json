@@ -1,0 +1,66 @@
+{
+  "name": "53-kunle-stadium",
+  "player": "toon",
+  "sound": {
+    "bpm": 112,
+    "key": 45
+  },
+  "scenes": [
+    {
+      "type": "intro",
+      "world": "stadium",
+      "duration": 2.8,
+      "entry": "slide",
+      "kicker": "Kung Fu Kunle",
+      "lines": [
+        "Match",
+        "*day*"
+      ],
+      "caption": "Match day treat?",
+      "pidgin": "Na match day!"
+    },
+    {
+      "type": "breaker",
+      "world": "stadium",
+      "duration": 5.0,
+      "attack": "kick",
+      "reveal": "giftcard",
+      "title": [
+        "Treat",
+        "*yourself*"
+      ],
+      "title2": [
+        "Gift cards &",
+        "*subscriptions*"
+      ],
+      "burst": "GOAL!",
+      "caption": "Gift cards and subscriptions, paid from your Naira wallet.",
+      "pidgin": "Gift card and subscription, pay from your Naira wallet.",
+      "badge": "Code shows in the app"
+    },
+    {
+      "type": "outro",
+      "world": "brand",
+      "duration": 5.4,
+      "title": [
+        "Score",
+        "*big.*"
+      ],
+      "button": "Create free account",
+      "url": "almightypumps.com",
+      "contacts": [
+        {
+          "icon": "mail",
+          "text": "support@almightypumps.com"
+        },
+        {
+          "icon": "chat",
+          "text": "WhatsApp +234 708 665 1436"
+        }
+      ],
+      "caption": "",
+      "vo": "Almighty Pumps. Create your free account at almightypumps.com.",
+      "pidgin": "Almighty Pumps. Open free account for almightypumps.com."
+    }
+  ]
+}

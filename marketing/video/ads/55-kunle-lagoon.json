@@ -1,0 +1,67 @@
+{
+  "name": "55-kunle-lagoon",
+  "player": "toon",
+  "sound": {
+    "bpm": 112,
+    "key": 45
+  },
+  "scenes": [
+    {
+      "type": "intro",
+      "world": "lagoon",
+      "duration": 2.8,
+      "entry": "fly",
+      "kicker": "Kung Fu Kunle",
+      "lines": [
+        "Need a",
+        "*code?*"
+      ],
+      "caption": "Need a verification code?",
+      "pidgin": "You need verification code?"
+    },
+    {
+      "type": "breaker",
+      "world": "lagoon",
+      "duration": 5.0,
+      "attack": "punches",
+      "reveal": "sms",
+      "title": [
+        "Get a",
+        "*US number*"
+      ],
+      "title2": [
+        "SMS",
+        "*codes*"
+      ],
+      "burst": "POW!",
+      "caption": "Rent a US number for your SMS code. No code, no charge.",
+      "pidgin": "Rent US number for your SMS code. If code no come, you no go pay.",
+      "label": "No US number",
+      "badge": "No code, no charge"
+    },
+    {
+      "type": "outro",
+      "world": "brand",
+      "duration": 5.4,
+      "title": [
+        "Code",
+        "*caught.*"
+      ],
+      "button": "Create free account",
+      "url": "almightypumps.com",
+      "contacts": [
+        {
+          "icon": "mail",
+          "text": "support@almightypumps.com"
+        },
+        {
+          "icon": "chat",
+          "text": "WhatsApp +234 708 665 1436"
+        }
+      ],
+      "caption": "",
+      "vo": "Almighty Pumps. Create your free account at almightypumps.com.",
+      "pidgin": "Almighty Pumps. Open free account for almightypumps.com."
+    }
+  ]
+}

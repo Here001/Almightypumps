@@ -1,0 +1,67 @@
+{
+  "name": "40-kunle-temple",
+  "player": "toon",
+  "sound": {
+    "bpm": 112,
+    "key": 45
+  },
+  "scenes": [
+    {
+      "type": "intro",
+      "world": "temple",
+      "duration": 2.8,
+      "entry": "drop",
+      "kicker": "Kung Fu Kunle",
+      "lines": [
+        "Will it",
+        "*work?*"
+      ],
+      "caption": "Will a US eSIM work on your phone?",
+      "pidgin": "US eSIM go work for your phone?"
+    },
+    {
+      "type": "breaker",
+      "world": "temple",
+      "duration": 5.0,
+      "attack": "palm",
+      "reveal": "phonecheck",
+      "title": [
+        "Don't",
+        "*guess*"
+      ],
+      "title2": [
+        "Check it",
+        "*free*"
+      ],
+      "burst": "HUAH!",
+      "caption": "Check your phone free first. No wallet money needed.",
+      "pidgin": "Check your phone free first. You no need fund wallet.",
+      "label": "Not sure?",
+      "badge": "Free phone check"
+    },
+    {
+      "type": "outro",
+      "world": "brand",
+      "duration": 5.4,
+      "title": [
+        "Check first.",
+        "*Buy after.*"
+      ],
+      "button": "Create free account",
+      "url": "almightypumps.com",
+      "contacts": [
+        {
+          "icon": "mail",
+          "text": "support@almightypumps.com"
+        },
+        {
+          "icon": "chat",
+          "text": "WhatsApp +234 708 665 1436"
+        }
+      ],
+      "caption": "",
+      "vo": "Almighty Pumps. Create your free account at almightypumps.com.",
+      "pidgin": "Almighty Pumps. Open free account for almightypumps.com."
+    }
+  ]
+}

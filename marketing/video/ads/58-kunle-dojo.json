@@ -1,0 +1,69 @@
+{
+  "name": "58-kunle-dojo",
+  "player": "toon",
+  "sound": {
+    "bpm": 112,
+    "key": 45
+  },
+  "scenes": [
+    {
+      "type": "intro",
+      "world": "dojo",
+      "duration": 2.8,
+      "entry": "slide",
+      "kicker": "Kung Fu Kunle",
+      "lines": [
+        "Pay first?",
+        "*Wait!*"
+      ],
+      "caption": "Paying a stranger first? Wait!",
+      "pidgin": "You wan pay stranger first? Wait!"
+    },
+    {
+      "type": "escrow",
+      "world": "dojo",
+      "duration": 5.6,
+      "burst": "SAFE!",
+      "title": [
+        "Lesson",
+        "*one*"
+      ],
+      "title2": [
+        "Use",
+        "*escrow*"
+      ],
+      "steps": [
+        "Your money is held",
+        "Seller delivers",
+        "You check it",
+        "Then the seller is paid"
+      ],
+      "caption": "With escrow, the seller is only paid after delivery.",
+      "pidgin": "With escrow, seller go collect money only after delivery."
+    },
+    {
+      "type": "outro",
+      "world": "brand",
+      "duration": 5.4,
+      "title": [
+        "Master's",
+        "*rule.*"
+      ],
+      "button": "Create free account",
+      "url": "almightypumps.com",
+      "contacts": [
+        {
+          "icon": "mail",
+          "text": "support@almightypumps.com"
+        },
+        {
+          "icon": "chat",
+          "text": "WhatsApp +234 708 665 1436"
+        }
+      ],
+      "caption": "",
+      "vo": "Almighty Pumps. Create your free account at almightypumps.com.",
+      "pidgin": "Almighty Pumps. Open free account for almightypumps.com."
+    }
+  ]
+}

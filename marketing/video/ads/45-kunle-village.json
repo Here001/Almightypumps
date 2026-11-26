@@ -1,0 +1,67 @@
+{
+  "name": "45-kunle-village",
+  "player": "toon",
+  "sound": {
+    "bpm": 112,
+    "key": 45
+  },
+  "scenes": [
+    {
+      "type": "intro",
+      "world": "village",
+      "duration": 2.8,
+      "entry": "fly",
+      "kicker": "Kung Fu Kunle",
+      "lines": [
+        "Parcel",
+        "*wahala?*"
+      ],
+      "caption": "Need to send a parcel?",
+      "pidgin": "You wan send parcel?"
+    },
+    {
+      "type": "breaker",
+      "world": "village",
+      "duration": 5.0,
+      "attack": "palm",
+      "reveal": "package",
+      "title": [
+        "Send it",
+        "*right*"
+      ],
+      "title2": [
+        "Send or",
+        "*receive*"
+      ],
+      "burst": "HUAH!",
+      "caption": "Send or receive a package in Nigeria or abroad. Track it with your code.",
+      "pidgin": "Send or receive package for Naija or abroad. Track am with your code.",
+      "label": "Parcel wahala",
+      "badge": "Track it with your code"
+    },
+    {
+      "type": "outro",
+      "world": "brand",
+      "duration": 5.4,
+      "title": [
+        "From village",
+        "*to the world.*"
+      ],
+      "button": "Create free account",
+      "url": "almightypumps.com",
+      "contacts": [
+        {
+          "icon": "mail",
+          "text": "support@almightypumps.com"
+        },
+        {
+          "icon": "chat",
+          "text": "WhatsApp +234 708 665 1436"
+        }
+      ],
+      "caption": "",
+      "vo": "Almighty Pumps. Create your free account at almightypumps.com.",
+      "pidgin": "Almighty Pumps. Open free account for almightypumps.com."
+    }
+  ]
+}

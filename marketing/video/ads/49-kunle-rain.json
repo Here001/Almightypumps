@@ -1,0 +1,67 @@
+{
+  "name": "49-kunle-rain",
+  "player": "toon",
+  "sound": {
+    "bpm": 112,
+    "key": 45
+  },
+  "scenes": [
+    {
+      "type": "intro",
+      "world": "rain",
+      "duration": 2.8,
+      "entry": "drop",
+      "kicker": "Kung Fu Kunle",
+      "lines": [
+        "Stuck?",
+        "*No wahala*"
+      ],
+      "caption": "Stuck with an order? No wahala.",
+      "pidgin": "Your order hook? No wahala."
+    },
+    {
+      "type": "breaker",
+      "world": "rain",
+      "duration": 5.0,
+      "attack": "flykick",
+      "reveal": "chat",
+      "title": [
+        "We",
+        "*dey here*"
+      ],
+      "title2": [
+        "Real",
+        "*help*"
+      ],
+      "burst": "POOF!",
+      "caption": "Message us in the app, by email or on WhatsApp. We'll sort it.",
+      "pidgin": "Message us for app, email or WhatsApp. We go sort am.",
+      "label": "Confused",
+      "badge": "Help chat in the app"
+    },
+    {
+      "type": "outro",
+      "world": "brand",
+      "duration": 5.4,
+      "title": [
+        "Rain or shine,",
+        "*we dey.*"
+      ],
+      "button": "Create free account",
+      "url": "almightypumps.com",
+      "contacts": [
+        {
+          "icon": "mail",
+          "text": "support@almightypumps.com"
+        },
+        {
+          "icon": "chat",
+          "text": "WhatsApp +234 708 665 1436"
+        }
+      ],
+      "caption": "",
+      "vo": "Almighty Pumps. Create your free account at almightypumps.com.",
+      "pidgin": "Almighty Pumps. Open free account for almightypumps.com."
+    }
+  ]
+}
