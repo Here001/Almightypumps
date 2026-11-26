@@ -1,0 +1,66 @@
+{
+  "name": "43-kunle-waterfall",
+  "player": "toon",
+  "sound": {
+    "bpm": 112,
+    "key": 45
+  },
+  "scenes": [
+    {
+      "type": "intro",
+      "world": "waterfall",
+      "duration": 2.8,
+      "entry": "drop",
+      "kicker": "Kung Fu Kunle",
+      "lines": [
+        "Birthday",
+        "*loading?*"
+      ],
+      "caption": "Friend's birthday loading?",
+      "pidgin": "Your padi birthday dey come?"
+    },
+    {
+      "type": "breaker",
+      "world": "waterfall",
+      "duration": 5.0,
+      "attack": "kick",
+      "reveal": "giftcard",
+      "title": [
+        "Gift for",
+        "*a friend?*"
+      ],
+      "title2": [
+        "Gift cards &",
+        "*subscriptions*"
+      ],
+      "burst": "WHAM!",
+      "caption": "Buy gift cards and subscriptions from your Naira wallet. Your code shows in the app.",
+      "pidgin": "Buy gift card and subscription from your Naira wallet. Your code go show for app.",
+      "badge": "Code shows in the app"
+    },
+    {
+      "type": "outro",
+      "world": "brand",
+      "duration": 5.4,
+      "title": [
+        "Gift like",
+        "*a master.*"
+      ],
+      "button": "Create free account",
+      "url": "almightypumps.com",
+      "contacts": [
+        {
+          "icon": "mail",
+          "text": "support@almightypumps.com"
+        },
+        {
+          "icon": "chat",
+          "text": "WhatsApp +234 708 665 1436"
+        }
+      ],
+      "caption": "",
+      "vo": "Almighty Pumps. Create your free account at almightypumps.com.",
+      "pidgin": "Almighty Pumps. Open free account for almightypumps.com."
+    }
+  ]
+}

@@ -76,17 +76,22 @@ Keep the claims true (no invented prices, customer numbers or reviews), the same
 
 Scripts with `"player": "toon"` use a separate 2D cartoon player in `player-toon/` (no 3D, so it renders much
 faster). Its star is Kunle, an original Nigerian kung fu character drawn in code (`kunle.js`: a small bone rig with
-named poses such as guard, chop, kick, punch, crane, fly, salute and thumb). `worlds.js` has six cartoon backgrounds:
-`rock`, `rooftop`, `dojo`, `street`, `market`, `brand`. `ads/31-kunle-heroes.json` is the first one.
+named poses such as guard, chop, kick, punch, palm, crane, fly, salute and thumb). There are 22 cartoon backgrounds:
+`rock`, `rooftop`, `dojo`, `street`, `market`, `brand` (`worlds.js`) and `temple`, `forest`, `bamboo`, `waterfall`,
+`beach`, `village`, `desert`, `bridge`, `neon`, `rain`, `airport`, `snow`, `cave`, `stadium`, `clouds`, `lagoon`
+(`worlds2.js`). Extra props are in `props2.js`. `ads/31-kunle-heroes.json` is the long one; `ads/40-…` to `ads/59-…`
+are a series of short ones, one background each.
 
 | type | what happens | fields |
 | --- | --- | --- |
-| `intro` | Kunle flies in and lands, title pops | `kicker`, `lines`, `caption` |
-| `breaker` | he breaks a problem, the product appears | `attack` (chop, kick, punches), `label` (painted on the board), `burst`, `reveal` (esim, giftcard, airtime), `title`, `title2`, `badge`, `chips`, `caption` |
+| `intro` | Kunle arrives, title pops | `entry` (fly, drop, slide), `kicker`, `lines`, `caption` |
+| `breaker` | he breaks a problem, the product appears | `attack` (chop, kick, punches, flykick, palm), `obstacle` (blob or crate; the default depends on the attack), `label`, `burst`, `reveal` (esim, giftcard, airtime, phonecheck, travel, sms, package, wallet, seller, chat, docs), `title`, `title2`, `badge`, `chips`, `caption` |
+| `scroll` | he opens a training scroll with numbered steps | `title`, `heading`, `steps`, `caption` |
 | `escrow` | money goes into a shield, he seals it | `title`, `title2`, `steps`, `burst`, `caption` |
-| `outro` | logo slam, salute, button and web address | `title`, `button`, `url` |
+| `outro` | logo slam, salute, button, web address and contacts | `title`, `button`, `url`, `contacts` ([{icon: mail or chat, text}]) |
 
-Every scene also takes `world` and `duration`. `caption` is the English subtitle of the voiceover.
+Every scene also takes `world` and `duration`. `caption` is the English subtitle of the voiceover; `pidgin` (and
+`vo` on the outro) are only kept for the voiceover script and are not drawn.
 
 ## How it works
 

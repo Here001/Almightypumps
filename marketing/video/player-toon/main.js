@@ -2,11 +2,15 @@
 // Scene types: intro, breaker (chop | kick | punches → esim | giftcard | airtime), escrow, outro.
 import { drawKunle, poseAt, footDrop, POSES, ease, INK, COL } from "./kunle.js";
 import { WORLDS, rnd, halftone, apMark } from "./worlds.js";
+import { WORLDS2 } from "./worlds2.js";
+import { makeProps } from "./props2.js";
+Object.assign(WORLDS, WORLDS2);
 
 const cv = document.getElementById("c");
 const out = cv.getContext("2d");
 const buf = document.createElement("canvas");
 const g = buf.getContext("2d"); // everything is drawn here, then copied to the screen (with camera shake)
+const P2 = makeProps(g);
 let W, H, L, timeline = [], total = 0;
 const CREAM = "#F4F2EE", ORANGE = "#FF5A1F";
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
@@ -296,8 +300,12 @@ const SCENES = {
   intro(s) {
     const land = 0.75;
     const keys = [{ t: 0, pose: "fly" }, { t: land, pose: "fly", ease: "linear" }, { t: land + 0.08, pose: "land", with: { sq: 1 }, ease: "out" }, { t: 1.25, pose: "guard" }, { t: 2.1, pose: "guard" }, { t: 2.45, pose: "crane" }];
-    const xAt = (t) => L.cx - (1 - ease.out(prog(t, 0, land))) * W * 0.55;
-    const air = (t) => (t < land ? Math.sin(prog(t, 0, land) * Math.PI * 0.5 + Math.PI * 0.5) * H * 0.55 : 0);
+    // entry: "fly" (arcs in from the left), "drop" (falls straight down), "slide" (dashes in along the ground)
+    const entry = s.entry || "fly";
+    const xAt = (t) => entry === "drop" ? L.cx : entry === "slide" ? L.cx - (1 - ease.out(prog(t, 0, land))) * W * 0.7 : L.cx - (1 - ease.out(prog(t, 0, land))) * W * 0.55;
+    const air = (t) => (entry === "slide" ? 0 : t < land ? (entry === "drop" ? (1 - prog(t, 0, land) ** 2) * H * 0.7 : Math.sin(prog(t, 0, land) * Math.PI * 0.5 + Math.PI * 0.5) * H * 0.55) : 0);
+    if (entry === "drop") { keys[0].pose = "crane"; keys[1].pose = "crane"; }
+    if (entry === "slide") { keys[0].pose = "punch"; keys[1].pose = "punch"; }
     return {
       cues: [{ t: 0.05, type: "whoosh" }, { t: land, type: "impact" }, { t: 0.95, type: "pop" }, { t: 1.1, type: "pop" }, { t: 2.35, type: "swoosh" }],
       draw(t, T) {
@@ -312,23 +320,38 @@ const SCENES = {
   },
   breaker(s) {
     const attack = s.attack || "chop";
-    const hitAt = attack === "chop" ? 1.25 : attack === "kick" ? 1.0 : 0.9;
+    const obstacle = s.obstacle || (attack === "flykick" ? "blob" : attack === "palm" ? "crate" : null);
+    const hitAt = attack === "chop" ? 1.25 : attack === "kick" ? 1.0 : attack === "flykick" ? 1.0 : attack === "palm" ? 1.0 : 0.9;
     const hits = attack === "punches" ? [0.9, 1.12, 1.36] : [hitAt];
     const last = hits[hits.length - 1];
-    const keys = attack === "chop"
+    const keys = attack === "flykick"
+      ? [{ t: 0, pose: "guard" }, { t: 0.4, pose: "guard" }, { t: 0.55, pose: "land", ease: "out" }, { t: 0.75, pose: "fly", ease: "out" }, { t: hitAt, pose: "fly" }, { t: 1.35, pose: "land", with: { sq: 1 }, ease: "out" }, { t: 1.75, pose: "guard" }, { t: 2.5, pose: "point" }, { t: 3.2, pose: "thumb" }]
+      : attack === "palm"
+        ? [{ t: 0, pose: "crane" }, { t: 0.6, pose: "crane" }, { t: 0.85, pose: "guard", ease: "out" }, { t: hitAt, pose: "palm", ease: "snap" }, { t: 1.6, pose: "palm" }, { t: 2.0, pose: "guard", ease: "out" }, { t: 2.6, pose: "point" }, { t: 3.3, pose: "thumb" }]
+        : attack === "chop"
       ? [{ t: 0, pose: "guard" }, { t: 0.85, pose: "guard" }, { t: 1.08, pose: "windup", ease: "out" }, { t: hitAt, pose: "chop", ease: "snap" }, { t: 1.7, pose: "chop" }, { t: 2.1, pose: "point", ease: "out" }, { t: 3.0, pose: "point" }, { t: 3.3, pose: "thumb" }]
       : attack === "kick"
         ? [{ t: 0, pose: "guard" }, { t: 0.55, pose: "guard" }, { t: 0.82, pose: "chamber", ease: "out" }, { t: hitAt, pose: "kick", ease: "snap" }, { t: 1.5, pose: "kick" }, { t: 1.9, pose: "guard", ease: "out" }, { t: 2.6, pose: "point" }, { t: 3.4, pose: "thumb" }]
         : [{ t: 0, pose: "guard" }, { t: 0.7, pose: "guard" }, { t: 0.9, pose: "punch", ease: "snap" }, { t: 1.12, pose: "punch2", ease: "snap" }, { t: 1.36, pose: "punch", ease: "snap" }, { t: 1.8, pose: "punch" }, { t: 2.2, pose: "guard", ease: "out" }, { t: 3.0, pose: "thumb" }];
-    const strikePose = attack === "chop" ? "chop" : attack === "kick" ? "kick" : "punch";
+    const strikePose = { chop: "chop", kick: "kick", flykick: "fly", palm: "palm" }[attack] || "punch";
+    // the flying kick starts further back, jumps and lands where he normally stands
+    const flyX = (t) => (attack === "flykick" ? L.cx - (1 - ease.inOut(prog(t, 0.55, hitAt + 0.1))) * W * 0.3 : L.cx);
+    const flyAir = (t) => (attack === "flykick" ? Math.sin(prog(t, 0.6, 1.35) * Math.PI) * 170 * L.k : 0);
     let hit;
     return {
       cues: [{ t: 0.2, type: "pop" }, ...(attack === "chop" ? [{ t: 0.3, type: "whoosh" }, { t: 0.72, type: "hit" }] : [{ t: 0.3, type: "whoosh" }]), ...hits.map((h) => ({ t: h - 0.08, type: "swoosh" })), ...hits.map((h, i) => ({ t: h, type: i === hits.length - 1 ? "impact" : "hit" })), { t: last + 0.5, type: "riser", dur: 0.5 }, { t: last + 0.9, type: "pop" }, { t: last + 1.2, type: "pop" }],
       draw(t, T) {
-        hit = hit || reach(strikePose, attack === "kick" ? "foot" : "hand", L.cx);
+        if (!hit) { hit = reach(strikePose, attack === "kick" || attack === "flykick" ? "foot" : "hand", L.cx); if (attack === "flykick") hit = [hit[0] + 20 * L.k, hit[1] - flyAir(hitAt)]; }
         const [hx, hy] = hit, k = L.k;
         // the obstacle, before it breaks
-        if (attack === "chop") {
+        if (obstacle === "blob") {
+          const enter = ease.back(prog(t, 0.1, 0.6));
+          P2.blob(lerp(W + 300 * k, hx + 110 * k, enter), hy, k, T, s.label, t >= last ? t - last : -1);
+          if (t >= last) for (let i = 0; i < 6; i++) sparkle(hx + 110 * k + Math.cos(i) * (t - last) * 500 * k, hy + Math.sin(i * 2) * (t - last) * 400 * k, k * (1 - clamp(t - last)), T);
+        } else if (obstacle === "crate") {
+          const enter = ease.back(prog(t, 0.1, 0.6));
+          P2.crate(lerp(W + 300 * k, hx + 95 * k, enter), hy, k, s.label, t >= last ? t - last : -1, L.gy);
+        } else if (attack === "chop") {
           const by = hy + 24 * k;
           const drop = ease.back(prog(t, 0.25, 0.7));
           if (t < hitAt) { blocks(hx, L.gy, k); board(hx, lerp(-200, by, drop), 360 * k, 64 * k, s.label); }
@@ -348,7 +371,8 @@ const SCENES = {
           // a stand under the board
           if (t < last) { g.fillStyle = INK; g.fillRect(lerp(W + 300 * k, bx, slide) - 8 * k, by + 165 * k, 16 * k, L.gy - by - 165 * k); }
         }
-        kunle(keys, t, L.cx, T);
+        kunle(keys, t, flyX(t), T, attack === "flykick" ? { air: flyAir, xAt: flyX } : {});
+        if (attack === "flykick") dust(L.cx, L.gy, t - 1.35, 4, 8);
         hits.forEach((h, i) => { speedLines(hx, hy, t - h, 30 + i, 22); });
         burst(hx + 40 * k, hy - 150 * k, 130 * k, t - last, s.burst || "KIA!");
         if (hits.length > 1) hits.slice(0, -1).forEach((h, i) => burst(hx + (i ? 90 : -10) * k, hy - (100 + i * 60) * k, 80 * k, t - h, ["POW!", "BAM!"][i] || ""));
@@ -358,9 +382,11 @@ const SCENES = {
           const rx = lerp(hx, L.px, ease.out(rp)), ry = lerp(hy, L.py, ease.back(rp)), sc = L.ps * lerp(0.3, 1, ease.back(rp));
           if (s.reveal === "esim") phone(rx, ry, sc, T, prog(t, last + 0.9, last + 1.3));
           else if (s.reveal === "giftcard") giftCard(rx, ry - 60 * L.ps, sc, ease.out(rp), T);
+          else if (P2[s.reveal] && s.reveal !== "blob" && s.reveal !== "crate" && s.reveal !== "scroll") P2[s.reveal](rx, ry, sc, T, prog(t, last + 0.8, last + 1.6));
           else if (s.reveal === "airtime") { signal(rx, ry - 80 * L.ps, sc, prog(t, last + 0.6, last + 1.6) * 4, T); chips(s.chips || [], L.px, L.py + 160 * L.ps, L.ps * 0.95, t - last - 1.2); }
           if (rp >= 1) for (let i = 0; i < 4; i++) sparkle(L.px + Math.cos(i * 1.7 + T) * 200 * L.ps, L.py + Math.sin(i * 2.3 + T) * 260 * L.ps, L.ps, T);
-          if (s.badge) pill(s.badge, L.px, L.py + (s.reveal === "esim" ? 330 : 140) * L.ps, L.ps, t - last - 1.3, CREAM);
+          const badgeY = { esim: 330, phonecheck: 320, sms: 320, travel: 280, package: 230, wallet: 200, seller: 280, chat: 230, docs: 230 }[s.reveal] ?? 140;
+          if (s.badge) pill(s.badge, L.px, L.py + badgeY * L.ps, L.ps, t - last - 1.3, CREAM);
         }
         const swap = last + 0.7;
         title(s.title, L.tx, L.ty, L.ts, t - 0.1, { out: swap - 0.1 });
@@ -368,6 +394,21 @@ const SCENES = {
         if (s.kicker) small(s.kicker, L.tx, L.ty - 26 * L.ps, 34 * L.ps, t - 0.1, ORANGE);
         const flash = Math.max(...hits.map((h) => (t >= h ? Math.exp(-(t - h) * 30) : 0)));
         return { shake: shakeFrom(hits, t, attack === "punches" ? 14 : 30), flash: flash * 0.7 };
+      },
+    };
+  },
+  scroll(s) {
+    const keys = [{ t: 0, pose: "guard" }, { t: 0.35, pose: "salute", ease: "out" }, { t: 0.9, pose: "salute" }, { t: 1.2, pose: "point", ease: "out" }, { t: 3.6, pose: "point" }, { t: 3.9, pose: "thumb" }];
+    const steps = s.steps || [];
+    return {
+      cues: [{ t: 0.15, type: "pop" }, { t: 0.5, type: "whoosh" }, ...steps.map((_, i) => ({ t: 0.6 + i * 0.45 + 0.7, type: "tick" }))],
+      draw(t, T) {
+        const w = Math.min(W * 0.56, H * 0.62), h = (W > H ? 0.62 : W === H ? 0.62 : 0.4) * H;
+        const x = W > H ? W * 0.66 : W * 0.69, y = W > H ? H * 0.53 : W === H ? H * 0.53 : H * 0.5;
+        P2.scroll(x, y, w, h, L.ps, ease.out(prog(t, 0.4, 1.0)), s.heading || "", steps, t - 0.6);
+        kunle(keys, t, W > H ? L.cx : L.cx * 0.8, T, { k: L.k * (W > H ? 1 : 0.9) });
+        title(s.title, L.tx, L.ty, L.ts, t - 0.1);
+        return {};
       },
     };
   },

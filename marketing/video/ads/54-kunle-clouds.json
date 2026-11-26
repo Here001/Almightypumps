@@ -1,0 +1,64 @@
+{
+  "name": "54-kunle-clouds",
+  "player": "toon",
+  "sound": {
+    "bpm": 112,
+    "key": 45
+  },
+  "scenes": [
+    {
+      "type": "intro",
+      "world": "clouds",
+      "duration": 2.8,
+      "entry": "drop",
+      "kicker": "Kung Fu Kunle",
+      "lines": [
+        "One app,",
+        "*many skills*"
+      ],
+      "caption": "One app, many skills.",
+      "pidgin": "One app, plenty skills."
+    },
+    {
+      "type": "scroll",
+      "world": "clouds",
+      "duration": 5.2,
+      "title": [
+        "Kunle's",
+        "*secret*"
+      ],
+      "heading": "Almighty Pumps",
+      "steps": [
+        "US and travel eSIMs",
+        "Gift cards, airtime and data",
+        "Escrow for safe buying"
+      ],
+      "caption": "US and travel eSIMs, gift cards, airtime and data, and escrow for safe buying.",
+      "pidgin": "US and travel eSIM, gift card, airtime and data, and escrow for safe buying."
+    },
+    {
+      "type": "outro",
+      "world": "brand",
+      "duration": 5.4,
+      "title": [
+        "One app.",
+        "*No wahala.*"
+      ],
+      "button": "Create free account",
+      "url": "almightypumps.com",
+      "contacts": [
+        {
+          "icon": "mail",
+          "text": "support@almightypumps.com"
+        },
+        {
+          "icon": "chat",
+          "text": "WhatsApp +234 708 665 1436"
+        }
+      ],
+      "caption": "",
+      "vo": "Almighty Pumps. Create your free account at almightypumps.com.",
+      "pidgin": "Almighty Pumps. Open free account for almightypumps.com."
+    }
+  ]
+}

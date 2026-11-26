@@ -1,0 +1,67 @@
+{
+  "name": "42-kunle-bamboo",
+  "player": "toon",
+  "sound": {
+    "bpm": 112,
+    "key": 45
+  },
+  "scenes": [
+    {
+      "type": "intro",
+      "world": "bamboo",
+      "duration": 2.8,
+      "entry": "fly",
+      "kicker": "Kung Fu Kunle",
+      "lines": [
+        "Code no",
+        "*come?*"
+      ],
+      "caption": "Verification code not coming?",
+      "pidgin": "Verification code no gree come?"
+    },
+    {
+      "type": "breaker",
+      "world": "bamboo",
+      "duration": 5.0,
+      "attack": "chop",
+      "reveal": "sms",
+      "title": [
+        "Need a",
+        "*US number?*"
+      ],
+      "title2": [
+        "Codes",
+        "*sorted*"
+      ],
+      "burst": "KIA!",
+      "caption": "Get a US number for your SMS code. You only pay if the code arrives.",
+      "pidgin": "Get US number for your SMS code. Na only when code land you go pay.",
+      "label": "Code no come",
+      "badge": "Pay only if it arrives"
+    },
+    {
+      "type": "outro",
+      "world": "brand",
+      "duration": 5.4,
+      "title": [
+        "Code don",
+        "*land.*"
+      ],
+      "button": "Create free account",
+      "url": "almightypumps.com",
+      "contacts": [
+        {
+          "icon": "mail",
+          "text": "support@almightypumps.com"
+        },
+        {
+          "icon": "chat",
+          "text": "WhatsApp +234 708 665 1436"
+        }
+      ],
+      "caption": "",
+      "vo": "Almighty Pumps. Create your free account at almightypumps.com.",
+      "pidgin": "Almighty Pumps. Open free account for almightypumps.com."
+    }
+  ]
+}
