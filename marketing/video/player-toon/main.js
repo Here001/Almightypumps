@@ -234,6 +234,27 @@ function pill(text, x, y, s, t, col = ORANGE) {
   g.restore();
 }
 
+/** "Reach us" card: rows of {icon: "mail" | "chat", text}. */
+function contactCard(rows, x, y, s, t) {
+  const p = prog(t, 0, 0.3); if (p <= 0) return;
+  const fs = 28 * s, rh = 74 * s, pad = 22 * s, icon = 46 * s;
+  g.font = `600 ${fs}px Geist`;
+  const w = Math.max(...rows.map((r) => g.measureText(r.text).width)) + icon + pad * 3, h = rows.length * rh + pad * 2 + 40 * s;
+  g.save(); g.translate(x, y); g.globalAlpha = p; g.scale(lerp(0.85, 1, ease.back(p)), lerp(0.85, 1, ease.back(p)));
+  inked("#161922", () => g.roundRect(-w / 2, 0, w, h, 22 * s), 5);
+  g.strokeStyle = ORANGE; g.lineWidth = 3; g.beginPath(); g.roundRect(-w / 2 + 6 * s, 6 * s, w - 12 * s, h - 12 * s, 18 * s); g.stroke();
+  g.font = `700 ${24 * s}px 'Space Grotesk'`; g.fillStyle = ORANGE; g.textAlign = "left"; g.textBaseline = "middle"; g.fillText("NEED HELP? REACH US", -w / 2 + pad, pad + 14 * s);
+  rows.forEach((r, i) => {
+    const cy = pad + 40 * s + rh * (i + 0.5), ix = -w / 2 + pad + icon / 2;
+    g.fillStyle = ORANGE; g.beginPath(); g.arc(ix, cy, icon / 2, 0, 7); g.fill();
+    g.strokeStyle = "#fff"; g.fillStyle = "#fff"; g.lineWidth = 3 * s; g.lineJoin = "round";
+    if (r.icon === "mail") { g.strokeRect(ix - 13 * s, cy - 9 * s, 26 * s, 18 * s); g.beginPath(); g.moveTo(ix - 13 * s, cy - 9 * s); g.lineTo(ix, cy + 2 * s); g.lineTo(ix + 13 * s, cy - 9 * s); g.stroke(); }
+    else { g.beginPath(); g.arc(ix, cy - 1 * s, 12 * s, 0, 7); g.stroke(); g.beginPath(); g.moveTo(ix - 9 * s, cy + 7 * s); g.lineTo(ix - 13 * s, cy + 14 * s); g.lineTo(ix - 3 * s, cy + 11 * s); g.closePath(); g.fill(); g.font = `700 ${12 * s}px Geist`; g.textAlign = "center"; g.fillText("•••", ix, cy - 1 * s); }
+    g.font = `600 ${fs}px Geist`; g.fillStyle = CREAM; g.textAlign = "left"; g.fillText(r.text, ix + icon / 2 + pad * 0.6, cy + 1 * s);
+  });
+  g.restore();
+}
+
 // ---------- Kunle helpers ----------
 const ghostCv = document.createElement("canvas"), gctx = ghostCv.getContext("2d");
 function kunle(keys, t, x, time, opts = {}) {
@@ -394,6 +415,7 @@ const SCENES = {
           pill(s.button || "Create free account", bx, by, L.ps * 1.25, t - 1.3);
           small(s.url || "almightypumps.com", bx, by + 90 * L.ps, 40 * L.ps, t - 1.5);
         }
+        if (s.contacts?.length) contactCard(s.contacts, W > H ? W * 0.68 : W * 0.66, W > H ? H * 0.5 : H * (W === H ? 0.52 : 0.535), L.ps, t - 1.8);
         return { shake: shakeFrom([0.3], t, 20) };
       },
     };
