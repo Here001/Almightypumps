@@ -1,0 +1,61 @@
+{
+  "name": "33-build-website",
+  "world": "blueprint",
+  "palette": [
+    "#FF5A1F",
+    "#2BB8FF"
+  ],
+  "transition": "glitch",
+  "scenes": [
+    {
+      "type": "talk",
+      "duration": 3.2,
+      "enter": true,
+      "gestures": [
+        "wave",
+        "pointUp"
+      ],
+      "lines": "No website yet? *We'll build it.*",
+      "icons": [
+        "browser",
+        "code",
+        "gear"
+      ]
+    },
+    {
+      "type": "steps",
+      "duration": 3.8,
+      "kicker": "Website building",
+      "title": "From idea to *live site*",
+      "steps": [
+        "Tell us about your business",
+        "We design and build it",
+        "Your site goes live"
+      ]
+    },
+    {
+      "type": "talk",
+      "duration": 3.2,
+      "gestures": [
+        "present"
+      ],
+      "lines": "Made to look good on *every phone.*",
+      "icons": [
+        "browser",
+        "search"
+      ]
+    },
+    {
+      "type": "cta",
+      "duration": 3.6,
+      "title": "Get your *website built*",
+      "button": "Email or WhatsApp us",
+      "finish": "chrome",
+      "transition": "whip",
+      "contacts": [
+        "support@almightypumps.com",
+        "WhatsApp: +234 708 665 1436"
+      ]
+    }
+  ]
+}

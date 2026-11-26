@@ -1,6 +1,7 @@
 // Scene types. Each builds its overlay text (HTML) and its 3D objects, and draws itself for a local time t.
 import { THREE, E, prog, clamp, lerp, wob, BRAND } from "./core.js";
 import { makeLabel, makeCard, makeRing } from "./props.js";
+import { makeIcon } from "./toon.js";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 /** Text with *stars* → orange words; split into word spans (and optional letter spans) for animation. */
@@ -294,7 +295,7 @@ export const SCENES = {
 
   /** Closing call to action: chrome logo lands with a shock ring; button pulses. */
   cta(s, ctx) {
-    const el = div("sc s-cta", `<div class="txt pos-bottom center"><h2 class="mid">${words(s.title || "Create your *free* account")}</h2><div class="btn">${esc(s.button || "Sign up free")}</div><div class="url">${esc(s.url || "almightypumps.com")}</div></div>`);
+    const el = div("sc s-cta", `<div class="txt pos-bottom center"><h2 class="mid">${words(s.title || "Create your *free* account")}</h2><div class="btn">${esc(s.button || "Sign up free")}</div>${s.contacts ? `<div class="url contacts">${s.contacts.map((c) => `<span>${esc(c)}</span>`).join("")}</div>` : `<div class="url">${esc(s.url || "almightypumps.com")}</div>`}</div>`);
     const ws = [...el.querySelectorAll("h2 .w")], btn = el.querySelector(".btn"), url = el.querySelector(".url");
     const { logo } = ctx.props;
     const shock = new THREE.Mesh(new THREE.TorusGeometry(1, 0.02, 8, 128), new THREE.MeshBasicMaterial({ color: new THREE.Color(BRAND.accent).multiplyScalar(3), transparent: true, toneMapped: false, blending: THREE.AdditiveBlending, depthWrite: false }));
@@ -322,4 +323,52 @@ export const SCENES = {
       },
     };
   },
+};
+
+/** The cartoon guide talks: a speech bubble fills in word by word while his mouth moves and he gestures.
+ *  fields: lines (bubble text), gesture or gestures (wave, point, pointUp, present, thumbs, explain, cheer), icons, enter, kicker */
+SCENES.talk = function talk(s, ctx) {
+  const text = Array.isArray(s.lines) ? s.lines.join(" ") : s.lines || s.say || "";
+  const side = fmt(ctx, "top", "right", "right");
+  const el = div(`sc s-talk bub-${side}`, `<div class="bubble">${s.kicker ? `<div class="kicker">${words(s.kicker)}</div>` : ""}<p class="say">${words(text)}</p></div>`);
+  const bubble = el.querySelector(".bubble"), ws = [...el.querySelectorAll(".say .w")], kick = el.querySelector(".kicker");
+  const { toon } = ctx.props;
+  const icons = (s.icons || []).map((k) => { const m = makeIcon(k); m.visible = false; ctx.stage.scene.add(m); return m; });
+  const gestures = s.gestures || [s.gesture || "explain"];
+  const base = fmt(ctx, [0, -4.9, 0], [-1.9, -2.9, 0], [-3.4, -2.6, 0]);
+  const size = fmt(ctx, 2.05, 1.65, 1.6);
+  return {
+    el, objects: icons, speed: 0.5,
+    cues: [{ t: 0.05, type: "pop" }, ...icons.map((_, i) => ({ t: 0.5 + i * 0.35, type: "tick" }))],
+    update(t, d, T) {
+      const push = E.inOut(prog(t, 0, d));
+      cam(ctx, T, [base[0] * 0.25 + lerp(-0.4, 0.4, push), fmt(ctx, -0.6, -0.2, 0), fmt(ctx, lerp(10.2, 9.4, push), lerp(9.6, 9, push), lerp(9.6, 9, push))], [base[0] * 0.25, fmt(ctx, -1.0, -0.4, -0.3), 0], 0.6);
+      toon.visible = true;
+      const enter = s.enter ? E.back(prog(t, 0, 0.5)) : 1;
+      toon.position.set(...base); toon.scale.setScalar(size * clamp(enter, 0.001, 2));
+      toon.rotation.y = fmt(ctx, 0, 0.25, 0.3) + (s.enter ? (1 - E.out(prog(t, 0, 0.6))) * -2.4 : 0);
+      const talkStart = 0.3, talkEnd = d - 0.35;
+      const talk = clamp(prog(t, talkStart, 0.15) * (1 - prog(t, talkEnd, 0.2)));
+      const seg = d / gestures.length; const gi = Math.min(gestures.length - 1, Math.floor(t / seg)); const gt = t - gi * seg;
+      toon.pose(T, { talk, gesture: gestures[gi], from: gi ? gestures[gi - 1] : "idle", k: E.out(prog(gt, 0.05, 0.45)), look: fmt(ctx, 0, 0.15, 0.2), hop: s.enter ? Math.max(0, Math.sin(clamp(t / 0.5) * Math.PI)) * 0.25 : 0 });
+      // speech bubble: pops, then words appear in time with the talking
+      const bk = E.back(prog(t, 0.05, 0.4));
+      bubble.style.opacity = clamp(prog(t, 0.05, 0.15)); bubble.style.transform = `scale(${clamp(bk, 0, 1.2)})`;
+      show(kick, E.out(prog(t, 0.15, 0.3)), { y: 10 });
+      const span = Math.max(0.3, (talkEnd - talkStart) * 0.55);
+      ws.forEach((w, i) => { const st = talkStart + (i / Math.max(1, ws.length)) * span; show(w, E.out(prog(t, st, 0.18)), { y: 12, blur: 6 }); });
+      // icons float in an arc around his head
+      icons.forEach((m, i) => {
+        const st = 0.5 + i * 0.35; const k = E.back(prog(t, st, 0.45));
+        m.visible = t > st;
+        const sd = i % 2 ? 1 : -1, row = Math.floor(i / 2);
+        const x = base[0] + sd * fmt(ctx, 2.75 + row * 0.15, 2.0, 2.2), y = base[1] + size * fmt(ctx, 2.6, 2.4, 2.4) - row * fmt(ctx, 1.55, 1.2, 1.2) + Math.sin(T * 1.6 + i) * 0.1;
+        const a = sd * 0.5;
+        m.position.set(x, y, 0.8 + Math.cos(a) * 0.4);
+        m.scale.setScalar(clamp(k, 0, 1.3) * fmt(ctx, 0.85, 0.7, 0.7));
+        m.rotation.set(Math.sin(T * 0.9 + i) * 0.25, Math.sin(T * 1.2 + i * 2) * 0.5, Math.sin(T * 0.7 + i) * 0.1);
+      });
+      return { bloom: 0.6 };
+    },
+  };
 };

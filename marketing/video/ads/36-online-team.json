@@ -1,0 +1,62 @@
+{
+  "name": "36-online-team",
+  "world": "silk",
+  "palette": [
+    "#FF5A1F",
+    "#6B3BFF"
+  ],
+  "transition": "fade",
+  "scenes": [
+    {
+      "type": "talk",
+      "duration": 3.4,
+      "enter": true,
+      "gestures": [
+        "wave",
+        "present"
+      ],
+      "lines": "Social media. Websites. SEO. *One team.*",
+      "icons": [
+        "heart",
+        "browser",
+        "search"
+      ]
+    },
+    {
+      "type": "hologram",
+      "duration": 3.2,
+      "kicker": "Almighty Pumps",
+      "lines": [
+        "Your brand,",
+        "*handled.*"
+      ],
+      "sub": "Managed, built and found online."
+    },
+    {
+      "type": "talk",
+      "duration": 3.4,
+      "gestures": [
+        "present",
+        "thumbs"
+      ],
+      "lines": "Tell us what you need. *We'll handle the rest.*",
+      "icons": [
+        "chat",
+        "calendar",
+        "code"
+      ]
+    },
+    {
+      "type": "cta",
+      "duration": 3.6,
+      "title": "Let's grow *your brand*",
+      "button": "Email or WhatsApp us",
+      "finish": "chrome",
+      "transition": "whip",
+      "contacts": [
+        "support@almightypumps.com",
+        "WhatsApp: +234 708 665 1436"
+      ]
+    }
+  ]
+}

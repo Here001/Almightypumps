@@ -1,0 +1,72 @@
+{
+  "name": "34-website-care",
+  "world": "cubes",
+  "palette": [
+    "#FF5A1F",
+    "#36D399"
+  ],
+  "transition": "flash",
+  "scenes": [
+    {
+      "type": "talk",
+      "duration": 3.2,
+      "enter": true,
+      "gestures": [
+        "explain"
+      ],
+      "lines": "Website built... *then forgotten?*",
+      "icons": [
+        "browser",
+        "gear"
+      ]
+    },
+    {
+      "type": "carousel",
+      "duration": 4.2,
+      "kicker": "Website management",
+      "title": "We keep it *running*",
+      "items": [
+        {
+          "title": "Updates",
+          "text": "Pages and content kept fresh"
+        },
+        {
+          "title": "Fixes",
+          "text": "Broken things sorted"
+        },
+        {
+          "title": "Backups",
+          "text": "Your site kept safe"
+        },
+        {
+          "title": "Speed",
+          "text": "Pages that load fast"
+        }
+      ]
+    },
+    {
+      "type": "talk",
+      "duration": 3.4,
+      "gestures": [
+        "thumbs"
+      ],
+      "lines": "You focus on customers. *We look after the site.*",
+      "icons": [
+        "gear",
+        "chart"
+      ]
+    },
+    {
+      "type": "cta",
+      "duration": 3.6,
+      "title": "Hand us your *website*",
+      "button": "Email or WhatsApp us",
+      "finish": "chrome",
+      "transition": "whip",
+      "contacts": [
+        "support@almightypumps.com",
+        "WhatsApp: +234 708 665 1436"
+      ]
+    }
+  ]
+}

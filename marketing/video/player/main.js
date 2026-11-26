@@ -3,6 +3,7 @@ import { THREE, createStage, colourEnvironment, clamp, BRAND } from "./core.js";
 import { WORLDS } from "./worlds.js";
 import { makeLogo, makeParticleLogo, makePhone, makeProjector } from "./props.js";
 import { SCENES } from "./scenes.js";
+import { makeToon } from "./toon.js";
 
 let ctx, timeline = [], total = 0, clipCounts = {}, overlay;
 const frameCache = new Map();
@@ -28,7 +29,7 @@ window.loadAd = async (ad, format, opts = {}) => {
   const stage = createStage(document.getElementById("gl"), innerWidth, innerHeight);
   overlay = document.getElementById("ov");
   clipCounts = opts.clips || {};
-  const props = { logo: makeLogo(), particles: makeParticleLogo(), phone: makePhone(), projector: makeProjector() };
+  const props = { logo: makeLogo(), particles: makeParticleLogo(), phone: makePhone(), projector: makeProjector(), toon: makeToon() };
   for (const p of Object.values(props)) { p.visible = false; stage.scene.add(p); }
   stage.scene.add(new THREE.AmbientLight("#ffffff", 0.25));
   const key = new THREE.DirectionalLight("#ffffff", 1.4); key.position.set(3, 5, 6); stage.scene.add(key);

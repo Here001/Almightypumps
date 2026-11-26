@@ -1,0 +1,75 @@
+{
+  "name": "32-manage-social",
+  "world": "feed",
+  "palette": [
+    "#FF5A1F",
+    "#2BB8FF"
+  ],
+  "transition": "whip",
+  "scenes": [
+    {
+      "type": "talk",
+      "duration": 3.4,
+      "enter": true,
+      "gestures": [
+        "wave",
+        "explain"
+      ],
+      "lines": "Running a business *and* your social pages?",
+      "icons": [
+        "heart",
+        "chat",
+        "play",
+        "calendar"
+      ]
+    },
+    {
+      "type": "carousel",
+      "duration": 4.2,
+      "kicker": "Social media management",
+      "title": "We manage it *for you*",
+      "items": [
+        {
+          "title": "Plan",
+          "text": "A content calendar for your pages"
+        },
+        {
+          "title": "Create & post",
+          "text": "On time, in your brand style"
+        },
+        {
+          "title": "Engage",
+          "text": "Comments and messages answered"
+        },
+        {
+          "title": "Report",
+          "text": "See what is working"
+        }
+      ]
+    },
+    {
+      "type": "talk",
+      "duration": 3.2,
+      "gestures": [
+        "thumbs"
+      ],
+      "lines": "You run the business. *We run the pages.*",
+      "icons": [
+        "chart",
+        "heart"
+      ]
+    },
+    {
+      "type": "cta",
+      "duration": 3.6,
+      "title": "Let us *manage your pages*",
+      "button": "Email or WhatsApp us",
+      "finish": "chrome",
+      "transition": "whip",
+      "contacts": [
+        "support@almightypumps.com",
+        "WhatsApp: +234 708 665 1436"
+      ]
+    }
+  ]
+}
